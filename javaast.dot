@@ -1,0 +1,84 @@
+strict digraph JavaAST {
+  size="10.0,3.5";
+  orientation="landscape";
+  ratio=fill;
+  /*
+    -- TypeTree
+    class, interface
+
+    -- DefTree 
+    filed, variable, param, 
+    method, constructor 
+
+
+    -- Statement
+    switch, if, while, for, do-while, case, break
+    block
+    try-catch
+    assignment
+
+
+
+    -- Expr
+    postfix, ternary, unary, binary
+    literals
+    cast
+    new, ident
+    method call, select
+    new array, array access 
+
+
+    
+    -- Alone
+    return
+  */
+  Tree -> TypeTree;
+  Tree -> DefTree;
+  Tree -> Statement;
+  Tree -> Case;
+
+
+  subgraph {
+    TypeTree -> ClassDef;
+  }
+  
+  subgraph {
+    DefTree -> ValDef;
+    DefTree -> MethodDef;
+  }
+
+  subgraph {
+    Statement -> Block;
+    Statement -> Expr;
+    Statement -> Switch;
+    Statement -> Label;
+    Statement -> Synchronized;
+    Statement -> If;
+    Statement -> While;
+    Statement -> For;
+    Statement -> DoWhile;
+    Statement -> Break;
+    Statement -> Continue;
+    Statement -> Return;
+    Statement -> Try;
+    Statement -> Assign;
+  }
+
+  subgraph {
+    Expr -> Postfix;
+    Expr -> Binary;
+    Expr -> Unary;
+    Expr -> Ternary;
+    Expr -> Ident;
+    Expr -> Select;
+    Expr -> Literal;
+    Expr -> Apply;
+    Expr -> ArrayAccess;
+    Expr -> New;
+    Expr -> Throw;
+    Expr -> NewArray;
+    Expr -> Cast;
+  }
+  
+
+}
