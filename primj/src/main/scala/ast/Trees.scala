@@ -2,14 +2,14 @@ package ch.usi.inf.l3.sana.primj.ast
 
 
 import ch.usi.inf.l3.sana
-import sana.tiny.ast
 import sana.tiny.ast.Flags
 import sana.tiny.source.Position
 import sana.tiny.names.Names._
 import sana.tiny.types
-import sana.tiny.symbols
 import sana.calcj.ast.JavaOps._
 import sana.calcj.ast.Constants
+import sana.calcj.ast
+import sana.calcj.symbols
 
 
 
@@ -29,7 +29,8 @@ trait Trees extends ast.Trees {
   trait MethodDef extends DefTree {
     def ret: TypeUse
     def params: List[ValDef]
-    def body: Block
+    def body: Statement
+
 
     override def toString: String = 
       s"""|${flags} ${ret} ${name} (${params.mkString(", ")}) {
@@ -44,12 +45,31 @@ trait Trees extends ast.Trees {
     override def toString: String = s"${flags} ${tpt} ${name} = ${rhs}"
   }
   
+
   // Statements and Blocks
 
-  // FIXME: What is a block?
-  trait Block extends Statement
+  trait Return extends Statement {
+    val expr: Option[Expr]
+    val tpe: Option[Type] = expr.flatMap(_.tpe)
+    val symbol: Option[Symbol] = None
 
-  trait Assign extends Statement {
+    def isVoid: Boolean = expr == None
+    override def toString: String = s"return ${expr.getOrElse("")}"
+
+  }
+
+  trait Block extends Statement {
+    def stmts: List[Statement]
+    def symbol: Option[Symbol] = None
+    override def toString: String = 
+      s"""|{
+          |  ${stmts.map(_.toString).mkString("\n")}
+          |}""".stripMargin
+  }
+
+  
+
+  trait Assign extends Expr {
     def lhs: Expr
     def rhs: Expr
     def tpe: Option[Type] = None
@@ -90,15 +110,15 @@ trait Trees extends ast.Trees {
   }
 
   trait For extends Statement {
-    def init: Statement
+    def inits: List[Statement]
     def cond: Expr
-    def step: Expr
+    def steps: List[Expr]
     def body: Statement
     def tpe: Option[Type] = None
     def symbol: Option[Symbol] = None
 
     override def toString =
-      s"""|for(${init}; ${cond}; ${step}) {
+      s"""|for(${inits.mkString(", ")}; ${cond}; ${steps.mkString(", ")}) {
           |  ${body}
           |}""".stripMargin
 
@@ -154,11 +174,19 @@ trait Trees extends ast.Trees {
   }
 
   trait ForExtractor {
-    def unapply(f: For): Option[(Statement, Expr, Expr, Statement)] = f match {
+    def unapply(f: For): 
+      Option[(List[Statement], Expr, List[Expr], Statement)] = f match {
       case null => None
-      case _    => Some((f.init, f.cond, f.step, f.body))
+      case _    => Some((f.inits, f.cond, f.steps, f.body))
     }
   }
+  trait BlockExtractor {
+    def unapply(b: Block): Option[List[Statement]] = b match {
+      case null => None
+      case _    => Some(b.stmts)
+    }
+  }
+
 
   trait TernaryExtractor {
     def unapply(t: Ternary): Option[(Expr, Expr, Expr)] = t match {
@@ -176,7 +204,7 @@ trait Trees extends ast.Trees {
 
   trait MethodDefExtractor {
     def unapply(md: MethodDef): 
-      Option[(Flags, TypeUse, Name, List[ValDef], Block)] = md match {
+      Option[(Flags, TypeUse, Name, List[ValDef], Statement)] = md match {
         case null => None
         case _    => Some((md.flags, md.ret, md.name, md.params, md.body))
       }
@@ -189,9 +217,19 @@ trait Trees extends ast.Trees {
         case _    => Some((vd.flags, vd.tpt, vd.name, vd.rhs))
       }
   }
-
+  trait ReturnExtractor {
+    def unapply(r: Return): Option[Expr] = r match {
+      case null => None
+      case _    => for(e <- r.expr) yield e
+    }
+  }
   
-
+  // trait VoidReturnExtractor {
+  //   def unapply(r: Return): Option[Expr] = r match {
+  //     case null => None
+  //     case _    => for(e <- r.expr) yield e
+  //   }
+  // }
   /***************************** Factories **************************/
 
   trait AssignFactory {
@@ -222,14 +260,24 @@ trait Trees extends ast.Trees {
 
   }
 
+  trait BlockFactory {
+    private class BlockImpl(val stmts: List[Statement], val tpe: Option[Type],
+      val pos: Option[Position]) extends Block
+
+
+    def apply(ss: List[Statement], t: Option[Type], 
+      p: Option[Position]): Block = new BlockImpl(ss, t, p)
+
+  }
+
   trait ForFactory {
-    private class ForImpl(val init: Statement,
-      val cond: Expr, val step: Expr, val body: Statement,
+    private class ForImpl(val inits: List[Statement],
+      val cond: Expr, val steps: List[Expr], val body: Statement,
         val pos: Option[Position]) extends For
 
-    def apply(i: Statement, c: Expr, s: Expr, 
+    def apply(is: List[Statement], c: Expr, ss: List[Expr], 
       b: Statement, p: Option[Position] = None): For = 
-        new ForImpl(i, c, s, b, p)
+        new ForImpl(is, c, ss, b, p)
   }
 
   trait TernaryFactory {
@@ -254,12 +302,22 @@ trait Trees extends ast.Trees {
 
   trait MethodDefFactory {
     private class MethodDefImpl(val flags: Flags, val ret: TypeUse, 
-      val name: Name, val params: List[ValDef], val body: Block, 
+      val name: Name, val params: List[ValDef], val body: Statement, 
       val symbol: Option[Symbol], val pos: Option[Position]) extends MethodDef
 
     def apply(f: Flags, r: TypeUse, n: Name, ps: List[ValDef], 
-      b: Block, s: Option[Symbol], p: Option[Position]): MethodDef = 
+      b: Statement, s: Option[Symbol], p: Option[Position]): MethodDef = 
         new MethodDefImpl(f, r, n, ps, b, s, p)
+  }
+
+  trait ReturnFactory {
+    private class ReturnImpl(val expr: Option[Expr], 
+                val pos: Option[Position]) extends Return
+
+
+    def apply(e: Expr, p: Option[Position]): Return = new ReturnImpl(Some(e), p)
+
+    def apply(p: Option[Position]): Return = new ReturnImpl(None, p)
   }
 
   trait ValDefFactory {
@@ -282,8 +340,10 @@ trait Trees extends ast.Trees {
   val If        = new IfExtractor with IfFactory {}
   val While     = new WhileExtractor with WhileFactory {}
   val For       = new ForExtractor with ForFactory {}
+  val Block     = new BlockExtractor with BlockFactory {}
   val Ternary   = new TernaryExtractor with TernaryFactory {}
   val Apply     = new ApplyExtractor with ApplyFactory {}
+  val Return    = new ReturnExtractor with ReturnFactory {}
   val MethodDef = new MethodDefExtractor with MethodDefFactory {}
   val ValDef    = new ValDefExtractor with ValDefFactory {}
 }

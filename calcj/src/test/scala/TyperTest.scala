@@ -1,16 +1,19 @@
 import ch.usi.inf.l3.sana
 import sana.calcj
 import sana.tiny
+import tiny.util.CompilationUnits
+import tiny.contexts.TreeContexts
 import calcj.ast.Trees
 import calcj.ast.Constants
 import calcj.types.Types
-import calcj.symbols.Symbols
-import calcj.misc.JavaOps._
-import calcj.typechecker.Typer
+import calcj.ast.JavaOps._
+import calcj.typechecker.Typers
 import org.scalatest._
 
 class TyperTest extends FlatSpec with Matchers with Trees with 
-  Constants with Types with Typer with Symbols {
+  Constants with Types with Typers with CompilationUnits 
+  with TreeContexts {
+  // val typer = new Typer
   "1L >> 2" should "be long" in {
     val b = Binary(
               Lit(LongConstant(1), None), 
@@ -99,5 +102,5 @@ class TyperTest extends FlatSpec with Matchers with Trees with
               None)
     typeTree(b).tpe.map(_ == StringType).getOrElse(false)
   }
-  
+
 }

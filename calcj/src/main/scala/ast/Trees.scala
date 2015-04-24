@@ -2,18 +2,22 @@ package ch.usi.inf.l3.sana.calcj.ast
 
 
 import ch.usi.inf.l3.sana
-import sana.tiny.ast
-import sana.tiny.ast.Flags
-import sana.tiny.source.Position
-import sana.tiny.names.Names._
-import sana.tiny.types
-import sana.tiny.symbols
-import sana.calcj.ast.JavaOps._
+import sana.tiny
+import sana.calcj
+import tiny.ast
+import tiny.ast.Flags
+import tiny.source.Position
+import tiny.contexts.TreeContexts
+import tiny.names.Names._
+import tiny.types
+import calcj.ast.JavaOps._
 
 
+import scalaz.Scalaz._
+import scalaz.{Name => _, _}
 
 trait Trees extends ast.Trees {
-  self: types.Types with symbols.Symbols with Constants =>
+  self: types.Types with TreeContexts with Constants =>
   
   
   /********************* AST Nodes *********************************/
@@ -22,8 +26,8 @@ trait Trees extends ast.Trees {
   trait Cast extends Expr {
     def tpt: Expr // TODO: What should be here?
     def expr: Expr
-    def symbol: Option[Symbol] = None
-    override def tpe: Option[Type] = tpt.tpe
+    def owner: Option[TreeId] = None
+    override def tpe: TypeState[Type] = tpt.tpe
   }
 
   // Binary and Unary trees
@@ -31,8 +35,8 @@ trait Trees extends ast.Trees {
     def lhs: Expr
     def op: BOp
     def rhs: Expr
-    def symbol: Option[Symbol] = None
 
+    def owner: Option[TreeId] = None
     override def toString: String = 
       s"(${lhs.toString} ${op.toString} ${rhs.toString})"
   
@@ -41,24 +45,24 @@ trait Trees extends ast.Trees {
   trait Postfix extends Expr {
     def op: POp
     def expr: Expr
-    def symbol: Option[Symbol] = None
 
+    def owner: Option[TreeId] = None
     override def toString: String = s"(${op.toString}${expr.toString})"
   }
 
   trait Unary extends Expr {
     def op: UOp
     def expr: Expr
-    def symbol: Option[Symbol] = None
 
+    def owner: Option[TreeId] = None
     override def toString: String = s"(${expr.toString}${op.toString})"
   }
 
   // Literals
   trait Lit extends Expr {
     def const: Constant
-    def symbol: Option[Symbol] = None
-    override def tpe: Option[Type] = Some(const.tpe)
+    def owner: Option[TreeId] = None
+    override def tpe: TypeState[Type] = point(const.tpe)
   }
 
   /***************************** Extractors **************************/
@@ -118,28 +122,31 @@ trait Trees extends ast.Trees {
 
   trait BinaryFactory {
     private class BinaryImpl(val lhs: Expr,
-      val op: BOp, val rhs: Expr, val tpe: Option[Type],
+      val op: BOp, val rhs: Expr, val tpe: TypeState[Type],
       val pos: Option[Position]) extends Binary
 
-    def apply(l: Expr, o: BOp, r: Expr, t: Option[Type], 
+    def apply(l: Expr, o: BOp, r: Expr, t: TypeState[Type], 
       p: Option[Position]): Binary = new BinaryImpl(l, o, r, t, p)
   }
 
   trait UnaryFactory {
     private class UnaryImpl(val op: UOp,
-      val expr: Expr, val tpe: Option[Type],
+      val expr: Expr, val tpe: TypeState[Type],
       val pos: Option[Position]) extends Unary
 
-    def apply(o: UOp, e: Expr, t: Option[Type], p: Option[Position]): Unary =
+    def apply(o: UOp, e: Expr, t: TypeState[Type], 
+      p: Option[Position]): Unary =
       new UnaryImpl(o, e, t, p)
 
   }
 
   trait PostfixFactory {
     private class PostfixImpl(val expr: Expr, val op: POp,
-      val tpe: Option[Type], val pos: Option[Position]) extends Postfix
+      val tpe: TypeState[Type], 
+      val pos: Option[Position]) extends Postfix
 
-    def apply(e: Expr, o: POp, t: Option[Type], p: Option[Position]): Postfix =
+    def apply(e: Expr, o: POp, t: TypeState[Type], 
+      p: Option[Position]): Postfix =
       new PostfixImpl(e, o, t, p)
 
   }

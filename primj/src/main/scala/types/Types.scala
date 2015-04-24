@@ -2,8 +2,8 @@ package ch.usi.inf.l3.sana.primj.types
 
 
 import ch.usi.inf.l3.sana
-import sana.tiny
-import tiny.types
+import sana.calcj
+import calcj.types
 
 
 trait Types extends types.Types {
