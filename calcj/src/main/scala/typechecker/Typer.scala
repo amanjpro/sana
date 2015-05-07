@@ -10,7 +10,6 @@ import calcj.ast
 import calcj.types
 import calcj.ast.JavaOps._
 
-
 import scalaz.Scalaz._
 import scalaz._
 

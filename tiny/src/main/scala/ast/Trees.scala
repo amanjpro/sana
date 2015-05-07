@@ -45,12 +45,11 @@ trait Trees {
     def mods: Flags
   }
   
-  trait Statement extends Tree 
 
-  trait Expr extends Statement 
+  trait Expr extends Tree 
 
 
-  trait Empty extends Statement {
+  trait Empty extends Expr {
     def tpe: TypeState[Type]     = point(notype)
     def owner: Option[TreeId]    = None
     def pos: Option[Position]    = None

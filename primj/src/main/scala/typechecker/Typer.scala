@@ -5,15 +5,15 @@ import sana.tiny
 import sana.calcj
 import sana.primj
 import tiny.util.CompilationUnits
-import tiny.contexts.DefContext
 import tiny.passes
-import calcj.symbols
-import primj.ast
-import primj.types
+import tiny.contexts.TreeContexts
 import calcj.typechecker
 import calcj.ast.JavaOps._
-import scala.annotation.tailrec
+import primj.ast
+import primj.types
 
+import scalaz.Scalaz._
+import scalaz._
 
 // TODO: How long should we keep def information in our database?
 
@@ -23,97 +23,116 @@ import scala.annotation.tailrec
 // 3- String Conversion   Sect: 5.4 - p67
 
 trait Typer extends typechecker.Typers {
-  self: ast.Trees with symbols.Symbols with types.Types with CompilationUnits =>
+  self: ast.Trees with TreeContexts with types.Types with CompilationUnits =>
 
   trait Typer extends super.Typer {
 
-    override def typeTree(tree: Tree, env: DefContext): (Tree, DefContext) = 
-      tree match {
-        case e: Expr       => typeExpr(e, env)
-        case s: Statement  => typeStatement(s, env)
-        case _             => 
-          super.typeTree(tree, env)
-      }
-
-
-    def typeStatement(s: Statement, env: DefContext): (Statement, DefContext) = 
-      s match {
-        case iff: If       => typeIf(iff, env)
-        case wile: While   => typeWhile(wile, env)
-        case forloop: For  => typeFor(forloop, env)
-      }
-
-    def typeWhile(wile: While, env: DefContext): (While, DefContext) = {
-      val (cond, _)  = typeExpr(wile.cond, env)
-      val (body, _) = typeStatement(wile.body, env)
-      if(cond.tpe != Some(BooleanType)) {
-        error(TYPE_MISMATCH,
-          cond.tpe.toString, "boolean", wile.cond.pos, wile.cond)
-      }
-      (While(wile.flags, cond, body, wile.pos), env)
+    override def typeTree(tree: Tree): TreeState[Tree] = tree match {
+      case s: Expr  => for {
+        ts <- typeExpr(s)
+      } yield ts
+      case _             => 
+        super.typeTree(tree)
     }
 
-    def typeFor(forloop: For, env: DefContext): (For, DefContext) = {
-      val (inits, env1) = typeList(typeStatement, forloop.inits, env)
-      val (cond, _)     = typeExpr(forloop.cond, env1)
-      val (steps, env2) = typeList(typeExpr, forloop.steps, env1)
-      val (body, _)     = typeStatement(forloop.body, env1)
-      if(cond.tpe != Some(BooleanType)) {
-        error(TYPE_MISMATCH,
-          cond.tpe.toString, "boolean", forloop.cond.pos, forloop.cond)
-      }
-      val noStatementExprInits = inits.filter(isValDeforStatementExpression(_))
-      if(noStatementExprInits != Nil) {
-        val h = noStatementExprInits.head
-        error(BAD_STATEMENT, h.toString,
-          "An expression statement, or variable declaration", h.pos, h)
-      }
 
-      val noStatementExprSteps = steps.filter(!isValidStatementExpression(_))
-      if(noStatementExprSteps != Nil) {
-        val h = noStatementExprSteps.head
-        error(BAD_STATEMENT, h.toString,
-          "An expression statement, or more", h.pos, h)
-      }
-      (For(inits, cond, steps, body, forloop.pos), env)
-    }
 
-    def typeIf(iff: If, env: DefContext): (If, DefContext) = {
-      val (cond, _)  = typeExpr(iff.cond, env)
-      val (thenp, _) = typeStatement(iff.thenp, env)
-      val (elsep, _) = typeStatement(iff.elsep, env)
-      if(cond.tpe != Some(BooleanType)) {
-        error(TYPE_MISMATCH,
-          cond.tpe.toString, "boolean", iff.cond.pos, iff.cond)
+    def typeWhile(wile: While): TreeState[While] = for {
+      cond <- typeExpr(wile.cond)
+      body <- typeExpr(wile.body)
+      tpe  <- cond.tpe 
+      _    <- (tpe =/= BooleanType) match {
+        case true => 
+          error(TYPE_MISMATCH,
+            cond.tpe.toString, "boolean", wile.cond.pos, wile.cond)
+          point(()) 
+        case _    => point(())
       }
-      (If(cond, thenp, elsep, iff.pos), env)
-    }
+      tree <- point(While(wile.mods, cond, body, wile.pos))
+    } yield tree
 
-    override def typeExpr(e: Expr, 
-      env: DefContext): (Expr, DefContext) = e match {
-      case (_: Lit) | (_: Cast)   => (e, env)
+    def typeFor(forloop: For): TreeState[For] = for {
+      inits <- typeList(typeExpr, forloop.inits).sequenceU
+      cond  <- typeExpr(forloop.cond)
+      steps <- typeList(typeExpr, forloop.steps).sequenceU
+      body  <- typeExpr(forloop.body)
+      tpe   <- cond.tpe
+      _     <- (tpe =/= BooleanType) match {
+        case true =>
+          error(TYPE_MISMATCH,
+            cond.tpe.toString, "boolean", forloop.cond.pos, forloop.cond)
+          point(()) 
+        case _    => point(())
+      }
+      _     <- inits.filter(isValDefOrStatementExpression(_)) match {
+        case (x::xs) =>
+          error(BAD_STATEMENT, x.toString,
+            "An expression statement, or variable declaration", x.pos, x)
+          point(())
+        case _       => point(())
+      }
+      _     <- steps.filter(!isValidStatementExpression(_)) match {
+        case (x::xs) =>
+          error(BAD_STATEMENT, x.toString,
+            "An expression statement, or more", x.pos, x)
+          point(())
+        case _       => point(())
+      }
+      tree  <- point(For(inits, cond, steps, body, forloop.pos))
+    } yield tree
+
+    def typeIf(iff: If): TreeState[If] = for {
+      cond  <- typeExpr(iff.cond)
+      thenp <- typeExpr(iff.thenp)
+      elsep <- typeExpr(iff.elsep)
+      tpe   <- cond.tpe
+      _     <- (tpe =/= BooleanType) match {
+        case true =>
+          error(TYPE_MISMATCH,
+            cond.tpe.toString, "boolean", iff.cond.pos, iff.cond)
+          point(()) 
+        case _    => point(())
+      }
+      tree  <- point(If(cond, thenp, elsep, iff.pos))
+    } yield tree
+
+    override def typeExpr(e: Expr): TreeState[Expr] = e match {
+      case iff: If       => for {
+        ti <- typeIf(iff)
+      } yield ti
+      case wile: While   => for {
+        tw <- typeWhile(wile)
+      } yield tw
+      case forloop: For  => for {
+        tf <- typeFor(forloop)
+      } yield tf
+      case (_: Lit) | (_: Cast)   => point(e)
       case _                      => 
-        super.typeExpr(e, env)
+        super.typeExpr(e)
     }
 
 
-    def typeList[T <: Tree](f: (T, DefContext) => (T, DefContext),
-      ls: List[T], env: DefContext): (List[T], DefContext) = 
-        typeListCSP(f, ls, env, (xs: List[T]) => xs)
+    def typeList[T <: Tree](f: T => TreeState[T], 
+      ls: List[T]): List[TreeState[T]] = {
+      val typedList = for {
+        l    <- ls
+      } yield f(l)
+      typedList
+    }
 
-    @tailrec
-    final def typeListCSP[T <: Tree](f: (T, DefContext) => (T, DefContext), 
-      ls: List[T], env: DefContext, 
-      cont: List[T] => List[T]): (List[T], DefContext) = ls match {
-        case Nil    => (cont(Nil), env)
-        case x::xs  => 
-          val (t, env2) = f(x, env)
-          typeListCSP(f, xs, env2, (ts: List[T]) => cont(t::ts))
-      }
-
+    // @tailrec
+    // final def typeListCSP[T <: Tree](f: T => TreeState[T], 
+    //   ls: List[T], cont: List[T] => List[T]): TreeState[List[T]] = ls match {
+    //     case Nil    => (cont(Nil), env)
+    //     case x::xs  => 
+    //
+    //       val t = f(x)
+    //       typeListCSP(f, xs, env2, (ts: List[T]) => cont(t::ts))
+    //   }
+    //
     
 
-    def isValDeforStatementExpression(v: Statement): Boolean = v match {
+    def isValDefOrStatementExpression(v: Expr): Boolean = v match {
       case s: ValDef => true
       case e: Expr   => isValidStatementExpression(e)
       case _         => false
