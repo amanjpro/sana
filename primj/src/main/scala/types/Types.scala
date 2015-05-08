@@ -21,8 +21,8 @@ trait Types extends types.Types {
     private class MethodTypeImpl(val ret: Type,
       val params: List[Type]) extends MethodType
 
-    def apply(r: Type, ps: List[Type]): MethodType =
-      new MethodTypeImpl(r, ps)
+    def apply(ret: Type, params: List[Type]): MethodType =
+      new MethodTypeImpl(ret, params)
   }
 
 

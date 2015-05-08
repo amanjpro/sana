@@ -26,14 +26,20 @@ trait Constants {
     def tpe: Type
   }
 
+  /**************************** Extractors **************************/
+  trait ConstantExtractor {
+    def unapply(const: Constant): Option[(const.VType)] = Some(const.value)
+  }
+
+  /***************************** Factories **************************/
   trait ByteFactory {
     private class ByteConstImpl(val value: Byte, 
       val tpe: Type) extends Constant {
         type VType = Byte
       }
 
-    def apply(v: Byte): Constant = {
-      new ByteConstImpl(v, ByteType)
+    def apply(value: Byte): Constant = {
+      new ByteConstImpl(value, ByteType)
     }
   }
 
@@ -43,8 +49,8 @@ trait Constants {
         type VType = Short
       }
 
-    def apply(v: Short): Constant = {
-      new ShortConstImpl(v, ShortType)
+    def apply(value: Short): Constant = {
+      new ShortConstImpl(value, ShortType)
     }
   }
 
@@ -54,8 +60,8 @@ trait Constants {
         type VType = Char
       }
 
-    def apply(v: Char): Constant = {
-      new CharConstImpl(v, CharType)
+    def apply(value: Char): Constant = {
+      new CharConstImpl(value, CharType)
     }
   }
   trait IntFactory {
@@ -64,8 +70,8 @@ trait Constants {
         type VType = Int
       }
 
-    def apply(v: Int): Constant = {
-      new IntConstImpl(v, IntType)
+    def apply(value: Int): Constant = {
+      new IntConstImpl(value, IntType)
     }
   }
 
@@ -75,8 +81,8 @@ trait Constants {
         type VType = Long
       }
 
-    def apply(v: Long): Constant = {
-      new LongConstImpl(v, LongType)
+    def apply(value: Long): Constant = {
+      new LongConstImpl(value, LongType)
     }
   }
 
@@ -86,8 +92,8 @@ trait Constants {
         type VType = Float
       }
 
-    def apply(v: Float): Constant = {
-      new FloatConstImpl(v, FloatType)
+    def apply(value: Float): Constant = {
+      new FloatConstImpl(value, FloatType)
     }
   }
 
@@ -97,8 +103,8 @@ trait Constants {
         type VType = Double
       }
 
-    def apply(v: Double): Constant = {
-      new DoubleConstImpl(v, DoubleType)
+    def apply(value: Double): Constant = {
+      new DoubleConstImpl(value, DoubleType)
     }
   }
 
@@ -108,8 +114,8 @@ trait Constants {
         type VType = Boolean
       }
 
-    def apply(v: Boolean): Constant = {
-      new BooleanConstImpl(v, BooleanType)
+    def apply(value: Boolean): Constant = {
+      new BooleanConstImpl(value, BooleanType)
     }
   }
 
@@ -119,20 +125,21 @@ trait Constants {
         type VType = String
       }
 
-    def apply(v: String): Constant = {
-      new StringConstImpl(v, StringType)
+    def apply(value: String): Constant = {
+      new StringConstImpl(value, StringType)
     }
   }
 
-  val ByteConstant    = new ByteFactory {}
-  val ShortConstant   = new ShortFactory {}
-  val CharConstant    = new CharFactory {}
-  val IntConstant     = new IntFactory {}
-  val LongConstant    = new LongFactory {}
-  val FloatConstant   = new FloatFactory {}
-  val DoubleConstant  = new DoubleFactory {}
-  val BooleanConstant = new BooleanFactory {}
-  val StringConstant  = new StringFactory {}
+  /******************* Factory and Extractor instances ***************/
+  val ByteConstant    = new ByteFactory with ConstantExtractor {}
+  val ShortConstant   = new ShortFactory with ConstantExtractor {}
+  val CharConstant    = new CharFactory with ConstantExtractor {}
+  val IntConstant     = new IntFactory with ConstantExtractor {}
+  val LongConstant    = new LongFactory with ConstantExtractor {}
+  val FloatConstant   = new FloatFactory with ConstantExtractor {}
+  val DoubleConstant  = new DoubleFactory with ConstantExtractor {}
+  val BooleanConstant = new BooleanFactory with ConstantExtractor {}
+  val StringConstant  = new StringFactory with ConstantExtractor {}
 
   val DEFAULT_BYTE    = ByteConstant(0.toByte)
   val DEFAULT_CHAR    = CharConstant('\u0000')

@@ -12,8 +12,8 @@ object TreeId {
   class TreeIdImpl(val kind: TreeType,
     val unitId: Int, val treeId: Int) extends TreeId
 
-  def apply(k: TreeType, u: Int, t: Int): TreeId =
-    new TreeIdImpl(k, u, t)
+  def apply(kind: TreeType, unitId: Int, treeId: Int): TreeId =
+    new TreeIdImpl(kind, unitId, treeId)
 }
 
 abstract class TreeType

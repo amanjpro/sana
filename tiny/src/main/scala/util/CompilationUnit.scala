@@ -23,8 +23,9 @@ trait CompilationUnits {
     class CompilationUnitImpl(val treeState: TreeState[Tree], 
       val fileName: String) extends CompilationUnit
 
-    def apply(t: TreeState[Tree], f: String): CompilationUnit = 
-      new CompilationUnitImpl(t, f)
+    def apply(treeState: TreeState[Tree], 
+      fileName: String): CompilationUnit = 
+      new CompilationUnitImpl(treeState, fileName)
   }
 
 

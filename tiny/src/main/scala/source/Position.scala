@@ -19,8 +19,8 @@ object Position {
   }
 
 
-  def apply(s: String, r: Int, c: Int): Position = {
-    new PosImpl(s, r, c)
+  def apply(source: String, row: Int, col: Int): Position = {
+    new PosImpl(source, row, col)
   }
 
   def unapply(p: Position): Option[(String, Int, Int)] = p match {

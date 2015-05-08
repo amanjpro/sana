@@ -108,15 +108,16 @@ trait Trees extends ast.Trees {
     private class CastImpl(val tpt: Expr, val expr: Expr,
       val pos: Option[Position]) extends Cast
 
-    def apply(t: Expr, e: Expr, p: Option[Position]): Cast = 
-      new CastImpl(t, e, p)
+    def apply(tpt: Expr, expr: Expr, pos: Option[Position]): Cast = 
+      new CastImpl(tpt, expr, pos)
   }
 
   trait LitFactory {
     private class LitImpl(val const: Constant, 
       val pos: Option[Position]) extends Lit
 
-    def apply(c: Constant, p: Option[Position]): Lit = new LitImpl(c, p)
+    def apply(const: Constant, pos: Option[Position]): Lit = 
+      new LitImpl(const, pos)
   }
 
 
@@ -125,8 +126,8 @@ trait Trees extends ast.Trees {
       val op: BOp, val rhs: Expr, val tpe: TypeState[Type],
       val pos: Option[Position]) extends Binary
 
-    def apply(l: Expr, o: BOp, r: Expr, t: TypeState[Type], 
-      p: Option[Position]): Binary = new BinaryImpl(l, o, r, t, p)
+    def apply(lhs: Expr, op: BOp, rhs: Expr, tpe: TypeState[Type], 
+      pos: Option[Position]): Binary = new BinaryImpl(lhs, op, rhs, tpe, pos)
   }
 
   trait UnaryFactory {
@@ -134,10 +135,9 @@ trait Trees extends ast.Trees {
       val expr: Expr, val tpe: TypeState[Type],
       val pos: Option[Position]) extends Unary
 
-    def apply(o: UOp, e: Expr, t: TypeState[Type], 
-      p: Option[Position]): Unary =
-      new UnaryImpl(o, e, t, p)
-
+    def apply(op: UOp, expr: Expr, tpe: TypeState[Type], 
+      pos: Option[Position]): Unary =
+      new UnaryImpl(op, expr, tpe, pos)
   }
 
   trait PostfixFactory {
@@ -145,9 +145,9 @@ trait Trees extends ast.Trees {
       val tpe: TypeState[Type], 
       val pos: Option[Position]) extends Postfix
 
-    def apply(e: Expr, o: POp, t: TypeState[Type], 
-      p: Option[Position]): Postfix =
-      new PostfixImpl(e, o, t, p)
+    def apply(expr: Expr, op: POp, tpe: TypeState[Type], 
+      pos: Option[Position]): Postfix =
+      new PostfixImpl(expr, op, tpe, pos)
 
   }
 

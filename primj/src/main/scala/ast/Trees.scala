@@ -242,9 +242,9 @@ trait Trees extends ast.Trees {
       val rhs: Expr, val pos: Option[Position],
       val owner: Option[TreeId]) extends Assign
 
-    def apply(l: Expr, r: Expr, p: Option[Position] = None,
-      o: Option[TreeId] = None): Assign = 
-      new AssignImpl(l, r, p, o)
+    def apply(lhs: Expr, rhs: Expr, pos: Option[Position] = None,
+      owner: Option[TreeId] = None): Assign = 
+      new AssignImpl(lhs, rhs, pos, owner)
 
   }
   trait IfFactory {
@@ -253,9 +253,9 @@ trait Trees extends ast.Trees {
       val owner: Option[TreeId]) extends If
 
 
-    def apply(c: Expr, t: Expr, e: Expr,
-      p: Option[Position] = None, o: Option[TreeId] = None): If = 
-      new IfImpl(c, t, e, p, o)
+    def apply(cond: Expr, thenp: Expr, elsep: Expr,
+      pos: Option[Position] = None, owner: Option[TreeId] = None): If = 
+      new IfImpl(cond, thenp, elsep, pos, owner)
   }
 
 
@@ -265,9 +265,9 @@ trait Trees extends ast.Trees {
       val owner: Option[TreeId]) extends While
 
 
-    def apply(f: Flags, c: Expr, b: Expr,
-      p: Option[Position] = None, o: Option[TreeId] = None): While = 
-      new WhileImpl(f, c, b, p, o)
+    def apply(mods: Flags, cond: Expr, body: Expr,
+      pos: Option[Position] = None, owner: Option[TreeId] = None): While = 
+      new WhileImpl(mods, cond, body, pos, owner)
 
   }
 
@@ -276,9 +276,9 @@ trait Trees extends ast.Trees {
       val pos: Option[Position], val owner: Option[TreeId]) extends Block
 
 
-    def apply(ss: List[Expr], t: TypeState[Type], 
-      p: Option[Position] = None, o: Option[TreeId] = None): Block = 
-        new BlockImpl(ss, t, p, o)
+    def apply(stmts: List[Expr], tpe: TypeState[Type], 
+      pos: Option[Position] = None, owner: Option[TreeId] = None): Block = 
+        new BlockImpl(stmts, tpe, pos, owner)
 
   }
 
@@ -287,9 +287,10 @@ trait Trees extends ast.Trees {
       val cond: Expr, val steps: List[Expr], val body: Expr,
         val pos: Option[Position], val owner: Option[TreeId]) extends For
 
-    def apply(is: List[Expr], c: Expr, ss: List[Expr], 
-      b: Expr, p: Option[Position] = None, o: Option[TreeId] = None): For = 
-        new ForImpl(is, c, ss, b, p, o)
+    def apply(inits: List[Expr], cond: Expr, steps: List[Expr], 
+      body: Expr, pos: Option[Position] = None, 
+      owner: Option[TreeId] = None): For = 
+        new ForImpl(inits, cond, steps, body, pos, owner)
   }
 
   trait TernaryFactory {
@@ -298,9 +299,9 @@ trait Trees extends ast.Trees {
       val pos: Option[Position] = None, val owner: Option[TreeId]) extends Ternary
 
 
-    def apply(c: Expr, t: Expr, e: Expr, tp: TypeState[Type], 
-      p: Option[Position] = None, o: Option[TreeId]): Ternary = 
-      new TernaryImpl(c, t, e, tp, p, o)
+    def apply(cond: Expr, thenp: Expr, elsep: Expr, tpe: TypeState[Type], 
+      pos: Option[Position] = None, owner: Option[TreeId]): Ternary = 
+      new TernaryImpl(cond, thenp, elsep, tpe, pos, owner)
   }
 
   trait ApplyFactory {
@@ -309,21 +310,10 @@ trait Trees extends ast.Trees {
       val owner: Option[TreeId]) extends Apply
 
 
-    def apply(f: Expr, as: List[Expr], t: TypeState[Type], 
-      p: Option[Position] = None, o: Option[TreeId] = None): Apply = 
-        new ApplyImpl(f, as, t, p, o)
+    def apply(fun: Expr, args: List[Expr], tpe: TypeState[Type], 
+      pos: Option[Position] = None, owner: Option[TreeId] = None): Apply = 
+        new ApplyImpl(fun, args, tpe, pos, owner)
 
-  }
-
-  trait MethodDefFactory {
-    private class MethodDefImpl(val mods: Flags, val id: TreeId,
-      val ret: TypeUse, val name: Name, val params: List[ValDef], 
-      val body: Expr, val pos: Option[Position], 
-      val owner: Option[TreeId]) extends MethodDef
-
-    def apply(f: Flags, i: TreeId, r: TypeUse, n: Name, ps: List[ValDef], 
-      b: Expr, p: Option[Position] = None, o: Option[TreeId]): MethodDef = 
-        new MethodDefImpl(f, i, r, n, ps, b, p, o)
   }
 
   trait ReturnFactory {
@@ -331,11 +321,24 @@ trait Trees extends ast.Trees {
     val pos: Option[Position], val owner: Option[TreeId]) extends Return
 
 
-    def apply(e: Expr, p: Option[Position],
-      o: Option[TreeId]): Return = new ReturnImpl(Some(e), p, o)
+    def apply(expr: Expr, pos: Option[Position],
+      owner: Option[TreeId]): Return = new ReturnImpl(Some(expr), pos, owner)
 
-    def apply(p: Option[Position], o: Option[TreeId]): Return = 
-      new ReturnImpl(None, p, o)
+    def apply(pos: Option[Position], owner: Option[TreeId]): Return = 
+      new ReturnImpl(None, pos, owner)
+  }
+
+
+  trait MethodDefFactory {
+    private class MethodDefImpl(val mods: Flags, val id: TreeId,
+      val ret: TypeUse, val name: Name, val params: List[ValDef], 
+      val body: Expr, val pos: Option[Position], 
+      val owner: Option[TreeId]) extends MethodDef
+
+    def apply(mods: Flags, id: TreeId, ret: TypeUse, name: Name, 
+      params: List[ValDef], body: Expr, pos: Option[Position] = None, 
+      owner: Option[TreeId]): MethodDef = 
+        new MethodDefImpl(mods, id, ret, name, params, body, pos, owner)
   }
 
   trait ValDefFactory {
@@ -343,9 +346,10 @@ trait Trees extends ast.Trees {
       val tpt: TypeUse, val name: Name, val rhs: Tree, 
       val pos: Option[Position], val owner: Option[TreeId]) extends ValDef
 
-    def apply(f: Flags, i: TreeId, r: TypeUse, n: Name, 
-      b: Tree, p: Option[Position] = None, o: Option[TreeId] = None): ValDef = 
-        new ValDefImpl(f, i, r, n, b, p, o)
+    def apply(mods: Flags, id: TreeId, ret: TypeUse, name: Name, 
+      body: Tree, pos: Option[Position] = None, 
+      owner: Option[TreeId] = None): ValDef = 
+        new ValDefImpl(mods, id, ret, name, body, pos, owner)
   }
 
 

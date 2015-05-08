@@ -118,18 +118,18 @@ trait Trees {
     private class TypeUseImpl(val uses: Option[TreeId], val name: Name, 
       val owner: Option[TreeId], val pos: Option[Position]) extends TypeUse
 
-    def apply(u: Option[TreeId], n: Name, 
-      o: Option[TreeId], p: Option[Position]): TypeUse = 
-        new TypeUseImpl(u, n, o, p)
+    def apply(uses: Option[TreeId], name: Name, 
+      owner: Option[TreeId], pos: Option[Position]): TypeUse = 
+        new TypeUseImpl(uses, name, owner, pos)
   }
 
   trait IdentFactory {
     private class IdentImpl(val uses: Option[TreeId], val name: Name, 
       val owner: Option[TreeId], val pos: Option[Position]) extends Ident 
 
-    def apply(u: Option[TreeId], n: Name, 
-      o: Option[TreeId], p: Option[Position]): Ident = 
-        new IdentImpl(u, n, o, p)
+    def apply(uses: Option[TreeId], name: Name, 
+      owner: Option[TreeId], pos: Option[Position]): Ident = 
+        new IdentImpl(uses, name, owner, pos)
   }
 
 
@@ -152,18 +152,19 @@ trait Trees {
 
   /******************** Tree Traverses ******************************/
   trait TreeTraversers {
-    // def fold[K](f: (Tree, K) => K, acc: K): K
+    // type T = this.type
+    // def fold[K](acc: K)(f: (T, K) => K): K
     //
-    // def apply(f: Tree => Tree): Tree 
     //
-    // def filter(p: Tree => Boolean): List[Tree]
-    //   
+    // def map(f: T => T): T = fold(this)((z: T, y: T){
+    //   f(y)
+    // })
     //
-    // def foreach(f: Tree => Unit): Unit = {
-    //   fold[Unit]((x: Tree, y: Unit) => {
+    // def foreach(f: T => Unit): Unit = {
+    //   fold[Unit](())((x: T, y: Unit) => {
     //     f(x)
     //     ()
-    //   }, ())
+    //   })
     // } 
   }
 }

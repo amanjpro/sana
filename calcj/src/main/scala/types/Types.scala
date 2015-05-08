@@ -95,9 +95,9 @@ trait Types extends types.Types {
     private class BinaryTypeImpl(val op1: PrimitiveType,
       val op2: PrimitiveType, val ret: PrimitiveType) extends BinaryType
 
-    def apply(fst: PrimitiveType, snd: PrimitiveType, 
-      res: PrimitiveType): BinaryType =
-      new BinaryTypeImpl(fst, snd, res)
+    def apply(op1: PrimitiveType, op2: PrimitiveType, 
+      ret: PrimitiveType): BinaryType =
+      new BinaryTypeImpl(op1, op2, ret)
 
   }
 
@@ -114,8 +114,8 @@ trait Types extends types.Types {
     private class UnaryTypeImpl(val op: PrimitiveType,
       val ret: PrimitiveType) extends UnaryType
 
-    def apply(o: PrimitiveType, 
-      res: PrimitiveType): UnaryType = new UnaryTypeImpl(o, res)
+    def apply(op: PrimitiveType, 
+      ret: PrimitiveType): UnaryType = new UnaryTypeImpl(op, ret)
 
   }
 
