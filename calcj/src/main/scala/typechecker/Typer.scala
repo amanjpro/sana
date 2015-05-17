@@ -68,6 +68,16 @@ trait Typers extends passes.Phases {
               etree
           }
         }
+        // TODO:
+        // Pos unary operator, should ideally perform the cast and return
+        // the containing expression not the whole unary expression (the
+        // operation is redundant). But this will reproduce the same problem
+        // that Scala has, when type checker can return a different tree 
+        // type. What should we do here?
+        // res        <- unary.op match {
+        //   case Pos    => point(expr)
+        //   case _      => point(Unary(unary.op, expr, point(utpe), unary.pos))
+        // }
         res        <- point(Unary(unary.op, expr, point(utpe), unary.pos))
       } yield res 
     }
