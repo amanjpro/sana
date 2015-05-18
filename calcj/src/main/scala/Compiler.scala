@@ -44,12 +44,13 @@ class Compiler extends tiny.CompilerApi
   def standardPhases: List[Phase] = List(new Typer {})
 
 
-  def compile(files: List[String]): Result = {
+  def compile(files: List[String]): Either[String, Tree] = {
     val units = start(files)
     units.foreach((x: CompilationUnit) =>  {
       standardPhases.head.startPhase(x)
     })
-    result
+    // TODO: Fix this
+    Left("")
   }
 }
 
@@ -62,7 +63,8 @@ object Compiler {
       case fs         => 
         val compiler = new Compiler()
         compiler.compile(fs) 
-        println(compiler.result)
+        // TODO: Fix this
+        // println(compiler.result)
     }
 }
 }

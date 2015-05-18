@@ -3,13 +3,18 @@ package ch.usi.inf.l3.sana.tiny.report
 import ch.usi.inf.l3.sana
 import sana.tiny
 import tiny.source.Position
+import tiny.ast.Trees
+import tiny.contexts.TreeContexts
 
+import scalaz.{Name => _, _}
+import Scalaz._
 
 trait Reporting {
+  self: Trees with TreeContexts =>
+
   val BAD_STATEMENT  = 1
   val TYPE_MISMATCH  = 2
   val UNEXPETED_TREE = 3
-  var result: Result = Success
 
 
   def errorCodeToMsg(n: Int): String = n match {
@@ -19,9 +24,34 @@ trait Reporting {
   }
   
 
+  protected def createMessage[T](code: Int, found: String,
+    required: String, pos: Option[Position],
+    t: T): String = {
+      val msg = errorCodeToMsg(code)
+      val col = pos match {
+        case None    => 0
+        case Some(p) => 4 + p.col
+      }
+      val caret = if(col == 0) {
+        (col * ' ') + "^\n"
+      } else ""
+      s"""|$msg\n
+      |${2 * ' '}$found\n
+      |${2 * ' '}$required\n
+      |$col$t\n
+      |$caret""".stripMargin
+  }
 
-  def error(code: Int, found: String, required: String,
+  def error[T](code: Int, found: String, required: String,
     pos: Option[Position],
-    t: Any): Unit = 
-    result = result ++ Failure(Error, errorCodeToMsg(code), 1, 0)
+    t: T): Unit = 
+    compiler.rwst.tell(List(Failure(Error, 
+      createMessage(code, found, required, pos, t))))
+
+  def warning[T](code: Int, found: String, required: String,
+    pos: Option[Position],
+    t: T): Unit = 
+    compiler.rwst.tell(List(Failure(Warning, 
+      createMessage(code, found, required, pos, t))))
+
 }
