@@ -14,7 +14,7 @@ trait TreeContexts {
 
   val compiler = new CompilerMonad {
     type R = List[String]
-    type W = Result
+    type W = Failure
     type S = TreeContext
   }
 
@@ -31,25 +31,83 @@ trait TreeContexts {
         Applicative[Id].point((Nil, t, newState))
   }
 
+  def run[A](m: RWST[A], r: List[String], 
+      s: TreeContext): (List[Failure], A, TreeContext) = {
+    m.run(r, s)
+  }
+
   def point[A](t: A): RWST[A] = t.point[RWST]
 
   trait TreeContext {
     def compilationUnits: Map[Int, CompilationUnitContext]
 
+    def unit(index: Int): CompilationUnitContext = 
+      compilationUnits.get(index) match {
+        case Some(cu) => cu
+        case None     => MissingUnitContext
+      }
 
-    def getTpe(id: TreeId): Option[Type]
+    protected def newContext(cus: Map[Int, CompilationUnitContext]): TreeContext
+    
+    def defines(id: TreeId): Boolean = {
+      compilationUnits.get(id.unitId) match {
+        case None       => false
+        case Some(unit) => unit.defines(id)
+      }
+    }
+
+
+    def lookup(id: TreeId): TreeState[IdentifiedTree] //
+    // = for {
+    //   env     <- compiler.rwst.get
+    //   tree    <- env.unit(id.unitId).decls.get(id) match  {
+    //                case Some(t) => point(t)
+    //                case None    => point(BadTree)
+    //              }
+    // } yield tree
+
+
+    def extend(id: Int, 
+      unitContext: CompilationUnitContext): TreeContext = {
+      require(compilationUnits.get(id) == None, 
+        "The index of a Compilation Unit Context must be unique.")
+      update(id, unitContext)
+    }
+
+    def update(id: Int, 
+      unitContext: CompilationUnitContext): TreeContext = {
+      // val cuc: CompilationUnitContext = unitContext.extend(id, unitContext)
+      newContext(compilationUnits + (id -> unitContext))
+    }
+
+    def getTpe(id: TreeId): Option[Type] = for {
+      tree <- unit(id.unitId).decls.get(id)
+    } yield {
+      val (_, r, _) = run(tree.tpe, Nil, this)
+      r
+    }
   }
 
   trait CompilationUnitContext {
-    def definedTrees: Map[TreeId, Tree]
+    def decls: Map[TreeId, IdentifiedTree]
+    def extend(id: TreeId, tree: IdentifiedTree): CompilationUnitContext
+    def update(id: TreeId, tree: IdentifiedTree): CompilationUnitContext =
+        extend(id, tree)
+    def defines(id: TreeId): Boolean = decls.contains(id)
   }
   
+  object MissingUnitContext extends CompilationUnitContext {
+    def decls: Map[TreeId, IdentifiedTree] = Map.empty
+    def extend(id: TreeId, tree: IdentifiedTree): CompilationUnitContext = 
+        MissingUnitContext
+  }
+
   object EmptyContext extends TreeContext {
-    def compilationUnits: Map[Int, CompilationUnitContext] = Map.empty
-
-
-    def getTpe(id: TreeId): Option[Type] = None
-
+    lazy val compilationUnits: Map[Int, CompilationUnitContext] = Map.empty
+    def lookup(id: TreeId): TreeState[IdentifiedTree] = point(BadTree)
+    override def getTpe(id: TreeId): Option[Type] = None
+    protected def newContext(
+      cus: Map[Int, CompilationUnitContext]): TreeContext = EmptyContext
   }
 }
 
