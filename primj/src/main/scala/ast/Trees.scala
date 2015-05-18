@@ -54,7 +54,7 @@ trait Trees extends ast.Trees {
   
   trait ValDef extends DefTree {
     def tpt: TypeUse
-    def rhs: Tree
+    def rhs: Expr
     def tpe: TypeState[Type] = tpt.tpe
     override def toString: String = s"${mods} ${tpt} ${name} = ${rhs}"
   }
@@ -147,6 +147,14 @@ trait Trees extends ast.Trees {
     def fun: Expr
     def args: List[Expr]
 
+    def tpe: TypeState[Type] = for {
+      funty <- fun.tpe
+    } yield {
+      funty match {
+        case MethodType(r, _) => r
+        case _                => NoType
+      }
+    }
 
 
     override def toString: String = s"${fun}(${args.mkString(", ")})"
@@ -306,13 +314,12 @@ trait Trees extends ast.Trees {
 
   trait ApplyFactory {
     private class ApplyImpl(val fun: Expr, val args: List[Expr],
-      val tpe: TypeState[Type], val pos: Option[Position],
-      val owner: Option[TreeId]) extends Apply
+      val pos: Option[Position], val owner: Option[TreeId]) extends Apply
 
 
-    def apply(fun: Expr, args: List[Expr], tpe: TypeState[Type], 
-      pos: Option[Position] = None, owner: Option[TreeId] = None): Apply = 
-        new ApplyImpl(fun, args, tpe, pos, owner)
+    def apply(fun: Expr, args: List[Expr], pos: Option[Position] = None, 
+      owner: Option[TreeId] = None): Apply = 
+        new ApplyImpl(fun, args, pos, owner)
 
   }
 
@@ -343,11 +350,11 @@ trait Trees extends ast.Trees {
 
   trait ValDefFactory {
     private class ValDefImpl(val mods: Flags, val id: TreeId, 
-      val tpt: TypeUse, val name: Name, val rhs: Tree, 
+      val tpt: TypeUse, val name: Name, val rhs: Expr, 
       val pos: Option[Position], val owner: Option[TreeId]) extends ValDef
 
     def apply(mods: Flags, id: TreeId, ret: TypeUse, name: Name, 
-      body: Tree, pos: Option[Position] = None, 
+      body: Expr, pos: Option[Position] = None, 
       owner: Option[TreeId] = None): ValDef = 
         new ValDefImpl(mods, id, ret, name, body, pos, owner)
   }

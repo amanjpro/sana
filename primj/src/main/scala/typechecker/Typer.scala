@@ -28,14 +28,77 @@ trait Typer extends typechecker.Typers {
   trait Typer extends super.Typer {
 
     override def typeTree(tree: Tree): TreeState[Tree] = tree match {
-      case s: Expr  => for {
+      case dtree: DefTree => for {
+        ttree <- typeDefTree(dtree)
+      } yield ttree
+      case s: Expr        => for {
         ts <- typeExpr(s)
       } yield ts
-      case _             => 
+      case _              => 
         super.typeTree(tree)
     }
 
+    def typeDefTree(dtree: DefTree): TreeState[DefTree] = dtree match {
+      case vdef: ValDef     => for {
+        ttree <- typeValDef(vdef)
+      } yield ttree
+      case mdef: MethodDef  => for {
+        ttree <- typeMethodDef(mdef)
+      } yield ttree
+    }
 
+
+    def typeMethodDef(mdef: MethodDef): TreeState[MethodDef] = for {
+      params  <- typeList(typeValDef, mdef.params).sequenceU
+      body    <- typeExpr(mdef.body)
+      rhsty    <- body.tpe 
+      rty      <- mdef.ret.tpe
+      _        <- (rhsty <:< rty) match {
+        case false =>
+          error(TYPE_MISMATCH,
+            rhsty.toString, rty.toString, body.pos, mdef)
+          point(())
+        case true =>
+          point(())
+      }
+      tree    <- point(MethodDef(mdef.mods, mdef.id, mdef.ret, mdef.name, 
+                                  params, body, mdef.pos, mdef.owner))
+    } yield tree
+
+    def typeValDef(vdef: ValDef): TreeState[ValDef] = for {
+      rhs      <- typeExpr(vdef.rhs)
+      rhsty    <- rhs.tpe 
+      vty      <- vdef.tpt.tpe
+      _        <- (rhsty <:< vty) match {
+        case false =>
+          error(TYPE_MISMATCH,
+            rhsty.toString, vty.toString, rhs.pos, vdef)
+          point(())
+        case true =>
+          point(())
+      }
+      tree <- point(ValDef(vdef.mods, vdef.id, vdef.tpt, vdef.name, 
+                            rhs, vdef.pos, vdef.owner))
+    } yield tree
+
+
+    override def typeExpr(e: Expr): TreeState[Expr] = e match {
+      case iff: If                => for {
+        ti <- typeIf(iff)
+      } yield ti
+      case wile: While            => for {
+        tw <- typeWhile(wile)
+      } yield tw
+      case forloop: For           => for {
+        tf <- typeFor(forloop)
+      } yield tf
+      case (_: Lit) | (_: Cast)   => point(e)
+      case apply: Apply           => for {
+        tapp <- typeApply(apply)
+      } yield tapp
+      case _                      => 
+        super.typeExpr(e)
+    }
 
     def typeWhile(wile: While): TreeState[While] = for {
       cond <- typeExpr(wile.cond)
@@ -96,21 +159,28 @@ trait Typer extends typechecker.Typers {
       tree  <- point(If(cond, thenp, elsep, iff.pos))
     } yield tree
 
-    override def typeExpr(e: Expr): TreeState[Expr] = e match {
-      case iff: If       => for {
-        ti <- typeIf(iff)
-      } yield ti
-      case wile: While   => for {
-        tw <- typeWhile(wile)
-      } yield tw
-      case forloop: For  => for {
-        tf <- typeFor(forloop)
-      } yield tf
-      case (_: Lit) | (_: Cast)   => point(e)
-      case _                      => 
-        super.typeExpr(e)
-    }
+    def typeApply(app: Apply): TreeState[Apply] = for {
+      fun       <- typeExpr(app.fun)
+      funty     <- fun.tpe
+      args      <- typeList(typeExpr, app.args).sequenceU
+      argtys    <- args.map(_.tpe).sequenceU
+      _         <- funty match {
+        case MethodType(r, ts) if checkList[Type](argtys, ts, _ <:< _) =>
+          point(())
+        case t: MethodType                                             =>
+          // TODO: Fix the error message
+          error(TYPE_MISMATCH,
+            "", "", app.pos, app)
+          point(())
+        case t                                                         =>
+          error(BAD_STATEMENT,
+            t.toString, "function/method type", app.pos, app)
+          point(())
+      }
+      tree     <- point(Apply(fun, args, app.pos, app.owner))
+    } yield tree
 
+    
 
     def typeList[T <: Tree](f: T => TreeState[T], 
       ls: List[T]): List[TreeState[T]] = {
@@ -119,6 +189,10 @@ trait Typer extends typechecker.Typers {
       } yield f(l)
       typedList
     }
+
+
+
+  
 
     // @tailrec
     // final def typeListCSP[T <: Tree](f: T => TreeState[T], 
