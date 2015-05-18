@@ -118,8 +118,8 @@ trait Typers extends passes.Phases {
       } yield res
     }
 
-    def castIfNeeded(e: Expr, t1: Type, t2: Type): Expr = {
-      if(t1 == t2) e
+    private def castIfNeeded(e: Expr, t1: Type, t2: Type): Expr = {
+      if(t1 =:= t2) e
       else {
         val pos = e.pos
         // TODO: Assign TreeId to primitive types
