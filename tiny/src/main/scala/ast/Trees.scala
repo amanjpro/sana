@@ -18,7 +18,19 @@ trait Trees {
 
   /********************* AST Nodes *********************************/
 
-  trait TreeId
+  trait IdKind
+  object NoKind extends IdKind
+
+  trait TreeId {
+    val unitId: Int
+    val id: Int
+    val kind: IdKind
+  }
+  object NoId extends TreeId {
+    val unitId: Int = -1
+    val id: Int = -1
+    val kind: IdKind = NoKind
+  }
 
   
 
@@ -26,6 +38,13 @@ trait Trees {
     def tpe: TypeState[Type]
     def owner: Option[TreeId]
     def pos: Option[Position] 
+  }
+
+  object BadTree extends IdentifiedTree {
+    val id: TreeId = NoId
+    val tpe: TypeState[Type] = point(notype)
+    val owner: Option[TreeId] = None
+    val pos: Option[Position] = None
   }
 
   trait IdentifiedTree extends Tree {
@@ -64,9 +83,11 @@ trait Trees {
     // def filter(p: Tree => Boolean): List[Tree] = Nil
   }
 
+  trait UseTree extends Tree
+
   // Really common ASTs, I cannot imagine a compiler without them
   // FIXME: Do we really need TypeUse?
-  trait TypeUse extends Tree {
+  trait TypeUse extends UseTree {
     def uses: Option[TreeId]
     def tpe: TypeState[Type] = {
       newRWST {
@@ -88,7 +109,7 @@ trait Trees {
     // def apply(f: Tree => Tree): Tree = f(this)
     // def filter(p: Tree => Boolean): List[Tree] = if(p(this)) List(this) else Nil
   }
-  trait Ident extends Expr {
+  trait Ident extends Expr with UseTree {
     def uses: Option[TreeId]
     def tpe: TypeState[Type] = {
        newRWST {
