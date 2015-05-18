@@ -13,9 +13,47 @@ trait Types extends types.Types {
     def ret: Type
     def params: List[Type]
 
+    def =:=(t: Type): Boolean = t match {
+      case that: MethodType =>
+        val pcheck = checkList[Type](params, that.params, _ =:= _)
+        pcheck && this.ret =:= that.ret
+      case _                => false
+    }
+    def =/=(t: Type): Boolean = !(this =:= t)
+    // TODO: In Java-like languages, method subtyping is not like that!!
+    def <:<(t: Type): Boolean = {
+      val isEquiv = this =:= t
+      lazy val isSub = t match {
+        case that: MethodType =>
+          val pcheck = checkList[Type](params, that.params, _ >:> _)
+          pcheck && this.ret <:< that.ret
+        case _                => false
+      }
+      isEquiv || isSub
+    }
+    def >:>(t: Type): Boolean = {
+      val isEquiv = this =:= t
+      lazy val isSup = t match {
+        case that: MethodType =>
+          val pcheck = checkList[Type](params, that.params, _ <:< _)
+          pcheck && this.ret >:> that.ret
+        case _                => false
+      }
+      isEquiv || isSup
+    }
+
+
+    
+
     override def toString = s"(${params.mkString(", ")}) => ${ret}"
   }
 
+  def checkList[T](ts1: List[T], ts2: List[T], 
+    f: (T, T) => Boolean): Boolean = {
+    ts1.zip(ts2).foldLeft(true)((z, y) => {
+      z && f(y._1, y._2)
+    })
+  }
 
   trait MethodTypeFactory {
     private class MethodTypeImpl(val ret: Type,
@@ -25,7 +63,7 @@ trait Types extends types.Types {
       new MethodTypeImpl(ret, params)
   }
 
-
+  
   trait MethodTypeExtractor {
     def unapply(mt: MethodType): Option[(Type, List[Type])] = mt match {
       case null => None

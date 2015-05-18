@@ -21,7 +21,12 @@ trait Types extends types.Types {
 
   */
 
-  trait PrimitiveType extends Type
+  trait PrimitiveType extends Type {
+    def =:=(t: Type): Boolean = this == t
+    def =/=(t: Type): Boolean = this != t
+    def <:<(t: Type): Boolean = t =:= this
+    def >:>(t: Type): Boolean = t =:= this
+  }
 
 
 
@@ -78,6 +83,14 @@ trait Types extends types.Types {
     def op2: PrimitiveType
     def ret: PrimitiveType
 
+    def =:=(t: Type): Boolean = t match {
+      case that: BinaryType =>
+        this.op1 =:= that.op1 && this.op2 =:= that.op2 && this.ret =:= that.ret
+      case _                => false
+    }
+    def =/=(t: Type): Boolean = !(this =:= t)
+    def <:<(t: Type): Boolean = t =:= this
+    def >:>(t: Type): Boolean = t =:= this
     override def toString: String = s"BinaryType(${op1}, {$op2}) => ${ret}"
   }
 
@@ -86,12 +99,21 @@ trait Types extends types.Types {
     def op:   PrimitiveType
     def ret:  PrimitiveType
 
+    def =:=(t: Type): Boolean = t match {
+      case that: UnaryType =>
+        this.op =:= that.op && this.ret =:= that.ret
+      case _               => false
+    }
+    def =/=(t: Type): Boolean = !(this =:= t)
+    def <:<(t: Type): Boolean = t =:= this
+    def >:>(t: Type): Boolean = t =:= this
     override def toString: String = s"UnaryType(${op}) => ${ret}"
   }
 
 
 
   trait BinaryTypeFactory {
+
     private class BinaryTypeImpl(val op1: PrimitiveType,
       val op2: PrimitiveType, val ret: PrimitiveType) extends BinaryType
 
