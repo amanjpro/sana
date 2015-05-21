@@ -40,7 +40,7 @@ trait Trees extends ast.Trees {
       for {
         r   <- ret.tpe
         tps <- tys
-        ty  <- point(MethodType(r, tps))
+        ty  <- toTypeState(MethodType(r, tps))
       } yield ty
     }
 
@@ -63,7 +63,7 @@ trait Trees extends ast.Trees {
 
   trait Return extends Expr {
     val expr: Option[Expr]
-    val tpe: TypeState[Type] = expr.map(_.tpe).getOrElse(point(NoType))
+    val tpe: TypeState[Type] = expr.map(_.tpe).getOrElse(toTypeState(NoType))
 
     def isVoid: Boolean = expr == None
     override def toString: String = s"return ${expr.getOrElse("")}"
@@ -83,7 +83,7 @@ trait Trees extends ast.Trees {
   trait Assign extends Expr {
     def lhs: Expr
     def rhs: Expr
-    def tpe: TypeState[Type] = point(NoType)
+    def tpe: TypeState[Type] = toTypeState(NoType)
     override def toString: String = s"${lhs} = ${rhs}"
   }
 
@@ -91,7 +91,7 @@ trait Trees extends ast.Trees {
     def cond: Expr
     def thenp: Expr
     def elsep: Expr
-    def tpe: TypeState[Type] = point(NoType)
+    def tpe: TypeState[Type] = toTypeState(NoType)
 
 
     override def toString: String =
@@ -108,7 +108,7 @@ trait Trees extends ast.Trees {
     def mods: Flags
     def cond: Expr
     def body: Expr
-    def tpe: TypeState[Type] = point(NoType)
+    def tpe: TypeState[Type] = toTypeState(NoType)
 
     override def toString: String =
       s"""|while(${cond}) {
@@ -122,7 +122,7 @@ trait Trees extends ast.Trees {
     def cond: Expr
     def steps: List[Expr]
     def body: Expr
-    def tpe: TypeState[Type] = point(NoType)
+    def tpe: TypeState[Type] = toTypeState(NoType)
 
     override def toString =
       s"""|for(${inits.mkString(", ")}; ${cond}; ${steps.mkString(", ")}) {

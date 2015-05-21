@@ -49,10 +49,10 @@ trait Typer extends typechecker.Typers {
 
 
     def typeMethodDef(mdef: MethodDef): TreeState[MethodDef] = for {
-      params  <- typeList(typeValDef, mdef.params).sequenceU
-      body    <- typeExpr(mdef.body)
-      rhsty    <- body.tpe 
-      rty      <- mdef.ret.tpe
+      params   <- typeList(typeValDef, mdef.params).sequenceU
+      body     <- typeExpr(mdef.body)
+      rhsty    <- toRWST(body.tpe)
+      rty      <- toRWST(mdef.ret.tpe)
       _        <- (rhsty <:< rty) match {
         case false =>
           error(TYPE_MISMATCH,
@@ -67,8 +67,8 @@ trait Typer extends typechecker.Typers {
 
     def typeValDef(vdef: ValDef): TreeState[ValDef] = for {
       rhs      <- typeExpr(vdef.rhs)
-      rhsty    <- rhs.tpe 
-      vty      <- vdef.tpt.tpe
+      rhsty    <- toRWST(rhs.tpe)
+      vty      <- toRWST(vdef.tpt.tpe)
       _        <- (rhsty <:< vty) match {
         case false =>
           error(TYPE_MISMATCH,
@@ -103,7 +103,7 @@ trait Typer extends typechecker.Typers {
     def typeWhile(wile: While): TreeState[While] = for {
       cond <- typeExpr(wile.cond)
       body <- typeExpr(wile.body)
-      tpe  <- cond.tpe 
+      tpe  <- toRWST(cond.tpe)
       _    <- (tpe =/= BooleanType) match {
         case true => 
           error(TYPE_MISMATCH,
@@ -119,7 +119,7 @@ trait Typer extends typechecker.Typers {
       cond  <- typeExpr(forloop.cond)
       steps <- typeList(typeExpr, forloop.steps).sequenceU
       body  <- typeExpr(forloop.body)
-      tpe   <- cond.tpe
+      tpe   <- toRWST(cond.tpe)
       _     <- (tpe =/= BooleanType) match {
         case true =>
           error(TYPE_MISMATCH,
@@ -148,7 +148,7 @@ trait Typer extends typechecker.Typers {
       cond  <- typeExpr(iff.cond)
       thenp <- typeExpr(iff.thenp)
       elsep <- typeExpr(iff.elsep)
-      tpe   <- cond.tpe
+      tpe   <- toRWST(cond.tpe)
       _     <- (tpe =/= BooleanType) match {
         case true =>
           error(TYPE_MISMATCH,
@@ -161,9 +161,9 @@ trait Typer extends typechecker.Typers {
 
     def typeApply(app: Apply): TreeState[Apply] = for {
       fun       <- typeExpr(app.fun)
-      funty     <- fun.tpe
+      funty     <- toRWST(fun.tpe)
       args      <- typeList(typeExpr, app.args).sequenceU
-      argtys    <- args.map(_.tpe).sequenceU
+      argtys    <- args.map((x) => toRWST(x.tpe)).sequenceU
       _         <- funty match {
         case MethodType(r, ts) if checkList[Type](argtys, ts, _ <:< _) =>
           point(())
@@ -206,12 +206,12 @@ trait Typer extends typechecker.Typers {
     //
     
 
-    def isValDefOrStatementExpression(v: Expr): Boolean = v match {
+    protected def isValDefOrStatementExpression(v: Expr): Boolean = v match {
       case s: ValDef => true
       case e: Expr   => isValidStatementExpression(e)
       case _         => false
     }
-    def isValidStatementExpression(e: Expr): Boolean = e match {
+    protected def isValidStatementExpression(e: Expr): Boolean = e match {
       case _: Postfix    => true
       case Unary(Inc, _) => true
       case Unary(Dec, _) => true

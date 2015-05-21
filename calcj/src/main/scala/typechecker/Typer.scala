@@ -11,7 +11,6 @@ import calcj.types
 import calcj.ast.JavaOps._
 
 import scalaz.Scalaz._
-import scalaz._
 
 // From Java Specification 1.0 - Sect: 5.2 - p61
 // 1- Assignment Conversion
@@ -20,6 +19,11 @@ import scalaz._
 
 trait Typers extends passes.Phases {
   self: ast.Trees with TreeContexts with types.Types with CompilationUnits =>
+
+
+  protected def toRWST[A <: Type](st: TypeState[A]): RWST[A] = {
+    st.rwst[List[compiler.W], compiler.R]
+  }
 
   trait Typer extends Phase {
     def startPhase(unit: CompilationUnit): CompilationUnit = {
@@ -58,10 +62,10 @@ trait Typers extends passes.Phases {
     
     def typeUnary(unary: Unary): TreeState[Unary] = {
       for {
-        etree      <- typeExpr(unary.expr)
-        etpe       <- etree.tpe
+        etree      <- typeExpr(unary.expr)              
+        etpe       <- toRWST(etree.tpe)
         utpe       <- point(unaryTyper(etpe, unary))
-        expr       <- point {
+        expr       <- point {                           
           utpe match {
             case u: UnaryType => castIfNeeded(etree, u.op, utpe)
             case u            => 
@@ -78,7 +82,8 @@ trait Typers extends passes.Phases {
         //   case Pos    => point(expr)
         //   case _      => point(Unary(unary.op, expr, point(utpe), unary.pos))
         // }
-        res        <- point(Unary(unary.op, expr, point(utpe), unary.pos))
+        res        <- point(Unary(unary.op, expr,           // TreeState
+                            toTypeState(utpe), unary.pos))
       } yield res 
     }
 
@@ -88,9 +93,9 @@ trait Typers extends passes.Phases {
     def typeBinary(bin: Binary): TreeState[Binary] = {
       for {
         ltree                <- typeExpr(bin.lhs)
-        ltpe                 <- ltree.tpe
+        ltpe                 <- toRWST(ltree.tpe)
         rtree                <- typeExpr(bin.rhs)
-        rtpe                 <- rtree.tpe
+        rtpe                 <- toRWST(rtree.tpe)
         // INFO:
         // We do point, and cpoint the following call, because Scala
         // cannot infer the type of ``let-binding'' well.
@@ -114,7 +119,7 @@ trait Typers extends passes.Phases {
           }
         }
         res                  <- 
-          point(Binary(es._1, bin.op, es._2, point(btpe), bin.pos))
+          point(Binary(es._1, bin.op, es._2, toTypeState(btpe), bin.pos))
       } yield res
     }
 

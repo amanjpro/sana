@@ -13,6 +13,7 @@ trait TreeContexts {
   self: Trees with Types =>
 
   val compiler = new CompilerMonad {
+    // TODO: Why we need the Reader bit?
     type R = List[String]
     type W = Failure
     type S = TreeContext
@@ -23,16 +24,16 @@ trait TreeContexts {
 
   type TreeState[T <: Tree] = RWST[T]
 
-  type TypeState[T <: Type] = RWST[T]
 
-  def newRWST[A](f: TreeContext => (TreeContext, A)): RWST[A] = ReaderWriterStateT { 
+  def newRWST[A](f: TreeContext => (TreeContext, A)): RWST[A] = 
+    ReaderWriterStateT { 
       (config: compiler.R, oldState: TreeContext) => 
         val (newState, t) = f(oldState)
         Applicative[Id].point((Nil, t, newState))
-  }
+    }
 
-  def run[A](m: RWST[A], r: List[String], 
-      s: TreeContext): (List[Failure], A, TreeContext) = {
+  def run[A](m: RWST[A], s: TreeContext,
+      r: List[String]): (List[Failure], A, TreeContext) = {
     m.run(r, s)
   }
 
@@ -83,8 +84,9 @@ trait TreeContexts {
     def getTpe(id: TreeId): Option[Type] = for {
       tree <- unit(id.unitId).decls.get(id)
     } yield {
-      val (_, r, _) = run(tree.tpe, Nil, this)
-      r
+      tree.tpe.run(this)._2
+      // val (_, r, _) = run(tree.tpe, Nil, this)
+      // r
     }
   }
 

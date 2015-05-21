@@ -62,7 +62,7 @@ trait Trees extends ast.Trees {
   trait Lit extends Expr {
     def const: Constant
     def owner: Option[TreeId] = None
-    override def tpe: TypeState[Type] = point(const.tpe)
+    override def tpe: TypeState[Type] = toTypeState(const.tpe)
   }
 
   /***************************** Extractors **************************/

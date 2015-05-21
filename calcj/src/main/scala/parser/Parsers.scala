@@ -56,9 +56,9 @@ trait Parsers extends parser.Parsers {
       }
       (e1, op) match {
         case (e: Expr, op: POp) if isPostfix => 
-          Postfix(e, op, point(notype), pos(ctx))
+          Postfix(e, op, toTypeState(notype), pos(ctx))
         case (e: Expr, op: UOp) => 
-          Unary(op, e, point(notype), pos(ctx))
+          Unary(op, e, toTypeState(notype), pos(ctx))
         case _                  =>
           // TODO: report an error
           throw new Exception("Expression is expected")
@@ -91,7 +91,7 @@ trait Parsers extends parser.Parsers {
       val e2 = visitChildren(es.get(1))
       (e1, e2) match {
         case (x: Expr, y: Expr) => 
-          Binary(x, op, y, point(notype), pos(ctx))
+          Binary(x, op, y, toTypeState(notype), pos(ctx))
         case _                  =>
           // TODO: report an error
           throw new Exception("Expression is expected")

@@ -19,18 +19,18 @@ trait Namers {
 
     def canRedefine: Boolean
 
-    def bind(id: TreeId, tree: IdentifiedTree): TreeState[IdentifiedTree] =
-      for {
-        env    <- compiler.rwst.get
-        env2   <- if(env.defines(id) == false || canRedefine) {
-                    val unit2 = env.unit(id.unitId).extend(id, tree)
-                    point(env.update(id.unitId, unit2))
-                  } else {
-                    point(env)
-                  }
-        _      <- compiler.rwst.put(env2)
-      } yield tree
-
+    // def bind(id: TreeId, tree: IdentifiedTree): TreeState[IdentifiedTree] =
+    //   for {
+    //     env    <- compiler.rwst.get
+    //     env2   <- if(env.defines(id) == false || canRedefine) {
+    //                 val unit2 = env.unit(id.unitId).extend(id, tree)
+    //                 point(env.update(id.unitId, unit2))
+    //               } else {
+    //                 point(env)
+    //               }
+    //     _      <- compiler.rwst.put(env2)
+    //   } yield tree
+    //
     
     def gensym(pre: String): State[Int, String] = for {
       i <- get

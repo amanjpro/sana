@@ -15,6 +15,12 @@ import scalaz.{Name => _, _}
 trait Trees {
   self: Types with TreeContexts =>
 
+  // FIXME: Can I get rid of this ContextState?
+  private type ContextState[A] = State[TreeContext, A]
+  type TypeState[T <: Type] = State[TreeContext, T]
+
+  def toTypeState[A <: Type](t: A): State[TreeContext, A] = t.point[ContextState]
+
 
   /********************* AST Nodes *********************************/
 
@@ -42,7 +48,7 @@ trait Trees {
 
   object BadTree extends IdentifiedTree {
     val id: TreeId = NoId
-    val tpe: TypeState[Type] = point(notype)
+    val tpe: TypeState[Type] = toTypeState(notype)
     val owner: Option[TreeId] = None
     val pos: Option[Position] = None
   }
@@ -69,7 +75,7 @@ trait Trees {
 
 
   trait Empty extends Expr {
-    def tpe: TypeState[Type]     = point(notype)
+    def tpe: TypeState[Type]     = toTypeState(notype)
     def owner: Option[TreeId]    = None
     def pos: Option[Position]    = None
 
@@ -90,7 +96,7 @@ trait Trees {
   trait TypeUse extends UseTree {
     def uses: Option[TreeId]
     def tpe: TypeState[Type] = {
-      newRWST {
+      State {
         (ctx: TreeContext) => {
           val r = for {
             i <- uses
@@ -112,7 +118,7 @@ trait Trees {
   trait Ident extends Expr with UseTree {
     def uses: Option[TreeId]
     def tpe: TypeState[Type] = {
-       newRWST {
+       State {
         (ctx: TreeContext) => {
           val r = for {
             i <- uses
