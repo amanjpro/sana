@@ -4,6 +4,4 @@ scala:
 
 
 script:
-  - sbt ~tiny/compile
-  - sbt ~calcj/compile
   - sbt ~primj/compile
