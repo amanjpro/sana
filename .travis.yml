@@ -4,4 +4,4 @@ scala:
 
 
 script:
-  - sbt ~primj/compile
+  - sbt primj/compile
