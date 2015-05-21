@@ -1,6 +1,6 @@
 import sbt._
 import Keys._
-import pl.morgaroth.Antlr4Plugin._
+import com.simplytyped.Antlr4Plugin._
 import sbtassembly.Plugin._
 import AssemblyKeys._
 
@@ -12,7 +12,6 @@ object SharedSettings {
     scalaVersion := "2.11.5",
     exportJars := true,
     antlr4GenListener in Antlr4 := false,
-    antlr4OutputDir in Antlr4 := (javaSource in Compile).value,
     antlr4GenVisitor in Antlr4 := true,
     scalacOptions ++= Seq("-unchecked", "-deprecation", 
       "-feature", "-Xlint", "-Xfatal-warnings"), 

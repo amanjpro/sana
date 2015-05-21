@@ -1,3 +1,3 @@
-resolvers += "Sonatype OSS" at "https://oss.sonatype.org/service/local/staging/deploy/maven2"
+resolvers += "simplytyped" at "http://simplytyped.github.io/repo/releases"
 
-addSbtPlugin("pl.morgaroth" % "sbt-antlr4" % "1.5")
+addSbtPlugin("com.simplytyped" % "sbt-antlr4" % "0.7.4")
