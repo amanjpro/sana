@@ -4,4 +4,5 @@ scala:
 
 
 script:
+  - sbt antlr4:antlr4Generate
   - sbt primj/compile
