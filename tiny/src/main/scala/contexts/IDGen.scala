@@ -1,14 +1,10 @@
 package ch.usi.inf.l3.sana.tiny.contexts
 
+import java.util.concurrent.atomic.AtomicInteger
 
 class IDGen {
-  private var id: Int = -1
+  private val id: AtomicInteger = new AtomicInteger(0)
 
-  def getNextId: Int = {
-    this.synchronized {
-      id = id + 1
-      id
-    }
-  }
+  def getNextId: Int = id.getAndIncrement
 }
 
