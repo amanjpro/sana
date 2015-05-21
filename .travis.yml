@@ -2,5 +2,4 @@ language: scala
 
 
 before_script:
-  - sbt calcj/antlr4:antlr4Generate
-  - sbt primj/compile
+  - sbt calcj/antlr4:antlr4Generate primj/compile
