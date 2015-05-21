@@ -11,6 +11,7 @@ object SharedSettings {
     organization := "ch.usi.inf.l3",
     scalaVersion := "2.11.5",
     exportJars := true,
+    javaSource in Antlr4 := (javaSource in Compile).value,
     antlr4GenListener in Antlr4 := false,
     antlr4GenVisitor in Antlr4 := true,
     scalacOptions ++= Seq("-unchecked", "-deprecation", 
