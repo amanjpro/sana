@@ -1,8 +1,6 @@
 language: scala
-scala:
-  - 2.11.5
 
 
 script:
-  - sbt antlr4:antlr4Generate
+  - sbt calcj/antlr4:antlr4Generate
   - sbt primj/compile
