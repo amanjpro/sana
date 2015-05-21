@@ -21,6 +21,9 @@ import calcj.parser.Parsers
 import org.antlr.v4.runtime._
 import org.antlr.v4.runtime.tree._
 
+import scalaz.{Failure => Fail, Success => Pass, _}
+import Scalaz._
+
 
 class Compiler extends tiny.CompilerApi
   with Parsers
@@ -44,13 +47,13 @@ class Compiler extends tiny.CompilerApi
   def standardPhases: List[Phase] = List(new Typer {})
 
 
-  def compile(files: List[String]): Either[String, Tree] = {
+  def compile(files: List[String]): Validation[String, Tree] = {
     val units = start(files)
     units.foreach((x: CompilationUnit) =>  {
       standardPhases.head.startPhase(x)
     })
     // TODO: Fix this
-    Left("")
+    Fail("")
   }
 }
 
