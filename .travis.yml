@@ -1,0 +1,9 @@
+language: scala
+scala:
+  - 2.11.1
+
+
+script:
+  - sbt ~tiny/compile
+  - sbt ~calcj/compile
+  - sbt ~primj/compile
