@@ -1,6 +1,6 @@
 language: scala
 
 
-script:
+before_script:
   - sbt calcj/antlr4:antlr4Generate
   - sbt primj/compile
