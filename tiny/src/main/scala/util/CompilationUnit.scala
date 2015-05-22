@@ -24,11 +24,19 @@ trait CompilationUnits {
     // def treeState: CUState
     def fileName: String
     val idGen = new IDGen
+
+
+    def withState(state: TreeContext): CompilationUnit
   }
 
   trait CompilationUnitFactory {
     class CompilationUnitImpl(val tree: Tree, val state: TreeContext,
-      val fileName: String) extends CompilationUnit
+      val fileName: String) extends CompilationUnit {
+
+
+      def withState(st: TreeContext): CompilationUnit = 
+        apply(tree, st, fileName)
+    }
 
     def apply(tree: Tree, state: TreeContext,
       fileName: String): CompilationUnit = 
@@ -36,6 +44,21 @@ trait CompilationUnits {
   }
 
 
+  trait ErroneousCompilationUnitFactory {
+    class ErroneousCompilationUnitImpl(val state: TreeContext,
+              val fileName: String) extends CompilationUnit {
+      val tree: Tree = Empty
+      def withState(st: TreeContext): CompilationUnit = {
+        apply(st, fileName)
+      }
+    }
+
+    def apply(state: TreeContext,
+      fileName: String): CompilationUnit = 
+      new ErroneousCompilationUnitImpl(state, fileName)
+  }
+
   val CompilationUnit = new CompilationUnitFactory {}
+  val ErroneousCompilationUnit = new ErroneousCompilationUnitFactory {}
 }
 

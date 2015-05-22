@@ -6,7 +6,7 @@ import sana.calcj
 import tiny.util.CompilationUnits
 import tiny.contexts.TreeContexts
 import tiny.passes
-import tiny.report.Failure
+import tiny.report._
 import calcj.ast
 import calcj.types
 import calcj.ast.JavaOps._
@@ -36,20 +36,14 @@ trait Typers extends passes.Phases {
   //     }
   //   }
   //
-  def isErroneous(v: Vector[Failure]): Boolean = 
-    v.filter(_.isError) == Vector.empty
 
   trait Typer extends TransformerPhase {
     def startPhase(unit: CompilationUnit): 
-      Either[Vector[Failure], CompilationUnit] = {
+         (Vector[Failure], CompilationUnit) = {
       val tree  = unit.tree
       val state = unit.state
       val (w, typedTree, s) = run(typeTree(tree), state, Nil)
-      if(isErroneous(w)) {
-        Left(w)
-      } else {
-        Right(CompilationUnit(typedTree, s, unit.fileName))
-      }
+      (w, CompilationUnit(typedTree, s, unit.fileName))
     }
 
     def typeTree(tree: Tree): TreeState[Tree] = tree match {

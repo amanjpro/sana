@@ -6,6 +6,7 @@ import sana.calcj
 import sana.primj
 import tiny.util.CompilationUnits
 import tiny.passes
+import tiny.report._
 import tiny.contexts.TreeContexts
 import calcj.typechecker
 import calcj.ast.JavaOps._

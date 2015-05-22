@@ -44,30 +44,22 @@ class Compiler extends tiny.CompilerApi
     def parserStart(parser: CalcjParser): ParseTree = parser.program
   }
 
-  def standardPhases: List[Phase] = List(new Typer {})
+  val phases: List[Phase] = List(new Typer {})
 
-
-  def compile(files: List[String]): Validation[String, Tree] = {
-    val units = start(files)
-    units.foreach((x: CompilationUnit) =>  {
-      standardPhases.head.startPhase(x)
-    })
-    // TODO: Fix this
-    Fail("")
-  }
+  
 }
 
 
 object Compiler {
   def main(args: Array[String]): Unit = {
-    println(new java.io.File(".").getPath)
     args.toList match {
       case Nil        => println("No file to parse")
       case fs         => 
         val compiler = new Compiler()
-        compiler.compile(fs) 
-        // TODO: Fix this
-        // println(compiler.result)
+        val (errors, units) = compiler.start(fs) 
+        errors.foreach(println)
+        // TODO: Here it should go to codegen
+        units.foreach(println)
     }
-}
+  }
 }

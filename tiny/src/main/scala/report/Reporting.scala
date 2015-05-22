@@ -9,22 +9,26 @@ import tiny.contexts.TreeContexts
 import scalaz.{Name => _, _}
 import Scalaz._
 
+trait ErrorCode
+case object BAD_STATEMENT extends ErrorCode
+case object TYPE_MISMATCH extends ErrorCode
+case object UNEXPETED_TREE extends ErrorCode
+
 trait Reporting {
   self: Trees with TreeContexts =>
 
-  val BAD_STATEMENT  = 1
-  val TYPE_MISMATCH  = 2
-  val UNEXPETED_TREE = 3
-
-
-  def errorCodeToMsg(n: Int): String = n match {
-    case 1 => "Unexpected expressions here"
-    case 2 => "Type mismatch"
-    case 3 => "Unexpected tree"
+  
+  def errorCodeToMsg(n: ErrorCode): String = n match {
+    case BAD_STATEMENT => "Unexpected expressions here"
+    case TYPE_MISMATCH => "Type mismatch"
+    case UNEXPETED_TREE => "Unexpected tree"
   }
   
 
-  protected def createMessage[T](code: Int, found: String,
+  def isErroneous(v: Vector[Failure]): Boolean = 
+    v.filter(_.isError) == Vector.empty
+
+  protected def createMessage[T](code: ErrorCode, found: String,
     required: String, pos: Option[Position],
     t: T): String = {
       val msg = errorCodeToMsg(code)
@@ -42,13 +46,13 @@ trait Reporting {
       |$caret""".stripMargin
   }
 
-  def error[T](code: Int, found: String, required: String,
+  def error[T](code: ErrorCode, found: String, required: String,
     pos: Option[Position],
     t: T): Writer[Vector[Failure], Unit] = 
       Vector(Failure(Error, 
                   createMessage(code, found, required, pos, t))).tell
 
-  def warning[T](code: Int, found: String, required: String,
+  def warning[T](code: ErrorCode, found: String, required: String,
     pos: Option[Position],
     t: T): Writer[Vector[Failure], Unit] = 
       Vector(Failure(Warning, 

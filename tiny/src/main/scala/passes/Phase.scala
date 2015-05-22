@@ -9,6 +9,7 @@ import tiny.source.Position
 import tiny.util.CompilationUnits
 import tiny.contexts.TreeContexts
 
+import scalaz.\/
 
 trait Phases extends Reporting {
   self: Trees with CompilationUnits with TreeContexts =>
@@ -16,15 +17,15 @@ trait Phases extends Reporting {
 
   trait Phase {
     type R
-    def startPhase(unit: CompilationUnit): Either[Vector[Failure], R]
+    def startPhase(unit: CompilationUnit): R
   }
 
   trait TransformerPhase extends Phase {
-    type R = CompilationUnit
+    type R = (Vector[Failure], CompilationUnit)
   }
 
   trait CheckerPhase extends Phase {
-    type R = Unit
+    type R = Vector[Failure]
   }
 }
 
