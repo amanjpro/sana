@@ -6,11 +6,12 @@ import sana.calcj
 import tiny.util.CompilationUnits
 import tiny.contexts.TreeContexts
 import tiny.passes
+import tiny.report.Failure
 import calcj.ast
 import calcj.types
 import calcj.ast.JavaOps._
 
-import scalaz.{Name => _, _}
+import scalaz.{Name => _, Failure => _, _}
 import scalaz.Scalaz._
 
 // From Java Specification 1.0 - Sect: 5.2 - p61
@@ -27,24 +28,28 @@ trait Typers extends passes.Phases {
     st.rwst[Vector[compiler.W], compiler.R]
   }
 
-  protected def toState[A](rwst: RWST[A]): State[TreeContext, A] = 
-    State {
-      (ctx: TreeContext) => {
-        val r = rwst.run(Nil, ctx)._2
-        (ctx, r)
+  // protected def toState[A](rwst: RWST[A]): State[TreeContext, A] = 
+  //   State {
+  //     (ctx: TreeContext) => {
+  //       val r = rwst.run(Nil, ctx)._2
+  //       (ctx, r)
+  //     }
+  //   }
+  //
+  def isErroneous(v: Vector[Failure]): Boolean = 
+    v.filter(_.isError) == Vector.empty
+
+  trait Typer extends TransformerPhase {
+    def startPhase(unit: CompilationUnit): 
+      Either[Vector[Failure], CompilationUnit] = {
+      val tree  = unit.tree
+      val state = unit.state
+      val (w, typedTree, s) = run(typeTree(tree), state, Nil)
+      if(isErroneous(w)) {
+        Left(w)
+      } else {
+        Right(CompilationUnit(typedTree, s, unit.fileName))
       }
-    }
-
-  trait Typer extends Phase {
-    def startPhase(unit: CompilationUnit): CompilationUnit = {
-      val treeState = unit.treeState
-      val newTreeState = for {
-        tree <- toRWST(treeState)
-        r    <- typeTree(tree)
-      } yield r
-
-      val newCUState = toState(newTreeState)
-      CompilationUnit(newCUState, unit.fileName)
     }
 
     def typeTree(tree: Tree): TreeState[Tree] = tree match {

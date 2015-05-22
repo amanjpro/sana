@@ -15,9 +15,20 @@ trait Phases extends Reporting {
 
 
   trait Phase {
-    def startPhase(unit: CompilationUnit): CompilationUnit
+    type R
+    def startPhase(unit: CompilationUnit): Either[Vector[Failure], R]
+  }
+
+  trait TransformerPhase extends Phase {
+    type R = CompilationUnit
+  }
+
+  trait CheckerPhase extends Phase {
+    type R = Unit
   }
 }
+
+
 
 
 

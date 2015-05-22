@@ -15,22 +15,24 @@ trait CompilationUnits {
   self: Trees with TreeContexts =>
 
 
-  def toCUState[A <: Tree](t: A): State[TreeContext, A] = t.point[ContextState]
-  type CUState = State[TreeContext, Tree]
+  // def toCUState[A <: Tree](t: A): State[TreeContext, A] = t.point[ContextState]
+  // type CUState = State[TreeContext, Tree]
 
   trait CompilationUnit {
-    def treeState: CUState
+    def tree: Tree
+    def state: TreeContext
+    // def treeState: CUState
     def fileName: String
     val idGen = new IDGen
   }
 
   trait CompilationUnitFactory {
-    class CompilationUnitImpl(val treeState: CUState, 
+    class CompilationUnitImpl(val tree: Tree, val state: TreeContext,
       val fileName: String) extends CompilationUnit
 
-    def apply(treeState: CUState,
+    def apply(tree: Tree, state: TreeContext,
       fileName: String): CompilationUnit = 
-      new CompilationUnitImpl(treeState, fileName)
+      new CompilationUnitImpl(tree, state, fileName)
   }
 
 

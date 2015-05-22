@@ -21,6 +21,7 @@ case class Failure(kind: ErrorKind,
   //     this
   // }
 
+  def isError: Boolean = kind == Error
 
   // def errorFound(wno: Int, eno: Int): String = {
   //   def text(no: Int, msg: String): String = no match {
