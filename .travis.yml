@@ -1,5 +1,7 @@
 language: scala
 
+scala:
+  - 2.11.5
 
 before_script:
   - sbt calcj/antlr4:antlr4Generate 
