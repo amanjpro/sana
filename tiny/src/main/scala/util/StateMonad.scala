@@ -71,7 +71,7 @@ trait CompilerMonad {
 
 
   // point is equivalent to ``pure'' and ``return'' in Haskell
-  type RWST[V] = ReaderWriterState[R, List[W], S, V]
+  type RWST[V] = ReaderWriterState[R, Vector[W], S, V]
 
   // def compiler(n: Int, st: Compiler): Compiler = {
   //   for {

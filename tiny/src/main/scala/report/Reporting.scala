@@ -44,14 +44,14 @@ trait Reporting {
 
   def error[T](code: Int, found: String, required: String,
     pos: Option[Position],
-    t: T): Unit = 
-    compiler.rwst.tell(List(Failure(Error, 
-      createMessage(code, found, required, pos, t))))
+    t: T): Writer[Vector[Failure], Unit] = 
+      Vector(Failure(Error, 
+                  createMessage(code, found, required, pos, t))).tell
 
   def warning[T](code: Int, found: String, required: String,
     pos: Option[Position],
-    t: T): Unit = 
-    compiler.rwst.tell(List(Failure(Warning, 
-      createMessage(code, found, required, pos, t))))
+    t: T): Writer[Vector[Failure], Unit] = 
+      Vector(Failure(Warning, 
+                  createMessage(code, found, required, pos, t))).tell
 
 }

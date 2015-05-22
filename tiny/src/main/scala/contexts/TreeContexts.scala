@@ -12,6 +12,7 @@ import scalaz.Scalaz._
 trait TreeContexts {
   self: Trees with Types =>
 
+  type ContextState[A] = State[TreeContext, A]
   val compiler = new CompilerMonad {
     // TODO: Why we need the Reader bit?
     type R = List[String]
@@ -29,11 +30,11 @@ trait TreeContexts {
     ReaderWriterStateT { 
       (config: compiler.R, oldState: TreeContext) => 
         val (newState, t) = f(oldState)
-        Applicative[Id].point((Nil, t, newState))
+        Applicative[Id].point((Vector.empty, t, newState))
     }
 
   def run[A](m: RWST[A], s: TreeContext,
-      r: List[String]): (List[Failure], A, TreeContext) = {
+      r: List[String]): (Vector[Failure], A, TreeContext) = {
     m.run(r, s)
   }
 
