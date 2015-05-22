@@ -13,15 +13,21 @@ import org.scalatest._
 class TyperTest extends FlatSpec with Matchers with Trees with 
   Constants with Types with Typers with CompilationUnits 
   with TreeContexts {
-  // val typer = new Typer
+  def getTpe(ts: RWST[Tree]): Type = {
+    val tpe = ts.run(Nil, EmptyContext)._2.tpe
+    tpe.run(EmptyContext)._2
+  }
+  
+  val typer = new Typer {}
   "1L >> 2" should "be long" in {
     val b = Binary(
               Lit(LongConstant(1), None), 
               SHR,
               Lit(IntConstant(2), None), 
-              None,
+              toTypeState(NoType),
               None)
-    typeTree(b).tpe.map(_ == LongType).getOrElse(false)
+    val tpe = getTpe(typer.typeTree(b))
+    tpe =:= LongType
   }
 
   "(short) 1 >>> 1L" should "be int" in {
@@ -29,9 +35,10 @@ class TyperTest extends FlatSpec with Matchers with Trees with
               Lit(ShortConstant(1), None), 
               USHR,
               Lit(LongConstant(1), None), 
-              None,
+              toTypeState(NoType),
               None)
-    typeTree(b).tpe.map(_ == IntType).getOrElse(false)
+    val tpe = getTpe(typer.typeTree(b))
+    tpe =:= IntType
   }
 
   "1 << 1.0f" should "not type check" in {
@@ -39,9 +46,10 @@ class TyperTest extends FlatSpec with Matchers with Trees with
               Lit(IntConstant(1), None), 
               SHL,
               Lit(FloatConstant(1.0f), None), 
-              None,
+              toTypeState(NoType),
               None)
-    typeTree(b).tpe == None
+    val tpe = getTpe(typer.typeTree(b))
+    tpe =:= ErrorType
   }
 
   "(short) 1 >>> true" should "not type check" in {
@@ -49,9 +57,10 @@ class TyperTest extends FlatSpec with Matchers with Trees with
               Lit(ShortConstant(1), None), 
               USHR,
               Lit(BooleanConstant(true), None), 
-              None,
+              toTypeState(NoType),
               None)
-    typeTree(b).tpe == None
+    val tpe = getTpe(typer.typeTree(b))
+    tpe =:= ErrorType
   }
 
   "(short) 1 + -((byte) 2) * 4" should "be int" in {
@@ -61,15 +70,16 @@ class TyperTest extends FlatSpec with Matchers with Trees with
               Binary(
                 Unary(Neg,
                   Lit(ByteConstant(2), None), 
-                  None,
+                  toTypeState(NoType),
                   None),
                 Mul, 
                 Lit(IntConstant(4), None), 
-                None,
+                toTypeState(NoType),
                 None),
-              None,
+              toTypeState(NoType),
               None)
-    typeTree(b).tpe.map(_ == IntType).getOrElse(false)
+    val tpe = getTpe(typer.typeTree(b))
+    tpe =:= IntType
   }
 
 
@@ -78,14 +88,15 @@ class TyperTest extends FlatSpec with Matchers with Trees with
               Unary(
                 Neg,
                 Lit(CharConstant('a'), None),
-                None,
+                toTypeState(NoType),
                 None),
               Mul,
               Lit(DoubleConstant(2.2D), None),
-              None,
+              toTypeState(NoType),
               None
             )
-    typeTree(b).tpe.map(_ == DoubleType).getOrElse(false)
+    val tpe = getTpe(typer.typeTree(b))
+    tpe =:= DoubleType
   }
 
   "(short) 1 + (byte) 2 + \"4\"" should "be String" in {
@@ -96,11 +107,22 @@ class TyperTest extends FlatSpec with Matchers with Trees with
                 Lit(ByteConstant(2), None), 
                 Add, 
                 Lit(StringConstant("4"), None), 
-                None,
+                toTypeState(NoType),
                 None),
-              None,
+              toTypeState(NoType),
               None)
-    typeTree(b).tpe.map(_ == StringType).getOrElse(false)
+    val tpe = getTpe(typer.typeTree(b))
+    tpe =:= DoubleType
+  }
+
+  "+((short) 1)" should "be int" in {
+    val b = Unary(
+              Pos,
+              Lit(ByteConstant(1), None),
+              toTypeState(NoType),
+              None)
+    val tpe = getTpe(typer.typeTree(b))
+    tpe =:= IntType
   }
 
 }
