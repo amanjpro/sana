@@ -38,6 +38,11 @@ trait Typers extends passes.Phases {
   //
 
   trait Typer extends TransformerPhase {
+    val name: String = "typer"
+    override val description: Option[String] = 
+      Some("The main type-checking phase.")
+    override def runRightAfter: Option[String] = Some("parser")
+
     def startPhase(unit: CompilationUnit): 
          (Vector[Failure], CompilationUnit) = {
       val tree  = unit.tree

@@ -17,6 +17,11 @@ trait Phases extends Reporting {
 
   trait Phase {
     type R
+    val description: Option[String] = None
+    val name: String
+    def runRightAfter: Option[String] = None
+    def runAfter: List[String] = runRightAfter.toList
+    def runBefore: List[String] = Nil
     def startPhase(unit: CompilationUnit): R
   }
 
