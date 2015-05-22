@@ -15,8 +15,6 @@ import scalaz.{Name => _, _}
 trait Trees {
   self: Types with TreeContexts =>
 
-  // FIXME: Can I get rid of this ContextState?
-  private type ContextState[A] = State[TreeContext, A]
   type TypeState[T <: Type] = State[TreeContext, T]
 
   def toTypeState[A <: Type](t: A): State[TreeContext, A] = t.point[ContextState]

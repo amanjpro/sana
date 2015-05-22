@@ -107,7 +107,7 @@ trait Typer extends typechecker.Typers {
       _    <- (tpe =/= BooleanType) match {
         case true => 
           error(TYPE_MISMATCH,
-            cond.tpe.toString, "boolean", wile.cond.pos, wile.cond)
+            tpe.toString, "boolean", wile.cond.pos, wile.cond)
           point(()) 
         case _    => point(())
       }
@@ -123,7 +123,7 @@ trait Typer extends typechecker.Typers {
       _     <- (tpe =/= BooleanType) match {
         case true =>
           error(TYPE_MISMATCH,
-            cond.tpe.toString, "boolean", forloop.cond.pos, forloop.cond)
+            tpe.toString, "boolean", forloop.cond.pos, forloop.cond)
           point(()) 
         case _    => point(())
       }
@@ -152,7 +152,7 @@ trait Typer extends typechecker.Typers {
       _     <- (tpe =/= BooleanType) match {
         case true =>
           error(TYPE_MISMATCH,
-            cond.tpe.toString, "boolean", iff.cond.pos, iff.cond)
+            tpe.toString, "boolean", iff.cond.pos, iff.cond)
           point(()) 
         case _    => point(())
       }

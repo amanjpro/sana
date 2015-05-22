@@ -10,6 +10,7 @@ import calcj.ast
 import calcj.types
 import calcj.ast.JavaOps._
 
+import scalaz.{Name => _, _}
 import scalaz.Scalaz._
 
 // From Java Specification 1.0 - Sect: 5.2 - p61
@@ -21,18 +22,29 @@ trait Typers extends passes.Phases {
   self: ast.Trees with TreeContexts with types.Types with CompilationUnits =>
 
 
-  protected def toRWST[A <: Type](st: TypeState[A]): RWST[A] = {
-    st.rwst[List[compiler.W], compiler.R]
+  // Move the following two functions to some Monad utility class
+  protected def toRWST[A](st: State[TreeContext, A]): RWST[A] = {
+    st.rwst[Vector[compiler.W], compiler.R]
   }
+
+  protected def toState[A](rwst: RWST[A]): State[TreeContext, A] = 
+    State {
+      (ctx: TreeContext) => {
+        val r = rwst.run(Nil, ctx)._2
+        (ctx, r)
+      }
+    }
 
   trait Typer extends Phase {
     def startPhase(unit: CompilationUnit): CompilationUnit = {
       val treeState = unit.treeState
       val newTreeState = for {
-        tree <- treeState
+        tree <- toRWST(treeState)
         r    <- typeTree(tree)
       } yield r
-      CompilationUnit(newTreeState, unit.fileName)
+
+      val newCUState = toState(newTreeState)
+      CompilationUnit(newCUState, unit.fileName)
     }
 
     def typeTree(tree: Tree): TreeState[Tree] = tree match {
