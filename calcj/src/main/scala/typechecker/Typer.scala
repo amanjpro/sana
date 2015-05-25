@@ -7,12 +7,14 @@ import tiny.util.CompilationUnits
 import tiny.contexts.TreeContexts
 import tiny.passes
 import tiny.report._
+import tiny.util.MonadUtils
 import calcj.ast
 import calcj.types
 import calcj.ast.JavaOps._
 
 import scalaz.{Name => _, Failure => _, _}
 import scalaz.Scalaz._
+import scala.language.{higherKinds, implicitConversions}
 
 // From Java Specification 1.0 - Sect: 5.2 - p61
 // 1- Assignment Conversion
@@ -20,13 +22,26 @@ import scalaz.Scalaz._
 // 3- String Conversion   Sect: 5.4 - p67
 
 trait Typers extends passes.Phases {
-  self: ast.Trees with TreeContexts with types.Types with CompilationUnits =>
+  self: ast.Trees with 
+        TreeContexts with 
+        types.Types with 
+        CompilationUnits with
+        MonadUtils =>
 
 
-  // Move the following two functions to some Monad utility class
-  protected def toRWST[A](st: State[TreeContext, A]): RWST[A] = {
-    st.rwst[Vector[compiler.W], compiler.R]
-  }
+  type Inner[A]              = WriterT[Id, Vector[Failure], A]
+  type Outer[F[_], A]        = StateT[F, TreeContext, A]
+  type Stacked[A]             = Outer[Inner, A]
+  type TypeChecker[T <: Tree] = Stacked[T]
+
+  protected def point[A](t: A): Outer[Inner, A] = t.point[Stacked]
+
+  def toTypeChecker[A](x: Outer[Id, A]): Stacked[A] = x.lift[Inner]
+  // def toTypeChecker[A <: Tree](st: State[TreeContext, A]): TypeChecker[A] = {
+//     
+  // }
+
+  
 
   // protected def toState[A](rwst: RWST[A]): State[TreeContext, A] = 
   //   State {
@@ -41,17 +56,18 @@ trait Typers extends passes.Phases {
     val name: String = "typer"
     override val description: Option[String] = 
       Some("The main type-checking phase.")
-    override def runRightAfter: Option[String] = Some("parser")
+    override def runRightAfter: Option[String] = Some("namer")
+
 
     def startPhase(unit: CompilationUnit): 
          (Vector[Failure], CompilationUnit) = {
       val tree  = unit.tree
       val state = unit.state
-      val (w, typedTree, s) = run(typeTree(tree), state, Nil)
+      val (w, (s, typedTree)) = typeTree(tree).run(state).run
       (w, CompilationUnit(typedTree, s, unit.fileName))
     }
 
-    def typeTree(tree: Tree): TreeState[Tree] = tree match {
+    def typeTree(tree: Tree): TypeChecker[Tree] = tree match {
       case e: Expr       => for {
         te <- typeExpr(e)
       } yield te
@@ -61,7 +77,7 @@ trait Typers extends passes.Phases {
         point(tree)
     }
 
-    def typeExpr(e: Expr): TreeState[Expr] = e match {
+    def typeExpr(e: Expr): TypeChecker[Expr] = e match {
       case bin: Binary            => for {
         te <- typeBinary(bin)
       } yield te
@@ -76,10 +92,10 @@ trait Typers extends passes.Phases {
     }
 
     
-    def typeUnary(unary: Unary): TreeState[Unary] = {
+    def typeUnary(unary: Unary): TypeChecker[Unary] = {
       for {
         etree      <- typeExpr(unary.expr)              
-        etpe       <- toRWST(etree.tpe)
+        etpe       <- toTypeChecker(etree.tpe)
         utpe       <- point(unaryTyper(etpe, unary))
         expr       <- point {                           
           utpe match {
@@ -98,7 +114,7 @@ trait Typers extends passes.Phases {
         //   case Pos    => point(expr)
         //   case _      => point(Unary(unary.op, expr, point(utpe), unary.pos))
         // }
-        res        <- point(Unary(unary.op, expr,           // TreeState
+        res        <- point(Unary(unary.op, expr,           
                             toTypeState(utpe), unary.pos))
       } yield res 
     }
@@ -106,12 +122,12 @@ trait Typers extends passes.Phases {
 
     
 
-    def typeBinary(bin: Binary): TreeState[Binary] = {
+    def typeBinary(bin: Binary): TypeChecker[Binary] = {
       for {
         ltree                <- typeExpr(bin.lhs)
-        ltpe                 <- toRWST(ltree.tpe)
+        ltpe                 <- toTypeChecker(ltree.tpe)
         rtree                <- typeExpr(bin.rhs)
-        rtpe                 <- toRWST(rtree.tpe)
+        rtpe                 <- toTypeChecker(rtree.tpe)
         // INFO:
         // We do point, and cpoint the following call, because Scala
         // cannot infer the type of ``let-binding'' well.

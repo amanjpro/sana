@@ -2,7 +2,7 @@ package ch.usi.inf.l3.sana.tiny.contexts
 
 import ch.usi.inf.l3.sana.tiny
 import tiny.ast.Trees
-import tiny.util.CompilerMonad
+import tiny.util.MonadUtils
 import tiny.report._
 import tiny.types.Types
 
@@ -10,35 +10,10 @@ import scalaz.{StateT, State, Monoid, Applicative, ReaderWriterStateT}
 import scalaz.Scalaz._
 
 trait TreeContexts {
-  self: Trees with Types =>
+  self: Trees with Types with MonadUtils =>
 
   type ContextState[A] = State[TreeContext, A]
-  val compiler = new CompilerMonad {
-    // TODO: Why we need the Reader bit?
-    type R = List[String]
-    type W = Failure
-    type S = TreeContext
-  }
-
   
-  type RWST[V] = compiler.RWST[V]
-
-  type TreeState[T <: Tree] = RWST[T]
-
-
-  def newRWST[A](f: TreeContext => (TreeContext, A)): RWST[A] = 
-    ReaderWriterStateT { 
-      (config: compiler.R, oldState: TreeContext) => 
-        val (newState, t) = f(oldState)
-        Applicative[Id].point((Vector.empty, t, newState))
-    }
-
-  def run[A](m: RWST[A], s: TreeContext,
-      r: List[String]): (Vector[Failure], A, TreeContext) = {
-    m.run(r, s)
-  }
-
-  def point[A](t: A): RWST[A] = t.point[RWST]
 
   trait TreeContext {
     def compilationUnits: Map[Int, CompilationUnitContext]
@@ -59,7 +34,7 @@ trait TreeContexts {
     }
 
 
-    def lookup(id: TreeId): TreeState[IdentifiedTree] //
+    def lookup(id: TreeId): State[TreeContext, IdentifiedTree] //
     // = for {
     //   env     <- compiler.rwst.get
     //   tree    <- env.unit(id.unitId).decls.get(id) match  {
@@ -107,7 +82,10 @@ trait TreeContexts {
 
   object EmptyContext extends TreeContext {
     lazy val compilationUnits: Map[Int, CompilationUnitContext] = Map.empty
-    def lookup(id: TreeId): TreeState[IdentifiedTree] = point(BadTree)
+    def lookup(id: TreeId): State[TreeContext, IdentifiedTree] = {
+      val badTree: IdentifiedTree = BadTree
+      badTree.point[ContextState]
+    }
     override def getTpe(id: TreeId): Option[Type] = None
     protected def newContext(
       cus: Map[Int, CompilationUnitContext]): TreeContext = EmptyContext

@@ -6,6 +6,7 @@ import sana.tiny
 import sana.calcj
 import tiny.ast.TreeGen
 import tiny.util.CompilationUnits
+import tiny.util.MonadUtils
 import tiny.passes.Phases
 import tiny.report._
 import tiny.contexts.TreeContexts
@@ -34,6 +35,7 @@ class Compiler extends tiny.CompilerApi
   with Typers
   with TreeContexts
   with TreeGen 
+  with MonadUtils
   with CompilationUnits {
 
 

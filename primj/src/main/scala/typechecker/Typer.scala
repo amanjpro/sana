@@ -4,7 +4,7 @@ import ch.usi.inf.l3.sana
 import sana.tiny
 import sana.calcj
 import sana.primj
-import tiny.util.CompilationUnits
+import tiny.util.{CompilationUnits, MonadUtils}
 import tiny.passes
 import tiny.report._
 import tiny.contexts.TreeContexts
@@ -24,11 +24,15 @@ import scalaz._
 // 3- String Conversion   Sect: 5.4 - p67
 
 trait Typer extends typechecker.Typers {
-  self: ast.Trees with TreeContexts with types.Types with CompilationUnits =>
+  self: ast.Trees with 
+        TreeContexts with 
+        types.Types with 
+        CompilationUnits with
+        MonadUtils =>
 
   trait Typer extends super.Typer {
 
-    override def typeTree(tree: Tree): TreeState[Tree] = tree match {
+    override def typeTree(tree: Tree): TypeChecker[Tree] = tree match {
       case dtree: DefTree => for {
         ttree <- typeDefTree(dtree)
       } yield ttree
@@ -39,7 +43,7 @@ trait Typer extends typechecker.Typers {
         super.typeTree(tree)
     }
 
-    def typeDefTree(dtree: DefTree): TreeState[DefTree] = dtree match {
+    def typeDefTree(dtree: DefTree): TypeChecker[DefTree] = dtree match {
       case vdef: ValDef     => for {
         ttree <- typeValDef(vdef)
       } yield ttree
@@ -49,11 +53,11 @@ trait Typer extends typechecker.Typers {
     }
 
 
-    def typeMethodDef(mdef: MethodDef): TreeState[MethodDef] = for {
+    def typeMethodDef(mdef: MethodDef): TypeChecker[MethodDef] = for {
       params   <- typeList(typeValDef, mdef.params).sequenceU
       body     <- typeExpr(mdef.body)
-      rhsty    <- toRWST(body.tpe)
-      rty      <- toRWST(mdef.ret.tpe)
+      rhsty    <- toTypeChecker(body.tpe)
+      rty      <- toTypeChecker(mdef.ret.tpe)
       _        <- (rhsty <:< rty) match {
         case false =>
           error(TYPE_MISMATCH,
@@ -66,10 +70,10 @@ trait Typer extends typechecker.Typers {
                                   params, body, mdef.pos, mdef.owner))
     } yield tree
 
-    def typeValDef(vdef: ValDef): TreeState[ValDef] = for {
+    def typeValDef(vdef: ValDef): TypeChecker[ValDef] = for {
       rhs      <- typeExpr(vdef.rhs)
-      rhsty    <- toRWST(rhs.tpe)
-      vty      <- toRWST(vdef.tpt.tpe)
+      rhsty    <- toTypeChecker(rhs.tpe)
+      vty      <- toTypeChecker(vdef.tpt.tpe)
       _        <- (rhsty <:< vty) match {
         case false =>
           error(TYPE_MISMATCH,
@@ -83,7 +87,7 @@ trait Typer extends typechecker.Typers {
     } yield tree
 
 
-    override def typeExpr(e: Expr): TreeState[Expr] = e match {
+    override def typeExpr(e: Expr): TypeChecker[Expr] = e match {
       case iff: If                => for {
         ti <- typeIf(iff)
       } yield ti
@@ -101,10 +105,10 @@ trait Typer extends typechecker.Typers {
         super.typeExpr(e)
     }
 
-    def typeWhile(wile: While): TreeState[While] = for {
+    def typeWhile(wile: While): TypeChecker[While] = for {
       cond <- typeExpr(wile.cond)
       body <- typeExpr(wile.body)
-      tpe  <- toRWST(cond.tpe)
+      tpe  <- toTypeChecker(cond.tpe)
       _    <- (tpe =/= BooleanType) match {
         case true => 
           error(TYPE_MISMATCH,
@@ -115,12 +119,12 @@ trait Typer extends typechecker.Typers {
       tree <- point(While(wile.mods, cond, body, wile.pos))
     } yield tree
 
-    def typeFor(forloop: For): TreeState[For] = for {
+    def typeFor(forloop: For): TypeChecker[For] = for {
       inits <- typeList(typeExpr, forloop.inits).sequenceU
       cond  <- typeExpr(forloop.cond)
       steps <- typeList(typeExpr, forloop.steps).sequenceU
       body  <- typeExpr(forloop.body)
-      tpe   <- toRWST(cond.tpe)
+      tpe   <- toTypeChecker(cond.tpe)
       _     <- (tpe =/= BooleanType) match {
         case true =>
           error(TYPE_MISMATCH,
@@ -145,11 +149,11 @@ trait Typer extends typechecker.Typers {
       tree  <- point(For(inits, cond, steps, body, forloop.pos))
     } yield tree
 
-    def typeIf(iff: If): TreeState[If] = for {
+    def typeIf(iff: If): TypeChecker[If] = for {
       cond  <- typeExpr(iff.cond)
       thenp <- typeExpr(iff.thenp)
       elsep <- typeExpr(iff.elsep)
-      tpe   <- toRWST(cond.tpe)
+      tpe   <- toTypeChecker(cond.tpe)
       _     <- (tpe =/= BooleanType) match {
         case true =>
           error(TYPE_MISMATCH,
@@ -160,11 +164,11 @@ trait Typer extends typechecker.Typers {
       tree  <- point(If(cond, thenp, elsep, iff.pos))
     } yield tree
 
-    def typeApply(app: Apply): TreeState[Apply] = for {
+    def typeApply(app: Apply): TypeChecker[Apply] = for {
       fun       <- typeExpr(app.fun)
-      funty     <- toRWST(fun.tpe)
+      funty     <- toTypeChecker(fun.tpe)
       args      <- typeList(typeExpr, app.args).sequenceU
-      argtys    <- args.map((x) => toRWST(x.tpe)).sequenceU
+      argtys    <- args.map((x) => toTypeChecker(x.tpe)).sequenceU
       _         <- funty match {
         case MethodType(r, ts) if checkList[Type](argtys, ts, _ <:< _) =>
           point(())
@@ -183,8 +187,8 @@ trait Typer extends typechecker.Typers {
 
     
 
-    def typeList[T <: Tree](f: T => TreeState[T], 
-      ls: List[T]): List[TreeState[T]] = {
+    def typeList[T <: Tree](f: T => TypeChecker[T], 
+      ls: List[T]): List[TypeChecker[T]] = {
       val typedList = for {
         l    <- ls
       } yield f(l)
@@ -196,8 +200,8 @@ trait Typer extends typechecker.Typers {
   
 
     // @tailrec
-    // final def typeListCSP[T <: Tree](f: T => TreeState[T], 
-    //   ls: List[T], cont: List[T] => List[T]): TreeState[List[T]] = ls match {
+    // final def typeListCSP[T <: Tree](f: T => TypeChecker[T], 
+    //   ls: List[T], cont: List[T] => List[T]): TypeChecker[List[T]] = ls match {
     //     case Nil    => (cont(Nil), env)
     //     case x::xs  => 
     //

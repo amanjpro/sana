@@ -9,13 +9,18 @@ import tiny.contexts.TreeContexts
 import tiny.ast.Trees
 import tiny.ast.TreeGen
 import tiny.util.CompilationUnits
+import tiny.util.MonadUtils
 import tiny.types.Types
 import tiny.passes.Phases
 import tiny.report._
 
 
 trait CompilerApi {
-  self: Parsers with CompilationUnits with Phases with TreeContexts =>
+  self: Parsers with 
+        CompilationUnits with 
+        Phases with 
+        TreeContexts with
+        MonadUtils =>
 
 
   val phases: List[Phase]
