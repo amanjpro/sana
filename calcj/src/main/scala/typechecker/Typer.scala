@@ -14,7 +14,7 @@ import calcj.ast.JavaOps._
 
 import scalaz.{Name => _, Failure => _, _}
 import scalaz.Scalaz._
-import scala.language.{higherKinds, implicitConversions}
+import scala.language.higherKinds
 
 // From Java Specification 1.0 - Sect: 5.2 - p61
 // 1- Assignment Conversion
@@ -29,30 +29,16 @@ trait Typers extends passes.Phases {
         MonadUtils =>
 
 
-  type Inner[A]              = WriterT[Id, Vector[Failure], A]
-  type Outer[F[_], A]        = StateT[F, TreeContext, A]
-  type Stacked[A]             = Outer[Inner, A]
-  type TypeChecker[T <: Tree] = Stacked[T]
-
-  protected def point[A](t: A): Outer[Inner, A] = t.point[Stacked]
-
-  def toTypeChecker[A](x: Outer[Id, A]): Stacked[A] = x.lift[Inner]
-  // def toTypeChecker[A <: Tree](st: State[TreeContext, A]): TypeChecker[A] = {
-//     
-  // }
-
-  
-
-  // protected def toState[A](rwst: RWST[A]): State[TreeContext, A] = 
-  //   State {
-  //     (ctx: TreeContext) => {
-  //       val r = rwst.run(Nil, ctx)._2
-  //       (ctx, r)
-  //     }
-  //   }
-  //
-
   trait Typer extends TransformerPhase {
+    type Inner[A]               = WriterT[Id, Vector[Failure], A]
+    type Outer[F[_], A]         = StateT[F, TreeContext, A]
+    type Stacked[A]             = Outer[Inner, A]
+    type TypeChecker[T <: Tree] = Stacked[T]
+
+    protected def point[A](t: A): Outer[Inner, A] = t.point[Stacked]
+
+    def toTypeChecker[A](x: Outer[Id, A]): Stacked[A] = x.lift[Inner]
+
     val name: String = "typer"
     override val description: Option[String] = 
       Some("The main type-checking phase.")
