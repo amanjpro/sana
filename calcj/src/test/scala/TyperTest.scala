@@ -1,7 +1,7 @@
 import ch.usi.inf.l3.sana
 import sana.calcj
 import sana.tiny
-import tiny.util.CompilationUnits
+import tiny.util.{CompilationUnits, MonadUtils}
 import tiny.contexts.TreeContexts
 import calcj.ast.Trees
 import calcj.ast.Constants
@@ -12,10 +12,10 @@ import org.scalatest._
 
 class TyperTest extends FlatSpec with Matchers with Trees with 
   Constants with Types with Typers with CompilationUnits 
-  with TreeContexts {
-  def getTpe(ts: RWST[Tree]): Type = {
-    val tpe = ts.run(Nil, EmptyContext)._2.tpe
-    tpe.run(EmptyContext)._2
+  with TreeContexts with MonadUtils {
+  def getTpe(ts: TypeChecker[Tree]): Type = {
+    val (_, (_, tree)) = ts.run(EmptyContext).run
+    tree.tpe.eval(EmptyContext)
   }
   
   val typer = new Typer {}
