@@ -12,6 +12,8 @@ import tiny.report._
 trait MonadUtils {
   self: Trees with TreeContexts =>
   
+  // TODO: This trait is not needed at all, we can get rid of it completely
+  // (at least so far)
   /*
    * R: Abstract type for the Reader part in ReaderWriterState
    * W: Abstract type for the Writer part in ReaderWriterState
