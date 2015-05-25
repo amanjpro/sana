@@ -34,7 +34,7 @@ trait TreeContexts {
     }
 
 
-    def lookup(id: TreeId): State[TreeContext, IdentifiedTree] //
+    def lookup(name: String): Option[TreeId] //
     // = for {
     //   env     <- compiler.rwst.get
     //   tree    <- env.unit(id.unitId).decls.get(id) match  {
@@ -82,10 +82,7 @@ trait TreeContexts {
 
   object EmptyContext extends TreeContext {
     lazy val compilationUnits: Map[Int, CompilationUnitContext] = Map.empty
-    def lookup(id: TreeId): State[TreeContext, IdentifiedTree] = {
-      val badTree: IdentifiedTree = BadTree
-      badTree.point[ContextState]
-    }
+    def lookup(name: String): Option[TreeId] = None
     override def getTpe(id: TreeId): Option[Type] = None
     protected def newContext(
       cus: Map[Int, CompilationUnitContext]): TreeContext = EmptyContext

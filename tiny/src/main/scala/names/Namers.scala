@@ -3,7 +3,7 @@ package ch.usi.inf.l3.sana.tiny.names
 import ch.usi.inf.l3.sana.tiny
 import tiny.source.Position
 import tiny.contexts.TreeContexts
-import tiny.util.CompilationUnits
+import tiny.util.{CompilationUnits, MonadUtils}
 import tiny.contexts.TreeId
 import tiny.ast.Trees
 import tiny.types.Types
@@ -13,11 +13,15 @@ import Names._
 
  
 import scalaz.{Name => _, Failure => _, _}
-import scala.language.higherKinds
+import scala.language.{higherKinds,implicitConversions}
 import Scalaz._
 
 trait Namers extends passes.Phases {
-  self: Trees with TreeContexts with Types with CompilationUnits =>
+  self: Trees with 
+        TreeContexts with 
+        Types with 
+        CompilationUnits with
+        MonadUtils =>
 
   trait Namer extends TransformerPhase {
     type Inner[A]               = WriterT[Id, Vector[Failure], A]
@@ -25,13 +29,23 @@ trait Namers extends passes.Phases {
     type Stacked[A]             = Outer[Inner, A]
     type NamerMonad[T <: Tree]  = Stacked[T]
 
+    private type ST[C, A] = StateT[Inner, C, A]
     protected def point[A](t: A): Outer[Inner, A] = t.point[Stacked]
+    protected def get = {
+      MonadState[ST, TreeContext].get
+    }
+    protected def put(env: TreeContext) = {
+      MonadState[ST, TreeContext].put(env)
+    }
+    protected def modify(f: TreeContext => TreeContext) = {
+      MonadState[ST, TreeContext].modify(f)
+    }
 
-    def toNamerMonad[A](x: Outer[Id, A]): Stacked[A] = x.lift[Inner]
+    implicit def toNamerMonad[A](x: Outer[Id, A]): Stacked[A] = x.lift[Inner]
 
     val name: String = "namer"
     override val description: Option[String] = 
-      Some("The main type-checking phase.")
+      Some("The main namer phase, bind uses to definitions.")
     override def runRightAfter: Option[String] = Some("parser")
 
 
@@ -61,9 +75,9 @@ trait Namers extends passes.Phases {
     //   } yield tree
     //
     
-    def gensym(pre: String): State[Int, String] = for {
-      i <- get
-      _ <- put(i+1)
-    } yield pre + i.toString
+    // def gensym(pre: String): State[Int, String] = for {
+    //   i <- get
+    //   _ <- put(i+1)
+    // } yield pre + i.toString
   }
 }
