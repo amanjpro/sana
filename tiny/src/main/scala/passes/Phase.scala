@@ -9,8 +9,6 @@ import tiny.source.Position
 import tiny.util.CompilationUnits
 import tiny.contexts.TreeContexts
 
-import scalaz.\/
-
 trait Phases extends Reporting {
   self: Trees with CompilationUnits with TreeContexts =>
 
@@ -23,6 +21,7 @@ trait Phases extends Reporting {
     def runAfter: List[String] = runRightAfter.toList
     def runBefore: List[String] = Nil
     def startPhase(unit: CompilationUnit): R
+    def processOptions(options: List[String]): Unit = ()
   }
 
   trait TransformerPhase extends Phase {
