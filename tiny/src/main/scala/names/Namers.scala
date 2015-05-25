@@ -13,7 +13,7 @@ import Names._
 
  
 import scalaz.{Name => _, Failure => _, _}
-import scala.language.{higherKinds,implicitConversions}
+import scala.language.higherKinds
 import Scalaz._
 
 trait Namers extends passes.Phases {
@@ -21,14 +21,15 @@ trait Namers extends passes.Phases {
         TreeContexts with 
         Types with 
         CompilationUnits with
-        MonadUtils =>
+   MonadUtils =>
 
+  type Inner[A]               = WriterT[Id, Vector[Failure], A]
+  type Outer[F[_], A]         = StateT[F, TreeContext, A]
+  type Stacked[A]             = Outer[Inner, A]
+  type NamerMonad[T <: Tree]  = Stacked[T]
+
+  def toNamerMonad[A](x: Outer[Id, A]): Stacked[A] = x.lift[Inner]
   trait Namer extends TransformerPhase {
-    type Inner[A]               = WriterT[Id, Vector[Failure], A]
-    type Outer[F[_], A]         = StateT[F, TreeContext, A]
-    type Stacked[A]             = Outer[Inner, A]
-    type NamerMonad[T <: Tree]  = Stacked[T]
-
     private type ST[C, A] = StateT[Inner, C, A]
     protected def point[A](t: A): Outer[Inner, A] = t.point[Stacked]
     protected def get = {
@@ -41,7 +42,6 @@ trait Namers extends passes.Phases {
       MonadState[ST, TreeContext].modify(f)
     }
 
-    implicit def toNamerMonad[A](x: Outer[Id, A]): Stacked[A] = x.lift[Inner]
 
     val name: String = "namer"
     override val description: Option[String] = 

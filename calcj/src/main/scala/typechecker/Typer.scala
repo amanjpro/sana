@@ -27,17 +27,17 @@ trait Typers extends passes.Phases {
         types.Types with 
         CompilationUnits with
         MonadUtils =>
+  type Inner[A]               = WriterT[Id, Vector[Failure], A]
+  type Outer[F[_], A]         = StateT[F, TreeContext, A]
+  type Stacked[A]             = Outer[Inner, A]
+  type TypeChecker[T <: Tree] = Stacked[T]
 
+  def toTypeChecker[A](x: Outer[Id, A]): Stacked[A] = x.lift[Inner]
 
   trait Typer extends TransformerPhase {
-    type Inner[A]               = WriterT[Id, Vector[Failure], A]
-    type Outer[F[_], A]         = StateT[F, TreeContext, A]
-    type Stacked[A]             = Outer[Inner, A]
-    type TypeChecker[T <: Tree] = Stacked[T]
-
+    
     protected def point[A](t: A): Outer[Inner, A] = t.point[Stacked]
 
-    def toTypeChecker[A](x: Outer[Id, A]): Stacked[A] = x.lift[Inner]
 
     val name: String = "typer"
     override val description: Option[String] = 
