@@ -54,7 +54,7 @@ trait Typer extends typechecker.Typers {
 
 
     def typeMethodDef(mdef: MethodDef): TypeChecker[MethodDef] = for {
-      params   <- typeList(typeValDef, mdef.params).sequenceU
+      params   <- mdef.params.map(typeValDef(_)).sequenceU
       body     <- typeExpr(mdef.body)
       rhsty    <- toTypeChecker(body.tpe)
       rty      <- toTypeChecker(mdef.ret.tpe)
@@ -120,9 +120,9 @@ trait Typer extends typechecker.Typers {
     } yield tree
 
     def typeFor(forloop: For): TypeChecker[For] = for {
-      inits <- typeList(typeExpr, forloop.inits).sequenceU
+      inits <- forloop.inits.map(typeExpr(_)).sequenceU
       cond  <- typeExpr(forloop.cond)
-      steps <- typeList(typeExpr, forloop.steps).sequenceU
+      steps <- forloop.steps.map(typeExpr(_)).sequenceU
       body  <- typeExpr(forloop.body)
       tpe   <- toTypeChecker(cond.tpe)
       _     <- (tpe =/= BooleanType) match {
@@ -167,7 +167,7 @@ trait Typer extends typechecker.Typers {
     def typeApply(app: Apply): TypeChecker[Apply] = for {
       fun       <- typeExpr(app.fun)
       funty     <- toTypeChecker(fun.tpe)
-      args      <- typeList(typeExpr, app.args).sequenceU
+      args      <- app.args.map(typeExpr(_)).sequenceU
       argtys    <- args.map((x) => toTypeChecker(x.tpe)).sequenceU
       _         <- funty match {
         case MethodType(r, ts) if checkList[Type](argtys, ts, _ <:< _) =>
@@ -185,31 +185,6 @@ trait Typer extends typechecker.Typers {
       tree     <- point(Apply(fun, args, app.pos, app.owner))
     } yield tree
 
-    
-
-    def typeList[T <: Tree](f: T => TypeChecker[T], 
-      ls: List[T]): List[TypeChecker[T]] = {
-      val typedList = for {
-        l    <- ls
-      } yield f(l)
-      typedList
-    }
-
-
-
-  
-
-    // @tailrec
-    // final def typeListCSP[T <: Tree](f: T => TypeChecker[T], 
-    //   ls: List[T], cont: List[T] => List[T]): TypeChecker[List[T]] = ls match {
-    //     case Nil    => (cont(Nil), env)
-    //     case x::xs  => 
-    //
-    //       val t = f(x)
-    //       typeListCSP(f, xs, env2, (ts: List[T]) => cont(t::ts))
-    //   }
-    //
-    
 
     protected def isValDefOrStatementExpression(v: Expr): Boolean = v match {
       case s: ValDef => true
