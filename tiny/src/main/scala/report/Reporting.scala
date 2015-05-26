@@ -19,9 +19,9 @@ trait Reporting {
 
   
   def errorCodeToMsg(n: ErrorCode): String = n match {
-    case BAD_STATEMENT => "Unexpected expressions here"
-    case TYPE_MISMATCH => "Type mismatch"
-    case UNEXPETED_TREE => "Unexpected tree"
+    case BAD_STATEMENT       => "Unexpected expressions here"
+    case TYPE_MISMATCH       => "Type mismatch"
+    case UNEXPETED_TREE      => "Unexpected tree"
   }
   
 

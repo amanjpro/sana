@@ -32,9 +32,8 @@ trait Namers extends names.Namers {
     def nameDef(defTree: DefTree): NamerMonad[DefTree]
     def bindUse(tree: Tree): NamerMonad[Tree] = tree match {
       case deftree: DefTree                           => for {
-       r <- nameDef(deftree)
+       r <- bindUseDefs(deftree)
       } yield r
-      case lit:Lit                                    => point(lit)
       case tuse: TypeUse                              => for {
        env  <- get
        tid  = env.lookup(tuse.name)
@@ -43,7 +42,16 @@ trait Namers extends names.Namers {
         e <- bindUseExpr(expr)
       } yield e
     }
+
+    def bindUseDefs(defTree: DefTree): NamerMonad[DefTree] 
+    //= defTree match {
+    //   case m:MethodDef                                => for {
+    //      
+    //   }
+    // }
+
     def bindUseExpr(expr: Expr): NamerMonad[Expr] = expr match {
+      case lit:Lit                                    => point(lit)
       case id: Ident                                  => for {
        env  <- get
        tid  = env.lookup(id.name)
@@ -95,8 +103,8 @@ trait Namers extends names.Namers {
         fun  <- bindUseExpr(apply.fun)
         args <- apply.args.map(bindUseExpr(_)).sequenceU
       } yield Apply(fun, args, apply.pos, apply.owner)
-      case ret:Return      if ret.expr == None          => point(ret)
-      case ret:Return                                   => for {
+      case ret:Return      if ret.expr == None        => point(ret)
+      case ret:Return                                 => for {
         expr <- bindUseExpr(ret.expr.get)
       } yield Return(expr, ret.pos, ret.owner)
     }

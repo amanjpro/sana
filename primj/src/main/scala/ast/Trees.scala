@@ -353,10 +353,10 @@ trait Trees extends ast.Trees {
       val tpt: TypeUse, val name: Name, val rhs: Expr, 
       val pos: Option[Position], val owner: Option[TreeId]) extends ValDef
 
-    def apply(mods: Flags, id: TreeId, ret: TypeUse, name: Name, 
-      body: Expr, pos: Option[Position] = None, 
+    def apply(mods: Flags, id: TreeId, tpt: TypeUse, name: Name, 
+      rhs: Expr, pos: Option[Position] = None, 
       owner: Option[TreeId] = None): ValDef = 
-        new ValDefImpl(mods, id, ret, name, body, pos, owner)
+        new ValDefImpl(mods, id, tpt, name, rhs, pos, owner)
   }
 
 

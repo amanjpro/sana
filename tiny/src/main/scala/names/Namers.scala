@@ -46,7 +46,7 @@ trait Namers extends passes.Phases {
     val name: String = "namer"
     override val description: Option[String] = 
       Some("The main namer phase, bind uses to definitions.")
-    override def runRightAfter: Option[String] = Some("parser")
+    override def runRightAfter: Option[String] = Some("owner-assigner")
 
 
     def startPhase(unit: CompilationUnit): 
