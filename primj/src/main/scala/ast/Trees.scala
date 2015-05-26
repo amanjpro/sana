@@ -71,7 +71,7 @@ trait Trees extends ast.Trees {
   }
 
   trait Block extends Expr {
-    def stmts: List[Expr]
+    def stmts: List[Tree]
     override def toString: String = 
       s"""|{
           |  ${stmts.map(_.toString).mkString("\n")}
@@ -194,7 +194,7 @@ trait Trees extends ast.Trees {
     }
   }
   trait BlockExtractor {
-    def unapply(b: Block): Option[List[Expr]] = b match {
+    def unapply(b: Block): Option[List[Tree]] = b match {
       case null => None
       case _    => Some(b.stmts)
     }
@@ -280,11 +280,11 @@ trait Trees extends ast.Trees {
   }
 
   trait BlockFactory {
-    private class BlockImpl(val stmts: List[Expr], val tpe: TypeState[Type],
+    private class BlockImpl(val stmts: List[Tree], val tpe: TypeState[Type],
       val pos: Option[Position], val owner: Option[TreeId]) extends Block
 
 
-    def apply(stmts: List[Expr], tpe: TypeState[Type], 
+    def apply(stmts: List[Tree], tpe: TypeState[Type], 
       pos: Option[Position] = None, owner: Option[TreeId] = None): Block = 
         new BlockImpl(stmts, tpe, pos, owner)
 

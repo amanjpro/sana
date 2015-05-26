@@ -76,7 +76,7 @@ trait Namers extends names.Namers {
         body  <- bindUseExpr(wile.body)
       } yield While(wile.mods, cond, body, wile.pos, wile.owner)
       case block:Block                                => for {
-        stmts <- block.stmts.map(bindUseExpr(_)).sequenceU
+        stmts <- block.stmts.map(bindUse(_)).sequenceU
         r     <- point(Block(stmts, block.tpe, block.pos, block.owner))
       } yield r
       case forloop:For                                => for {
