@@ -69,7 +69,7 @@ trait AssignOwners extends passes.Phases {
     }
 
     def assign(tree: Tree): OwnerAssignerMonad[Tree] = tree match {
-      case dtree: DefTree                            => for {
+      case dtree: TermTree                           => for {
         r       <- assignDef(dtree)
       } yield r
       case tuse: TypeUse                             => for {
@@ -80,7 +80,7 @@ trait AssignOwners extends passes.Phases {
       } yield e
     }
 
-    def assignDef(dtree: DefTree): OwnerAssignerMonad[DefTree] = dtree match {
+    def assignDef(dtree: TermTree): OwnerAssignerMonad[TermTree] = dtree match {
       case meth: MethodDef                           => for {
         r       <- assignMethodDef(meth)
       } yield r

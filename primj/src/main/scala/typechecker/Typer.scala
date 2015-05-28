@@ -33,17 +33,17 @@ trait Typer extends typechecker.Typers {
   trait Typer extends super.Typer {
 
     override def typeTree(tree: Tree): TypeChecker[Tree] = tree match {
-      case dtree: DefTree => for {
-        ttree <- typeDefTree(dtree)
+      case dtree: TermTree => for {
+        ttree <- typeTermTree(dtree)
       } yield ttree
-      case s: Expr        => for {
+      case s: Expr         => for {
         ts <- typeExpr(s)
       } yield ts
-      case _              => 
+      case _               => 
         super.typeTree(tree)
     }
 
-    def typeDefTree(dtree: DefTree): TypeChecker[DefTree] = dtree match {
+    def typeTermTree(dtree: TermTree): TypeChecker[TermTree] = dtree match {
       case vdef: ValDef     => for {
         ttree <- typeValDef(vdef)
       } yield ttree

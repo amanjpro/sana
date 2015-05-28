@@ -7,7 +7,7 @@ import sana.calcj
 import tiny.ast
 import tiny.ast.Flags
 import tiny.source.Position
-import tiny.contexts.TreeContexts
+import tiny.contexts._
 import tiny.names.Names._
 import tiny.types
 import calcj.ast.JavaOps._

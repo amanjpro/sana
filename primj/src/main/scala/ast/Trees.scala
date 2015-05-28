@@ -7,7 +7,7 @@ import sana.calcj
 import sana.primj
 import tiny.ast.Flags
 import tiny.source.Position
-import tiny.contexts.TreeContexts
+import tiny.contexts._
 import tiny.names.Names._
 import calcj.ast.JavaOps._
 import calcj.ast.Constants
@@ -31,7 +31,7 @@ trait Trees extends ast.Trees {
   /********************* AST Nodes *********************************/
   // Variable and Method definitions
 
-  trait MethodDef extends DefTree {
+  trait MethodDef extends TermTree {
     def ret: TypeUse
     def params: List[ValDef]
     def body: Expr
@@ -52,7 +52,7 @@ trait Trees extends ast.Trees {
 
   }
   
-  trait ValDef extends DefTree {
+  trait ValDef extends TermTree {
     def tpt: TypeUse
     def rhs: Expr
     def tpe: TypeState[Type] = tpt.tpe

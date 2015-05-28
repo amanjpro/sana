@@ -29,9 +29,9 @@ trait Namers extends names.Namers {
     def canRedefine: Boolean
 
     def named(tree: Tree): NamerMonad[Tree] 
-    def nameDef(defTree: DefTree): NamerMonad[DefTree]
+    def nameDef(defTree: TermTree): NamerMonad[TermTree]
     def bindUse(tree: Tree): NamerMonad[Tree] = tree match {
-      case deftree: DefTree                           => for {
+      case deftree: TermTree                          => for {
        r <- bindUseDefs(deftree)
       } yield r
       case tuse: TypeUse                              => for {
@@ -43,7 +43,7 @@ trait Namers extends names.Namers {
       } yield e
     }
 
-    def bindUseDefs(defTree: DefTree): NamerMonad[DefTree] 
+    def bindUseDefs(defTree: TermTree): NamerMonad[TermTree] 
     //= defTree match {
     //   case m:MethodDef                                => for {
     //      
