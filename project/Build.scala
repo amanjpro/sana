@@ -1,13 +1,17 @@
 import sbt._
 import Keys._
 import com.simplytyped.Antlr4Plugin._
-import sbtassembly.Plugin._
-import AssemblyKeys._
+import sbtassembly.AssemblyPlugin.autoImport._
 
 
 object SharedSettings {
   def sourceURL(proj: String, branch: String = "master"): String = 
     s"https://github.com/amanjpro/sana/blob/$branch/$proj€{FILE_PATH}.scala#L1"
+
+  def antlr(proj: String): Option[String] = 
+    Some(s"ch.usi.inf.l3.sana.calcj.$proj")
+
+
   val buildSettings  = antlr4Settings ++ Defaults.defaultSettings ++ Seq(
     version := "0.1-SNAPSHOT",
     organization := "ch.usi.inf.l3",
@@ -17,6 +21,17 @@ object SharedSettings {
     javaSource in Antlr4 := (javaSource in Compile).value,
     antlr4GenListener in Antlr4 := false,
     antlr4GenVisitor in Antlr4 := true,
+    assemblyMergeStrategy in assembly := {
+      case PathList("org", "antlr4", xs @ _*)              => MergeStrategy.first
+      case PathList("org", "antlr", xs @ _*)               => MergeStrategy.first
+      case PathList("org", "stringtemplate", xs @ _*)      => MergeStrategy.first
+      // case PathList(ps @ _*) if ps.last endsWith ".html" => MergeStrategy.first
+      // case "application.conf"                            => MergeStrategy.concat
+      // case "unwanted.txt"                                => MergeStrategy.discard
+      case x =>
+        val oldStrategy = (assemblyMergeStrategy in assembly).value
+        oldStrategy(x)
+    },
     scalacOptions ++= Seq("-unchecked", "-deprecation", 
       "-feature", "-Xlint", "-Xfatal-warnings"), 
     scalacOptions in (Compile, doc) ++= Seq("-groups", "-implicits",
@@ -44,6 +59,7 @@ object SharedSettings {
     autoAPIMappings := true,
     libraryDependencies ++= 
       List("org.scalatest" % "scalatest_2.11" % "2.2.4" % "test",
+            "org.antlr" % "antlr4" % "4.5",
             "org.ow2.asm" % "asm-all" % "5.0.3", 
             "org.scalaz" %% "scalaz-core" % "7.1.1")
   )
@@ -68,23 +84,18 @@ object build extends Build {
         bd => Seq("-sourcepath", bd.getAbsolutePath, 
           "-doc-source-url", sourceURL("tiny"))
       },
-      antlr4PackageName in Antlr4 := Some("ch.usi.inf.l3.sana.tiny.antlr"))
+      antlr4PackageName in Antlr4 := antlr("tiny"))
   ) 
 
   lazy val calcj = Project(
     id   = "calcj",
-    base = file("calcj")
-  ) settings (
+    base = file("calcj"),
+    settings = buildSettings ++ Seq(
     scalacOptions in (Compile, doc) <++= (baseDirectory in LocalProject("calcj")).map {
       bd => Seq("-sourcepath", bd.getAbsolutePath, "-doc-source-url", sourceURL("calcj"))
     },
-    artifact in (Compile, assembly) ~= { art =>
-      art.copy(`classifier` = Some("assembly"))
-    }
-  ) settings (buildSettings ++ assemblySettings ++ Seq(
-      antlr4PackageName in Antlr4 := Some("ch.usi.inf.l3.sana.calcj.antlr") 
-    ) ++ addArtifact(artifact in (Compile, assembly), 
-      assembly) : _*) dependsOn(tiny)
+    antlr4PackageName in Antlr4 := antlr("calcj"))
+  ) dependsOn(tiny)
 
   lazy val primj = Project(
     id   = "primj",
@@ -93,6 +104,6 @@ object build extends Build {
       scalacOptions in (Compile, doc) <++= (baseDirectory in LocalProject("primj")).map {
         bd => Seq("-sourcepath", bd.getAbsolutePath, "-doc-source-url", sourceURL("primj"))
       },
-      antlr4PackageName in Antlr4 := Some("ch.usi.inf.l3.sana.primj.antlr"))
+      antlr4PackageName in Antlr4 := antlr("primj"))
   ) dependsOn(calcj)
 }
