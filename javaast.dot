@@ -3,10 +3,13 @@ strict digraph JavaAST {
   orientation="landscape";
   ratio=fill;
   /*
+
+    -- DefTree
+    TermTree, TypeTree
     -- TypeTree
     class, interface
 
-    -- DefTree 
+    -- TermTree 
     filed, variable, param, 
     method, constructor 
 
@@ -32,11 +35,15 @@ strict digraph JavaAST {
     -- Alone
     return
   */
-  Tree -> TypeTree;
   Tree -> DefTree;
   Tree -> Statement;
   Tree -> Case;
 
+
+  subgraph {
+    DefTree -> TermTree;
+    DefTree -> TypeTree;
+  }
 
   subgraph {
     TypeTree -> ClassDef;
