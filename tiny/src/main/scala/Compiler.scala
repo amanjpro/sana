@@ -8,14 +8,13 @@ import tiny.parser.Parsers
 import tiny.contexts.TreeContexts
 import tiny.ast.Trees
 import tiny.ast.TreeGen
-import tiny.util.CompilationUnits
-import tiny.util.MonadUtils
+import tiny.util._
 import tiny.types.Types
 import tiny.passes.Phases
 import tiny.report._
 
 
-trait CompilerApi {
+trait CompilerApi extends SanaConfig {
   self: Parsers with 
         CompilationUnits with 
         Phases with 
@@ -26,6 +25,7 @@ trait CompilerApi {
   val phases: List[Phase]
 
   def sourceReader: SourceReader
+
   protected def compileUnit(unit: CompilationUnit): 
           (Vector[Failure], CompilationUnit) = {
     phases.foldLeft((Vector.empty[Failure], unit))((z, y) => {
