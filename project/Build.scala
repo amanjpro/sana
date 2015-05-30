@@ -9,8 +9,12 @@ object SharedSettings {
     s"https://github.com/amanjpro/sana/blob/$branch/$proj€{FILE_PATH}.scala#L1"
 
   def antlr(proj: String): Option[String] = 
-    Some(s"ch.usi.inf.l3.sana.calcj.$proj")
+    Some(s"ch.usi.inf.l3.sana.$proj.antlr")
 
+
+  
+  def antlrSetting(name: String): Setting[Option[String]] = 
+    antlr4PackageName in Antlr4 := antlr(name)
 
   val buildSettings  = antlr4Settings ++ Defaults.defaultSettings ++ Seq(
     version := "0.1-SNAPSHOT",
@@ -68,6 +72,25 @@ object build extends Build {
 
   import SharedSettings._
 
+  def project(name: String, deps: Seq[Project] = Nil,
+        moreSettings: Seq[Setting[_]] = Seq()): Project = {
+    val proj = Project(
+      id   = name,
+      base = file(name),
+      settings = buildSettings ++ moreSettings ++ Seq(
+        scalacOptions in (Compile, doc) <++= (baseDirectory in 
+          LocalProject(name)).map {
+            bd => Seq("-sourcepath", bd.getAbsolutePath, 
+              "-doc-source-url", sourceURL(name))
+          })
+    )
+    deps match {
+      case Seq()      => proj
+      case Seq(d)     => proj dependsOn d
+      case _          => proj dependsOn (deps.flatMap(_.dependencies): _*)
+    }
+  }
+
   lazy val root = Project(
     id = "root",
     base = file("."),
@@ -75,34 +98,29 @@ object build extends Build {
     aggregate = Seq(tiny, calcj, primj)
   ) 
 
-  lazy val tiny = Project(
-    id   = "tiny",
-    base = file("tiny"),
-    settings = buildSettings ++ Seq(
-      scalacOptions in (Compile, doc) <++= (baseDirectory in LocalProject("tiny")).map {
-        bd => Seq("-sourcepath", bd.getAbsolutePath, 
-          "-doc-source-url", sourceURL("tiny"))
-      },
-      antlr4PackageName in Antlr4 := antlr("tiny"))
-  ) 
+  lazy val tiny = project("tiny")
+   
 
-  lazy val calcj = Project(
-    id   = "calcj",
-    base = file("calcj"),
-    settings = buildSettings ++ Seq(
-    scalacOptions in (Compile, doc) <++= (baseDirectory in LocalProject("calcj")).map {
-      bd => Seq("-sourcepath", bd.getAbsolutePath, "-doc-source-url", sourceURL("calcj"))
-    },
-    antlr4PackageName in Antlr4 := antlr("calcj"))
-  ) dependsOn(tiny)
+  lazy val calcj = project("calcj", Seq(tiny), Seq(antlrSetting("calcj")))
 
-  lazy val primj = Project(
-    id   = "primj",
-    base = file("primj"),
-    settings = buildSettings ++ Seq(
-      scalacOptions in (Compile, doc) <++= (baseDirectory in LocalProject("primj")).map {
-        bd => Seq("-sourcepath", bd.getAbsolutePath, "-doc-source-url", sourceURL("primj"))
-      },
-      antlr4PackageName in Antlr4 := antlr("primj"))
-  ) dependsOn(calcj)
+  // Project(
+  //   id   = "calcj",
+  //   base = file("calcj"),
+  //   settings = buildSettings ++ Seq(
+  //   scalacOptions in (Compile, doc) <++= (baseDirectory in LocalProject("calcj")).map {
+  //     bd => Seq("-sourcepath", bd.getAbsolutePath, "-doc-source-url", sourceURL("calcj"))
+  //   },
+  //   antlr4PackageName in Antlr4 := antlr("calcj"))
+  // ) dependsOn(tiny)
+
+  lazy val primj = project("primj", Seq(calcj))
+  //   Project(
+  //   id   = "primj",
+  //   base = file("primj"),
+  //   settings = buildSettings ++ Seq(
+  //     scalacOptions in (Compile, doc) <++= (baseDirectory in LocalProject("primj")).map {
+  //       bd => Seq("-sourcepath", bd.getAbsolutePath, "-doc-source-url", sourceURL("primj"))
+  //     },
+  //     antlr4PackageName in Antlr4 := antlr("primj"))
+  // ) dependsOn(calcj)
 }
