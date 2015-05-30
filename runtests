@@ -1,5 +1,5 @@
 #!/bin/sh
-exec scala -save "$0" "$@"
+exec scala -save -deprecation -feature "$0" "$@"
 !#
 
 import java.util.Random
