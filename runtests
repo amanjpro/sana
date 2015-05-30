@@ -9,7 +9,7 @@ import java.io._
 import scala.language.postfixOps
 
 
-val VERSION = "0.1-SNAPSHOT.jar"
+val VERSION = "0.1-SNAPSHOT"
 val SVERSION = "2.11"
 val red = "\u001b[91m"
 val green = "\u001b[92m"
@@ -94,18 +94,20 @@ def start(opts: List[String]): Unit = {
     case List("recompile", "all")   =>
       val dirs = new File("tests").listFiles.filter(_.isDirectory)
       dirs.foreach((x) => {
-        s"sbt $x/assembly".!
-        s"cp $x/target/scala$SVERSION/$x-assembly-$VERSION.jar bin/$x.jar".!
+        val n = x.getName
+        println(n)
+        s"sbt $n/assembly".!
+        s"cp $n/target/scala-$SVERSION/$n-assembly-$VERSION.jar bin/$n.jar".!
       })
       start(List("all"))
     case List("recompile", x)       =>
       s"sbt $x/assembly".! 
-      s"cp $x/target/scala$SVERSION/$x-assembly-$VERSION.jar bin/$x.jar".!
+      s"cp $x/target/scala-$SVERSION/$x-assembly-$VERSION.jar bin/$x.jar".!
       start(List(x))
     case List("all")                =>
       val dirs = new File("tests").listFiles.filter(_.isDirectory)
       dirs.foreach((x) => {
-        testDir(x.getAbsolutePath, s"bin/${x.getName}")
+        testDir(x.getAbsolutePath, s"bin/${x.getName}.jar")
       })
     case List(dir)                  =>
       testDir(s"tests/$dir", s"bin/$dir.jar")
