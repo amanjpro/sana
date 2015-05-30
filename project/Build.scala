@@ -59,7 +59,6 @@ object SharedSettings {
     autoAPIMappings := true,
     libraryDependencies ++= 
       List("org.scalatest" % "scalatest_2.11" % "2.2.4" % "test",
-            "org.antlr" % "antlr4" % "4.5",
             "org.ow2.asm" % "asm-all" % "5.0.3", 
             "org.scalaz" %% "scalaz-core" % "7.1.1")
   )
