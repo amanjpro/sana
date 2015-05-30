@@ -27,6 +27,7 @@ trait CompilationUnits {
 
 
     def withState(state: TreeContext): CompilationUnit
+    override def toString: String = s"compilation unit for $fileName"
   }
 
   trait CompilationUnitFactory {
@@ -41,12 +42,15 @@ trait CompilationUnits {
     def apply(tree: Tree, state: TreeContext,
       fileName: String): CompilationUnit = 
       new CompilationUnitImpl(tree, state, fileName)
+
   }
 
 
   trait ErroneousCompilationUnitFactory {
     class ErroneousCompilationUnitImpl(val state: TreeContext,
               val fileName: String) extends CompilationUnit {
+      override def toString: String = 
+        s"erroneous compilation unit for $fileName"
       val tree: Tree = Empty
       def withState(st: TreeContext): CompilationUnit = {
         apply(st, fileName)
