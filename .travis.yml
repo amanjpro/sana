@@ -5,8 +5,10 @@ scala:
 
 before_script:
   - sbt calcj/antlr4:antlr4Generate 
-  - sbt caclj/assembly
+  - sbt calcj/assembly
   - sbt primj/compile
 
 
-script: "./runtests calcj"
+script: 
+  - "./runtests calcj"
+  - "sbt test"
