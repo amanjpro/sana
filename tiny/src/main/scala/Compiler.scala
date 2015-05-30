@@ -14,7 +14,7 @@ import tiny.passes.Phases
 import tiny.report._
 
 
-trait CompilerApi extends SanaConfig {
+trait CompilerApi {
   self: Parsers with 
         CompilationUnits with 
         Phases with 
