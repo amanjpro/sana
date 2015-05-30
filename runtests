@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 exec scala -save -deprecation -feature "$0" "$@"
 !#
 
@@ -9,6 +9,8 @@ import java.io._
 import scala.language.postfixOps
 
 
+val VERSION = "0.1-SNAPSHOT.jar"
+val SVERSION = "2.11"
 val red = "\u001b[91m"
 val green = "\u001b[92m"
 val endcolor = "\u001b[0m"
@@ -89,6 +91,17 @@ def testDir(dir: String, prg: String): Unit = {
 
 def start(opts: List[String]): Unit = {
   opts match {
+    case List("recompile", "all")   =>
+      val dirs = new File("tests").listFiles.filter(_.isDirectory)
+      dirs.foreach((x) => {
+        s"sbt $x/assembly".!
+        s"cp $x/target/scala$SVERSION/$x-assembly-$VERSION.jar bin/$x.jar".!
+      })
+      start(List("all"))
+    case List("recompile", x)       =>
+      s"sbt $x/assembly".! 
+      s"cp $x/target/scala$SVERSION/$x-assembly-$VERSION.jar bin/$x.jar".!
+      start(List(x))
     case List("all")                =>
       val dirs = new File("tests").listFiles.filter(_.isDirectory)
       dirs.foreach((x) => {
