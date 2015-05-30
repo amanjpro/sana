@@ -3,7 +3,6 @@ package ch.usi.inf.l3.sana.calcj
 
 import ch.usi.inf.l3.sana
 import sana.tiny
-import sana.calcj
 import tiny.ast.TreeGen
 import tiny.util.CompilationUnits
 import tiny.util.MonadUtils
@@ -12,12 +11,12 @@ import tiny.report._
 import tiny.contexts.TreeContexts
 import tiny.source.SourceReader
 import tiny.source.SourceFile
-import calcj.typechecker.Typers
-import calcj.ast.Trees
-import calcj.antlr._
-import calcj.types.Types
-import calcj.ast.Constants
-import calcj.parser.Parsers
+import typechecker.Typers
+import ast.Trees
+import antlr._
+import types.Types
+import ast.Constants
+import parser.Parsers
 
 import org.antlr.v4.runtime._
 import org.antlr.v4.runtime.tree._
