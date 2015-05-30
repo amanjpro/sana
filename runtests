@@ -109,3 +109,4 @@ def start(opts: List[String]): Unit = {
       // TYPE_MISMATCH    (make sure to leave the space after //)
 */
 start(args.toList)
+System.exit(failed)
