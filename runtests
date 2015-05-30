@@ -95,7 +95,6 @@ def start(opts: List[String]): Unit = {
       val dirs = new File("tests").listFiles.filter(_.isDirectory)
       dirs.foreach((x) => {
         val n = x.getName
-        println(n)
         s"sbt $n/assembly".!
         s"cp $n/target/scala-$SVERSION/$n-assembly-$VERSION.jar bin/$n.jar".!
       })
