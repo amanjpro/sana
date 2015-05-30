@@ -14,7 +14,7 @@ import calcj.ast.JavaOps._
 
 import scalaz.{Name => _, Failure => _, _}
 import scalaz.Scalaz._
-import scala.language.higherKinds
+import scala.language.{higherKinds,implicitConversions}
 
 // From Java Specification 1.0 - Sect: 5.2 - p61
 // 1- Assignment Conversion
@@ -32,13 +32,18 @@ trait Typers extends passes.Phases {
   type Stacked[A]             = Outer[Inner, A]
   type TypeChecker[T <: Tree] = Stacked[T]
 
-  def toTypeChecker[A](x: Outer[Id, A]): Stacked[A] = x.lift[Inner]
+  implicit def toTypeChecker[A](x: Outer[Id, A]): Stacked[A] = x.lift[Inner]
+  implicit def toTypeChecker[A](x: Writer[Vector[Failure], A]): Stacked[A] = 
+    x.liftM[Outer]
+  protected def point[A](t: A): Outer[Inner, A] = t.point[Stacked]
+
+  implicit def tree2Writer[T](t: T): Stacked[T] =
+      point(t)
+
 
   trait Typer extends TransformerPhase {
     
-    protected def point[A](t: A): Outer[Inner, A] = t.point[Stacked]
-
-
+    
     val name: String = "typer"
     override val description: Option[String] = 
       Some("The main type-checking phase.")
@@ -82,7 +87,7 @@ trait Typers extends passes.Phases {
       for {
         etree      <- typeExpr(unary.expr)              
         etpe       <- toTypeChecker(etree.tpe)
-        utpe       <- point(unaryTyper(etpe, unary))
+        utpe       <- unaryTyper(etpe, unary)
         expr       <- point {                           
           utpe match {
             case u: UnaryType => castIfNeeded(etree, u.op, utpe)
@@ -119,7 +124,7 @@ trait Typers extends passes.Phases {
         // cannot infer the type of ``let-binding'' well.
         // i.e. I cannot say btpe = binaryTyper(...) without
         // ascribing btpe's type, which results in a warning
-        btpe                 <- point(binaryTyper(rtpe, ltpe, bin))
+        btpe                 <- binaryTyper(rtpe, ltpe, bin)
         // INFO:
         // We cannot pattern match against the tuple here,
         // due to a bug in the Scala Compiler #SI-1336
@@ -153,7 +158,7 @@ trait Typers extends passes.Phases {
     }
 
 
-    def unaryTyper(tpe: Type, unary: Unary): Type = {
+    def unaryTyper(tpe: Type, unary: Unary): Stacked[Type] = {
       (unary.op, tpe)  match {
         case (Not, BooleanType)                              => 
           UnaryType(BooleanType, BooleanType)
@@ -170,35 +175,41 @@ trait Typers extends passes.Phases {
           UnaryType(x, x)
         case (Dec, x: NumericType)                           => 
           UnaryType(x, x)
-        case (Not, _)                                        => 
-          error(TYPE_MISMATCH,
-            tpe.toString, "boolean", unary.expr.pos, unary.expr)
-          ErrorType
-        case (Pos, _) | (Neg, _) | (Inc, _) | (Dec, _)       => 
-          error(TYPE_MISMATCH,
-            tpe.toString, "a numeric type", unary.expr.pos, unary.expr)
-          ErrorType
-        case _                                               => 
-          error(TYPE_MISMATCH,
-            tpe.toString, "an integral type", unary.expr.pos, unary.expr)
-          ErrorType
+        case (Not, _)                                        => for {
+          _ <- toTypeChecker(error(TYPE_MISMATCH,
+            tpe.toString, "boolean", unary.expr.pos, unary.expr))
+          r <- point(ErrorType)
+        } yield r
+        case (Pos, _) | (Neg, _) | (Inc, _) | (Dec, _)       => for {
+          _ <- toTypeChecker(error(TYPE_MISMATCH,
+            tpe.toString, "a numeric type", unary.expr.pos, unary.expr))
+          r <- point(ErrorType)
+        } yield r
+        case _                                               => for {
+          _ <- toTypeChecker(error(TYPE_MISMATCH,
+            tpe.toString, "an integral type", unary.expr.pos, unary.expr))
+          r <- point(ErrorType)
+        } yield r
       }
     }
 
-    def binaryTyper(ltpe: Type, rtpe: Type, bin: Binary): Type = bin.op match {
+    def binaryTyper(ltpe: Type, 
+      rtpe: Type, bin: Binary): Stacked[Type] = bin.op match {
         case Gt | Lt | Le | Ge                      => 
           (ltpe, rtpe) match {
             case (x: NumericType, y: NumericType)   =>
               val t = binaryNumericPromotion(x, y)
               BinaryType(t, t, BooleanType)
-            case (_: NumericType, _)                => 
-              error(TYPE_MISMATCH,
-                rtpe.toString, "a numerical type", bin.rhs.pos, bin.rhs)
-              ErrorType
-            case _                                  => 
-              error(TYPE_MISMATCH,
-                ltpe.toString, "a numerical type", bin.lhs.pos, bin.lhs)
-              ErrorType
+            case (_: NumericType, _)                => for {
+              _ <- toTypeChecker(error(TYPE_MISMATCH,
+                rtpe.toString, "a numerical type", bin.rhs.pos, bin.rhs))
+              r <- point(ErrorType)
+            } yield r
+            case _                                  => for {
+              _ <- toTypeChecker(error(TYPE_MISMATCH,
+                ltpe.toString, "a numerical type", bin.lhs.pos, bin.lhs))
+              r <- point(ErrorType)
+            } yield r
           }
         case Eq | Neq                               => 
           (ltpe, rtpe) match {
@@ -209,23 +220,27 @@ trait Typers extends passes.Phases {
               BinaryType(t, t, BooleanType)
             case (StringType, StringType)           => 
               BinaryType(StringType, StringType, BooleanType)
-            case _                                  => 
-              error(TYPE_MISMATCH,
-                ltpe.toString, "a primitive type", bin.pos, bin)
-              ErrorType
+            case _                                  => for {
+              _ <- toTypeChecker(error(TYPE_MISMATCH,
+                ltpe.toString, "a primitive type", bin.pos, bin))
+              r <- point(ErrorType)
+            } yield r
           }
         case And | Or | Amp | Pipe | Xor            => 
           (ltpe, rtpe) match {
             case (BooleanType, BooleanType)         =>
               BinaryType(BooleanType, BooleanType, BooleanType)
-            case (BooleanType, _)                   => 
-              error(TYPE_MISMATCH,
-                rtpe.toString, "bolean", bin.rhs.pos, bin.rhs)
-              ErrorType
-            case _                                  =>
-              error(TYPE_MISMATCH,
-                ltpe.toString, "bolean", bin.lhs.pos, bin.lhs)
-              ErrorType
+            case (BooleanType, _)                   => for {
+              _ <- toTypeChecker(error(TYPE_MISMATCH,
+                rtpe.toString, "bolean", bin.rhs.pos, bin.rhs))
+              r <- point(ErrorType)
+            } yield r
+            case _                                  => for {
+              _ <- toTypeChecker(error(TYPE_MISMATCH,
+                ltpe.toString, "bolean", bin.lhs.pos, bin.lhs))
+              r <- point(ErrorType)
+            } yield r
+
           } 
         case Add                                    =>
           (ltpe, rtpe) match {
@@ -235,28 +250,32 @@ trait Typers extends passes.Phases {
             case (StringType, _: PrimitiveType) | 
                   (_: PrimitiveType, StringType)    =>
               BinaryType(StringType, StringType, StringType)
-            case (_: NumericType, _)                => 
-              error(TYPE_MISMATCH,
-                rtpe.toString, "a numerical type", bin.rhs.pos, bin.rhs)
-              ErrorType
-            case _                                  => 
-              error(TYPE_MISMATCH,
-                ltpe.toString, "a numerical type", bin.lhs.pos, bin.lhs)
-              ErrorType
+            case (_: NumericType, _)                => for {
+              _ <- toTypeChecker(error(TYPE_MISMATCH,
+                rtpe.toString, "a numerical type", bin.rhs.pos, bin.rhs))
+              r <- point(ErrorType)
+            } yield r
+            case _                                  => for {
+              _ <- toTypeChecker(error(TYPE_MISMATCH,
+                ltpe.toString, "a numerical type", bin.lhs.pos, bin.lhs))
+              r <- point(ErrorType)
+            } yield r
           }
         case Sub | Mul | Div | Mod                  => 
           (ltpe, rtpe) match {
             case (x: NumericType, y: NumericType)   =>
               val t = binaryNumericPromotion(x, y)
               BinaryType(t, t, t)
-            case (_: NumericType, _)                => 
-              error(TYPE_MISMATCH,
-                rtpe.toString, "a numerical type", bin.rhs.pos, bin.rhs)
-              ErrorType
-            case _                                  => 
-              error(TYPE_MISMATCH,
-                ltpe.toString, "a numerical type", bin.lhs.pos, bin.lhs)
-              ErrorType
+            case (_: NumericType, _)                => for {
+              _ <- toTypeChecker(error(TYPE_MISMATCH,
+                rtpe.toString, "a numerical type", bin.rhs.pos, bin.rhs))
+              r <- point(ErrorType)
+            } yield r
+            case _                                  => for {
+              _ <- toTypeChecker(error(TYPE_MISMATCH,
+                ltpe.toString, "a numerical type", bin.lhs.pos, bin.lhs))
+              r <- point(ErrorType)
+            } yield r
 
           }
 
@@ -274,14 +293,16 @@ trait Typers extends passes.Phases {
               val t1 = unaryNumericPromotion(x)
               val t2 = unaryNumericPromotion(y)
               BinaryType(t1, t2, t1)
-            case (_: IntegralType, _)                => 
-              error(TYPE_MISMATCH,
-                rtpe.toString, "an integral type", bin.rhs.pos, bin.rhs)
-              ErrorType
-            case _                                  => 
-              error(TYPE_MISMATCH,
-                ltpe.toString, "an integral type", bin.lhs.pos, bin.lhs)
-              ErrorType
+            case (_: IntegralType, _)               => for {
+              _ <- toTypeChecker(error(TYPE_MISMATCH,
+                rtpe.toString, "an integral type", bin.rhs.pos, bin.rhs))
+              r <- point(ErrorType)
+            } yield r
+            case _                                  => for {
+              _ <- toTypeChecker(error(TYPE_MISMATCH,
+                ltpe.toString, "an integral type", bin.lhs.pos, bin.lhs))
+              r <- point(ErrorType)
+            } yield r
           }
 
     }

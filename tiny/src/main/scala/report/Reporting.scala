@@ -9,24 +9,28 @@ import tiny.contexts.TreeContexts
 import scalaz.{Name => _, _}
 import Scalaz._
 
-trait ErrorCode
-case object BAD_STATEMENT extends ErrorCode
-case object TYPE_MISMATCH extends ErrorCode
-case object UNEXPETED_TREE extends ErrorCode
+trait ErrorCode {
+  def message: String
+  lazy val code: String = this.toString
+}
+case object BAD_STATEMENT extends ErrorCode {
+  val message: String = "Unexpected expressions here"
+}
+case object TYPE_MISMATCH extends ErrorCode {
+  val message: String = "Type mismatch"
+}
+case object UNEXPETED_TREE extends ErrorCode {
+  val message: String = "Unexpected tree"
+}
 
 trait Reporting {
   self: Trees with TreeContexts =>
 
   
-  def errorCodeToMsg(n: ErrorCode): String = n match {
-    case BAD_STATEMENT       => "Unexpected expressions here"
-    case TYPE_MISMATCH       => "Type mismatch"
-    case UNEXPETED_TREE      => "Unexpected tree"
-  }
-  
+  def errorCodeToMsg(n: ErrorCode): String = n.message  
 
   def isErroneous(v: Vector[Failure]): Boolean = 
-    v.filter(_.isError) == Vector.empty
+    v.filter(_.isError) != Vector.empty
 
   protected def createMessage[T](code: ErrorCode, found: String,
     required: String, pos: Option[Position],
@@ -46,16 +50,23 @@ trait Reporting {
       |$caret""".stripMargin
   }
 
+  protected def createMessageOrGetCode[T](code: ErrorCode, found: String,
+    required: String, pos: Option[Position],
+    t: T): String = if(true) code.code 
+                    else 
+                      createMessage(code, found, required, pos, t)
+
+
   def error[T](code: ErrorCode, found: String, required: String,
     pos: Option[Position],
     t: T): Writer[Vector[Failure], Unit] = 
       Vector(Failure(Error, 
-                  createMessage(code, found, required, pos, t))).tell
+                  createMessageOrGetCode(code, found, required, pos, t))).tell
 
   def warning[T](code: ErrorCode, found: String, required: String,
     pos: Option[Position],
     t: T): Writer[Vector[Failure], Unit] = 
       Vector(Failure(Warning, 
-                  createMessage(code, found, required, pos, t))).tell
+                  createMessageOrGetCode(code, found, required, pos, t))).tell
 
 }
