@@ -34,7 +34,8 @@ case class Failure(kind: ErrorKind,
   //   }
   //   s"${text(wno, "warning")}\n${text(eno, "error")}"
   // } 
-  override def toString: String = s"$kind: $msg"
+  // TODO: Read SanaConfig if we are testing the compiler or not
+  override def toString: String = if(true) msg else s"$kind: $msg"
     
     // msg + s"\n${errorFound(warningNo, errorNo)}\nCompilation Unsuccessful"
 }

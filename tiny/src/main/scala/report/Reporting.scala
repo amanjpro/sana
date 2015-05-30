@@ -50,6 +50,7 @@ trait Reporting {
       |$caret""".stripMargin
   }
 
+  // TODO: Read SanaConfig if we are testing the compiler or not
   protected def createMessageOrGetCode[T](code: ErrorCode, found: String,
     required: String, pos: Option[Position],
     t: T): String = if(true) code.code 
