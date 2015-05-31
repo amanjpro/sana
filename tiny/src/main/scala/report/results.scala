@@ -11,8 +11,7 @@ package ch.usi.inf.l3.sana.tiny.report
 // }
 
 // Fix error reporting
-case class Failure(kind: ErrorKind, 
-  msg: String) { // extends Result 
+case class Failure(kind: ErrorKind, msg: String, isTest: Boolean) { // extends Result 
   // def ++(r: Result): Result = r match {
   //   case f: Failure   => 
   //     Failure(f.kind, s"${msg}\n${f.kind}: ${f.msg}", 
@@ -35,7 +34,9 @@ case class Failure(kind: ErrorKind,
   //   s"${text(wno, "warning")}\n${text(eno, "error")}"
   // } 
   // TODO: Read SanaConfig if we are testing the compiler or not
-  override def toString: String = if(true) msg else s"$kind: $msg"
+  override def toString: String = 
+    if(isTest) msg 
+    else s"$kind: $msg"
     
     // msg + s"\n${errorFound(warningNo, errorNo)}\nCompilation Unsuccessful"
 }

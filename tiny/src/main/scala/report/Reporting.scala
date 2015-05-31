@@ -27,6 +27,8 @@ trait Reporting {
   self: Trees with TreeContexts =>
 
   
+  val isTest: Boolean
+
   def errorCodeToMsg(n: ErrorCode): String = n.message  
 
   def isErroneous(v: Vector[Failure]): Boolean = 
@@ -53,7 +55,7 @@ trait Reporting {
   // TODO: Read SanaConfig if we are testing the compiler or not
   protected def createMessageOrGetCode[T](code: ErrorCode, found: String,
     required: String, pos: Option[Position],
-    t: T): String = if(true) code.code 
+    t: T): String = if(isTest) code.code 
                     else 
                       createMessage(code, found, required, pos, t)
 
@@ -62,12 +64,14 @@ trait Reporting {
     pos: Option[Position],
     t: T): Writer[Vector[Failure], Unit] = 
       Vector(Failure(Error, 
-                  createMessageOrGetCode(code, found, required, pos, t))).tell
+                  createMessageOrGetCode(code, found, required, pos, t),
+                  isTest)).tell
 
   def warning[T](code: ErrorCode, found: String, required: String,
     pos: Option[Position],
     t: T): Writer[Vector[Failure], Unit] = 
       Vector(Failure(Warning, 
-                  createMessageOrGetCode(code, found, required, pos, t))).tell
+                  createMessageOrGetCode(code, found, required, pos, t),
+                  isTest)).tell
 
 }

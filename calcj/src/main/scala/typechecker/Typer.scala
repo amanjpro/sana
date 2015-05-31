@@ -26,6 +26,7 @@ trait Typers extends passes.Phases {
         TreeContexts with 
         types.Types with 
         CompilationUnits with
+        Reporting with
         MonadUtils =>
   type Inner[A]               = WriterT[Id, Vector[Failure], A]
   type Outer[F[_], A]         = StateT[F, TreeContext, A]

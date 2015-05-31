@@ -4,8 +4,7 @@ package ch.usi.inf.l3.sana.calcj
 import ch.usi.inf.l3.sana
 import sana.tiny
 import tiny.ast.TreeGen
-import tiny.util.CompilationUnits
-import tiny.util.MonadUtils
+import tiny.util._
 import tiny.passes.Phases
 import tiny.report._
 import tiny.contexts.TreeContexts
@@ -25,7 +24,8 @@ import scalaz.{Failure => Fail, Success => Pass, _}
 import Scalaz._
 
 
-class Compiler extends tiny.CompilerApi
+class Compiler(val isTest: Boolean, 
+               val config: SanaConfig) extends tiny.CompilerApi
   with Parsers
   with Trees
   with Constants
@@ -35,8 +35,12 @@ class Compiler extends tiny.CompilerApi
   with TreeContexts
   with TreeGen 
   with MonadUtils
+  with Reporting
   with CompilationUnits {
 
+
+  val langName: String = "calcj"
+  val langVersion: String = "1.0"
 
   def sourceReader: SourceReader = new SourceReader {
     type P = CalcjParser
@@ -45,7 +49,9 @@ class Compiler extends tiny.CompilerApi
     def parserStart(parser: CalcjParser): ParseTree = parser.program
   }
 
-  val phases: List[Phase] = List(new Typer {})
+
+
+  val standardPhases: List[Phase] = List(new Typer {})
 
   
 }
@@ -56,7 +62,7 @@ object Compiler {
     args.toList match {
       case Nil        => println("No file to parse")
       case fs         => 
-        val compiler = new Compiler()
+        val compiler = new Compiler(true, null)
         val (errors, units) = compiler.start(fs) 
         errors.foreach(println)
         // TODO: Here it should go to codegen

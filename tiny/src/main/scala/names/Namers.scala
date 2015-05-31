@@ -21,7 +21,8 @@ trait Namers extends passes.Phases {
         TreeContexts with 
         Types with 
         CompilationUnits with
-   MonadUtils =>
+        MonadUtils with
+        Reporting =>
 
   type Inner[A]               = WriterT[Id, Vector[Failure], A]
   type Outer[F[_], A]         = StateT[F, TreeContext, A]

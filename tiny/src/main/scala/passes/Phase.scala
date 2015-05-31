@@ -9,8 +9,11 @@ import tiny.source.Position
 import tiny.util.CompilationUnits
 import tiny.contexts.TreeContexts
 
-trait Phases extends Reporting {
-  self: Trees with CompilationUnits with TreeContexts =>
+trait Phases {
+  self: Reporting with 
+        Trees with 
+        CompilationUnits with 
+        TreeContexts =>
 
 
   trait Phase {

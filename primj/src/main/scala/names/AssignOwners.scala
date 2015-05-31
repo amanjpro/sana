@@ -23,7 +23,8 @@ trait AssignOwners extends passes.Phases {
         TreeContexts with 
         Types with 
         CompilationUnits with
-   MonadUtils =>
+        Reporting with
+        MonadUtils =>
 
   type Inner[A]                       = ReaderT[Id, Option[TreeId], A]
   type Outer[F[_], A]                 = StateT[F, TreeContext, A]

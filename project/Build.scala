@@ -29,9 +29,6 @@ object SharedSettings {
       case PathList("org", "antlr4", xs @ _*)              => MergeStrategy.first
       case PathList("org", "antlr", xs @ _*)               => MergeStrategy.first
       case PathList("org", "stringtemplate", xs @ _*)      => MergeStrategy.first
-      // case PathList(ps @ _*) if ps.last endsWith ".html" => MergeStrategy.first
-      // case "application.conf"                            => MergeStrategy.concat
-      // case "unwanted.txt"                                => MergeStrategy.discard
       case x =>
         val oldStrategy = (assemblyMergeStrategy in assembly).value
         oldStrategy(x)
@@ -64,6 +61,7 @@ object SharedSettings {
     libraryDependencies ++= 
       List("org.scalatest" % "scalatest_2.11" % "2.2.4" % "test",
             "org.ow2.asm" % "asm-all" % "5.0.3", 
+            "com.github.scopt" %% "scopt" % "3.3.0",
             "org.scalaz" %% "scalaz-core" % "7.1.1")
   )
 }

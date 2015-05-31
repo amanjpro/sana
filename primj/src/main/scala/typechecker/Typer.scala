@@ -28,6 +28,7 @@ trait Typer extends typechecker.Typers {
         TreeContexts with 
         types.Types with 
         CompilationUnits with
+        Reporting with
         MonadUtils =>
 
   trait Typer extends super.Typer {

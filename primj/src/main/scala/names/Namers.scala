@@ -23,6 +23,7 @@ trait Namers extends names.Namers {
         TreeContexts with 
         Types with 
         CompilationUnits with
+        Reporting with
         MonadUtils =>
 
   trait Namer extends super.Namer {

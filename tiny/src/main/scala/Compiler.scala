@@ -12,6 +12,7 @@ import tiny.util._
 import tiny.types.Types
 import tiny.passes.Phases
 import tiny.report._
+import scopt.OptionParser
 
 
 trait CompilerApi {
@@ -19,16 +20,50 @@ trait CompilerApi {
         CompilationUnits with 
         Phases with 
         TreeContexts with
+        Reporting with
         MonadUtils =>
 
 
-  val phases: List[Phase]
+  val config: SanaConfig
+  val fmName: String = "Sana"
+  def langName: String
+  def langVersion: String
+
+  def commandLineArgumentProcessing(c: SanaConfig) = 
+    new OptionParser[Unit]("scopt") {
+      head(langName, langVersion)
+      opt[Boolean]("Stest") action { case _ =>
+        config.isTest = true
+      } text(s"To active testing mode for $fmName")
+      opt[Unit]('v', "verbose") action { case _ =>
+        config.isVerbose = true
+      } text(s"Set verbose flag to $fmName")
+      opt[Seq[String]]("SPlugin") action { case (plugins, _) =>
+        config.plugins = config.plugins ++ plugins
+      } valueName("<plugin1>, <plugin2>, ...") text(
+        "Comma seperated plugin names to be used.")
+      opt[String]('d', "destination") action { case (dest, _) =>
+        config.destination = Some(dest)
+      } text(s"Set the destination directory for the compiled classes")
+      arg[String]("<file>...") required() unbounded() action { case (f, _) =>
+        config.files = config.files ++ Vector(f) 
+      } text("Unbounded filenames or paths to compile")
+      opt[Seq[String]]("classpath") abbr("cp") action { case (cp, _) =>
+        config.classpath = config.classpath ++ cp
+        // config.copy(libName = k, maxCount = v)
+      } valueName("<cp1>:<cp2>, ...") text(
+        "Colon seperated classpath paths.")
+      help("help") text("prints this usage text")
+      // opt[Boolean]("-SPlugin") action { (x, c) =>
+        // config.copy(foo = x) } text("To active testing mode for Sana")
+    }
+  val standardPhases: List[Phase]
 
   def sourceReader: SourceReader
 
   protected def compileUnit(unit: CompilationUnit): 
           (Vector[Failure], CompilationUnit) = {
-    phases.foldLeft((Vector.empty[Failure], unit))((z, y) => {
+    standardPhases.foldLeft((Vector.empty[Failure], unit))((z, y) => {
       val (fst, snd) = z
       if(isErroneous(fst)) {
         (fst, ErroneousCompilationUnit(snd.state, snd.fileName))
@@ -49,6 +84,7 @@ trait CompilerApi {
       }
     })
   }
+
   protected def compile(cunits: List[CompilationUnit]):
     (Vector[Failure], List[CompilationUnit]) = {
     // FIXME: This is really broken, what about warnings? what about compiling
