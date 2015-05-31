@@ -54,8 +54,6 @@ Please refer to the [wiki](https://github.com/amanjpro/sana/wiki)
 
 [](## Credits)
 
-> TODO: Write credits
-
 ## License
 
 ```
