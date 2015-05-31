@@ -10,7 +10,7 @@ trait Configurations {
     /**
       * @group Testing and Debugging
       */
-    private var printTrees_ : Option[String] = None
+    private[this] var printTrees_ : Option[String] = None
     def printTrees: Option[String] = this.printTrees_
     protected[Configurations] def printTrees_=(v: Option[String]): Unit =
       this.printTrees_ = v
@@ -18,7 +18,7 @@ trait Configurations {
     /**
       * @group Testing and Debugging
       */
-    private var isTest_ : Boolean = false
+    private[this] var isTest_ : Boolean = false
     def isTest: Boolean = this.isTest_
     protected[Configurations] def isTest_=(v: Boolean): Unit =
       this.isTest_ = v
@@ -26,7 +26,7 @@ trait Configurations {
     /**
       * @group Testing and Debugging
       */
-    private var isVerbose_ : Boolean = false
+    private[this] var isVerbose_ : Boolean = false
     def isVerbose: Boolean = this.isVerbose_
     protected[Configurations] def isVerbose_=(v: Boolean): Unit =
       this.isVerbose_ = v
@@ -35,7 +35,7 @@ trait Configurations {
     /**
       * @group Plugins
       */
-    private var plugins_ : Vector[String] = Vector()
+    private[this] var plugins_ : Vector[String] = Vector()
     def plugins: Vector[String] = this.plugins_
     protected[Configurations] def plugins_=(v: Vector[String]): Unit =
       this.plugins_ = v
@@ -43,7 +43,7 @@ trait Configurations {
     /**
       * @group Compilation Options
       */
-    private var classpath_ : Vector[String] = Vector()
+    private[this] var classpath_ : Vector[String] = Vector()
     def classpath: Vector[String] = this.classpath_
     protected[Configurations] def classpath_=(v: Vector[String]): Unit =
       this.classpath_ = v
@@ -51,7 +51,7 @@ trait Configurations {
     /**
       * @group Compilation Options
       */
-    private var files_ : Vector[String] = Vector()
+    private[this] var files_ : Vector[String] = Vector()
     def files: Vector[String] = this.files_
     protected[Configurations] def files_=(v: Vector[String]): Unit =
       this.files_ = v
@@ -59,7 +59,7 @@ trait Configurations {
     /**
       * @group Compilation Options
       */
-    private var destination_ : Option[String] = None
+    private[this] var destination_ : Option[String] = None
     def destination: Option[String] = this.destination_
     protected[Configurations] def destination_=(v: Option[String]): Unit =
       this.destination_ = v
