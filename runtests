@@ -57,7 +57,7 @@ def test(file: String, prg: String): Unit = {
     case (x::y::Nil)  =>
       skip(file)
     case (x::y::rest) =>
-      val rr = s"scala $prg $file".!!
+      val rr = s"scala $prg --Stest $file".!!
       // Only take the first error
       val r = rr.split("\n").head
       if(y.startsWith(s"// ${r}")) {
