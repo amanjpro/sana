@@ -1,4 +1,4 @@
-package ch.usi.inf.l3.sana.tiny.util
+package ch.usi.inf.l3.sana.tiny.settings
 
 class SanaConfig {
   /**

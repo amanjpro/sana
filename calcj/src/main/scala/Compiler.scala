@@ -7,6 +7,7 @@ import tiny.ast.TreeGen
 import tiny.util._
 import tiny.passes.Phases
 import tiny.report._
+import tiny.settings._
 import tiny.contexts.TreeContexts
 import tiny.source.SourceReader
 import tiny.source.SourceFile
