@@ -122,6 +122,6 @@ def start(opts: List[String]): Unit = {
    2- line 2 should show the compilation result, like:
       // TYPE_MISMATCH    (make sure to leave the space after //)
 */
-"mkdir bin".!!
+"mkdir -p bin".!!
 start(args.toList)
 System.exit(failed)
