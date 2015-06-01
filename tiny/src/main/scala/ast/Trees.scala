@@ -70,7 +70,7 @@ trait Trees {
       * syntactically encloses this tree.
       * 
       *
-      * @see [[contexts.TreeId]]
+      * @see [[tiny.contexts.TreeId]]
       * @return Optionally the owner of this AST node.
       */
     def owner: Option[TreeId]
@@ -78,7 +78,7 @@ trait Trees {
     /**
       * Returns the position of this AST node in the parsed source file.
       *
-      * @see [[source.Position]]
+      * @see [[tiny.source.Position]]
       * @return Optionally the position of this AST node.
       */
     def pos: Option[Position] 
@@ -96,7 +96,7 @@ trait Trees {
       * This ''id'' is used in `owner` computing, and also later in name 
       * resolution.
       *
-      * @see [[contexts.TreeId]]
+      * @see [[tiny.contexts.TreeId]]
       * @return The id for this AST node.
       */
     def id: TreeId
@@ -172,7 +172,7 @@ trait Trees {
     /**
       * The ''id'' of the [[DefTree]] that this tree points too.
       *
-      * @see [[contexts.TreeId]]
+      * @see [[tiny.contexts.TreeId]]
       * @return Optionally the id for the [[DefTree]] that this tree uses.
       */
     def uses: Option[TreeId]
