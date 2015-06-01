@@ -58,14 +58,14 @@ type
     ;
 
 primitiveType
-    :   'boolean'                                        # BoolType
-    |   'char'                                           # CharType
-    |   'byte'                                           # ByteType
-    |   'short'                                          # ShortType
-    |   'int'                                            # IntType
-    |   'long'                                           # LongType
-    |   'float'                                          # FloatType
-    |   'double'                                         # DoubleType
+    :   'boolean'
+    |   'char'
+    |   'byte'
+    |   'short'
+    |   'int'
+    |   'long'
+    |   'float'
+    |   'double'
     ;
 
 voidType

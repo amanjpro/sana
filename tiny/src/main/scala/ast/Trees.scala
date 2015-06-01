@@ -5,6 +5,7 @@ import ch.usi.inf.l3.sana.tiny
 import tiny.source.Position
 import tiny.names.Names
 import tiny.contexts._
+import tiny.modifiers._
 import Names._
 import tiny.types._
 
@@ -367,4 +368,3 @@ trait Trees {
   }
 }
 
-trait Flags
