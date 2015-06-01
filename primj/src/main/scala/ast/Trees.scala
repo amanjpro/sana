@@ -29,8 +29,26 @@ trait Trees extends ast.Trees {
   self: types.Types with Constants with TreeContexts =>
 
   /********************* AST Nodes *********************************/
-  // Variable and Method definitions
 
+  /**
+    * Template is the AST node that represents the body of classes and
+    * interfaces. 
+    *
+    * [[primj]] has no class or interface, but having this node makes 
+    * going having multiple definitions in a single compilation unit.
+    *
+    * @group Api
+    */
+  trait Template extends Tree {
+    /**
+      * List of definitions defined in this template.
+      */
+    def members: List[DefTree]
+    def tpe: TypeState[Type] = toTypeState(VoidType)
+    def pos: Option[Position] = None
+  }
+
+  // Variable and Method definitions
   trait MethodDef extends TermTree {
     def ret: TypeUse
     def params: List[ValDef]
@@ -165,12 +183,20 @@ trait Trees extends ast.Trees {
 
 
   /***************************** Extractors **************************/
+  trait TemplateExtractor {
+    def unapply(tmpl: Template): Option[List[DefTree]] = tmpl match {
+      case null     => None
+      case _        => Some(tmpl.members)
+    }
+  }
+
   trait AssignExtractor {
     def unapply(a: Assign): Option[(Expr, Expr)] = a match {
       case null => None
       case _    => Some((a.lhs, a.rhs))
     }
   }
+
   trait IfExtractor {
     def unapply(i: If): Option[(Expr, Expr, Expr)] = i match {
       case null => None
@@ -244,6 +270,14 @@ trait Trees extends ast.Trees {
   //   }
   // }
   /***************************** Factories **************************/
+  trait TemplateFactory {
+    private class TemplateImpl(val members: List[DefTree], 
+      val owner: Option[TreeId]) extends Template
+
+    def apply(members: List[DefTree],
+      owner: Option[TreeId] = None): Template = 
+      new TemplateImpl(members, owner)
+  }
 
   trait AssignFactory {
     private class AssignImpl(val lhs: Expr, 
@@ -365,6 +399,7 @@ trait Trees extends ast.Trees {
 
   // TODO: Only let Extractors out, or none?
 
+  val Template  = new TemplateExtractor with TemplateFactory {}
   val Assign    = new AssignExtractor with AssignFactory {}
   val If        = new IfExtractor with IfFactory {}
   val While     = new WhileExtractor with WhileFactory {}
