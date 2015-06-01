@@ -1,7 +1,10 @@
 import sbt._
 import Keys._
 import com.simplytyped.Antlr4Plugin._
+import sbtunidoc.Plugin._
+import UnidocKeys._
 import sbtassembly.AssemblyPlugin.autoImport._
+import com.typesafe.sbt.SbtGit.{GitKeys => git}
 
 
 object SharedSettings {
@@ -92,9 +95,11 @@ object build extends Build {
   lazy val root = Project(
     id = "root",
     base = file("."),
-    settings = buildSettings,
+    settings = buildSettings, 
+      // ++
+      // site.settings ++ ghpages.settings: _*) ++ settings ),
     aggregate = Seq(tiny, calcj, primj)
-  ) 
+  ) settings (unidocSettings: _*)
 
   lazy val tiny = project("tiny")
    
