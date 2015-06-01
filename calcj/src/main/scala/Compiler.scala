@@ -1,6 +1,5 @@
 package ch.usi.inf.l3.sana.calcj
 
-
 import ch.usi.inf.l3.sana
 import sana.tiny
 import tiny.ast.TreeGen
@@ -47,10 +46,5 @@ trait Compiler extends tiny.CompilerApi
     def parserStart(parser: CalcjParser): ParseTree = parser.program
   }
 
-
-
   val standardPhases: List[Phase] = List(new Typer {})
-
-  
 }
-

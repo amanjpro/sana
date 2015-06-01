@@ -21,11 +21,10 @@ object Main {
       }
     }
 
-    val ln: String = "calcj"
-    val lv: String = "1.0"
 
     val c: cnfgs.ConfigType = 
-      cnfgs.processOptions(args, ln, lv, "Sana") match {
+      cnfgs.processOptions(args, langName, langVersion, 
+          tiny.frameworkName) match {
         case Right(config) => config
         case Left(msg)     => 
           println(msg)
@@ -33,6 +32,8 @@ object Main {
           ???
       }
 
+    val ln = langName
+    val lv = langVersion
     val compiler = new Compiler {
       val configurations: cnfgs.type = cnfgs
       val config: cnfgs.ConfigType = c
