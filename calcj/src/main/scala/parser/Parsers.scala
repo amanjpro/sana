@@ -112,14 +112,14 @@ trait Parsers extends parser.Parsers {
 
     override def visitPrimitiveType(
       @NotNull ctx: CalcjParser.PrimitiveTypeContext): Tree = { 
-      Ident(None, ctx.getText, None, pos(ctx))
+      TypeUse(None, ctx.getText, None, pos(ctx))
     }
 
     override def visitCast(@NotNull ctx: CalcjParser.CastContext): Tree = { 
       val e = visitChildren(ctx.expression)
       val tpt = visitChildren(ctx.primitiveType)
       (tpt, e) match {
-        case (tpt: Expr, e: Expr) =>
+        case (tpt: TypeUse, e: Expr) =>
           Cast(tpt, e, pos(ctx))
         case _               =>
           // TODO: report an error

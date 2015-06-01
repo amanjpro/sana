@@ -36,13 +36,17 @@ trait Namers extends names.Namers {
        r <- bindUseDefs(deftree)
       } yield r
       case tuse: TypeUse                              => for {
-       env  <- get
-       tid  = env.lookup(tuse.name)
-      } yield TypeUse(tid, tuse.name, tuse.owner, tuse.pos)
+       r  <- bindUseType(tuse)
+      } yield r
       case expr: Expr                                 => for {
         e <- bindUseExpr(expr)
       } yield e
     }
+
+    def bindUseType(tuse: TypeUse): NamerMonad[TypeUse] = for {
+      env  <- get
+      tid  = env.lookup(tuse.name)
+    } yield TypeUse(tid, tuse.name, tuse.owner, tuse.pos)
 
     def bindUseDefs(defTree: TermTree): NamerMonad[TermTree] 
     //= defTree match {
@@ -58,7 +62,7 @@ trait Namers extends names.Namers {
        tid  = env.lookup(id.name)
       } yield Ident(tid, id.name, id.owner, id.pos)
       case cast:Cast                                  => for {
-       tpt  <- bindUseExpr(cast.tpt)
+       tpt  <- bindUseType(cast.tpt)
        expr <- bindUseExpr(cast.expr) 
       } yield Cast(tpt, expr, cast.pos)
       case bin:Binary                                 => for {

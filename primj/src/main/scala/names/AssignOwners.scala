@@ -117,7 +117,7 @@ trait AssignOwners extends passes.Phases {
         r       <- point(Ident(id.uses, id.name, owner, id.pos))
       } yield r
       case cast: Cast                                => for {
-        tpt     <- assignExpr(cast.tpt)
+        tpt     <- assignTpt(cast.tpt)
         expr    <- assignExpr(cast.expr)
       } yield Cast(tpt, expr, cast.pos)
       case bin: Binary                               => for {
