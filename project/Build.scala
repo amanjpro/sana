@@ -39,7 +39,7 @@ object SharedSettings {
     scalacOptions ++= Seq("-unchecked", "-deprecation", 
       "-feature", "-Xlint", "-Xfatal-warnings"), 
     scalacOptions in (Compile, doc) ++= Seq("-groups", "-implicits",
-         "-diagrams", "-no-prefixes", "-author", "-explaintypes",
+         "-diagrams", "-author", "-explaintypes",
          "-language:implicitConversions,higherKinds"),
     // Help SBT to find Api docs for libraries that don't provide any in
     // their artifacts
@@ -102,28 +102,7 @@ object build extends Build {
   ) settings (unidocSettings: _*)
 
   lazy val tiny = project("tiny")
-   
-
   lazy val calcj = project("calcj", Seq(tiny), Seq(antlrSetting("calcj")))
+  lazy val primj = project("primj", Seq(calcj), Seq(antlrSetting("primj")))
 
-  // Project(
-  //   id   = "calcj",
-  //   base = file("calcj"),
-  //   settings = buildSettings ++ Seq(
-  //   scalacOptions in (Compile, doc) <++= (baseDirectory in LocalProject("calcj")).map {
-  //     bd => Seq("-sourcepath", bd.getAbsolutePath, "-doc-source-url", sourceURL("calcj"))
-  //   },
-  //   antlr4PackageName in Antlr4 := antlr("calcj"))
-  // ) dependsOn(tiny)
-
-  lazy val primj = project("primj", Seq(calcj))
-  //   Project(
-  //   id   = "primj",
-  //   base = file("primj"),
-  //   settings = buildSettings ++ Seq(
-  //     scalacOptions in (Compile, doc) <++= (baseDirectory in LocalProject("primj")).map {
-  //       bd => Seq("-sourcepath", bd.getAbsolutePath, "-doc-source-url", sourceURL("primj"))
-  //     },
-  //     antlr4PackageName in Antlr4 := antlr("primj"))
-  // ) dependsOn(calcj)
 }
