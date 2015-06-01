@@ -12,6 +12,7 @@ import calcj.typechecker
 import calcj.ast.JavaOps._
 import primj.ast
 import primj.types
+import primj.report._
 
 import scalaz.Scalaz._
 import scalaz._
@@ -34,6 +35,10 @@ trait Typer extends typechecker.Typers {
   trait Typer extends super.Typer {
 
     override def typeTree(tree: Tree): TypeChecker[Tree] = tree match {
+      case tmpl: Template  => for {
+          typedMembers <- tmpl.members.map(typeDefTree(_)).sequenceU
+          r            <- point(Template(typedMembers, tmpl.owner))
+        } yield r
       case dtree: TermTree => for {
         ttree <- typeTermTree(dtree)
       } yield ttree
@@ -42,6 +47,13 @@ trait Typer extends typechecker.Typers {
       } yield ts
       case _               => 
         super.typeTree(tree)
+    }
+
+    def typeDefTree(dtree: DefTree): TypeChecker[DefTree] = dtree match {
+      case ttree: TermTree     => for {
+        r <- typeTermTree(ttree)
+      } yield r
+      case _                   => point(dtree)
     }
 
     def typeTermTree(dtree: TermTree): TypeChecker[TermTree] = dtree match {
@@ -59,12 +71,14 @@ trait Typer extends typechecker.Typers {
       body     <- typeExpr(mdef.body)
       rhsty    <- toTypeChecker(body.tpe)
       rty      <- toTypeChecker(mdef.ret.tpe)
+      _        <- if(rty =:= VoidType) {
+      }
       _        <- (rhsty <:< rty) match {
         case false =>
           error(TYPE_MISMATCH,
             rhsty.toString, rty.toString, body.pos, mdef)
           point(())
-        case true =>
+        case true  =>
           point(())
       }
       tree    <- point(MethodDef(mdef.mods, mdef.id, mdef.ret, mdef.name, 
@@ -75,12 +89,16 @@ trait Typer extends typechecker.Typers {
       rhs      <- typeExpr(vdef.rhs)
       rhsty    <- toTypeChecker(rhs.tpe)
       vty      <- toTypeChecker(vdef.tpt.tpe)
-      _        <- (rhsty <:< vty) match {
+      _        <- if(vty =:= VoidType) {
+          error(VOID_TYPE_VARIABLE,
+            vty.toString, vty.toString, rhs.pos, vdef)
+          point(())
+      } else (rhsty <:< vty) match {
         case false =>
           error(TYPE_MISMATCH,
             rhsty.toString, vty.toString, rhs.pos, vdef)
           point(())
-        case true =>
+        case true  =>
           point(())
       }
       tree <- point(ValDef(vdef.mods, vdef.id, vdef.tpt, vdef.name, 
