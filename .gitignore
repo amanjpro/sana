@@ -96,3 +96,18 @@ Icon
 Network Trash Folder
 Temporary Items
 .apdisk
+
+
+# Ignore ANTLR generated fiels
+**/antlr/*.java
+*.tokens
+antlr/*
+
+# Testing binaries
+bin/*
+*.jar
+
+
+# Ctags files
+tags
+gentags
