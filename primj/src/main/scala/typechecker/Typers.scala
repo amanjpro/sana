@@ -24,7 +24,7 @@ import scalaz._
 // 2- Method Conversion   Sect: 5.3 - p66
 // 3- String Conversion   Sect: 5.4 - p67
 
-trait Typer extends typechecker.Typers {
+trait Typers extends typechecker.Typers {
   self: ast.Trees with 
         TreeContexts with 
         types.Types with 
