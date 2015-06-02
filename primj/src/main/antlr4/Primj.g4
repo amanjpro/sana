@@ -45,11 +45,11 @@ methodDeclaration
 
 
 variableDefinition
-    : type Identifier '=' expression
+    : type Identifier '=' expression (',' Identifier '=' expression)*
     ;
 
 variableDeclaration
-    : type Identifier
+    : type Identifier (',' Identifier)*
     ;
 
 type
@@ -156,9 +156,9 @@ expressionList
     ;
 
 expression
-    :   expression arguments                                             # Apply
+    :   Identifier arguments                                             # Apply
     |   primary                                                          # Primaries
-    |   expression '?' expression ':' expression                         # Ternary
+    |   parExpression '?' expression ':' expression                      # Ternary
     |   '(' primitiveType ')' expression                                 # Cast
     |   expression op=('++' | '--')                                      # Postfix
     |   op=('+'|'-'|'++'|'--') expression                                # UnaryNum
