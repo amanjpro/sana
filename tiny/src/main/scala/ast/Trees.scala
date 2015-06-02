@@ -341,7 +341,7 @@ trait Trees {
     */
   trait Modifiable {
     /**
-      * @see [[Flags]]
+      * @see [[tiny.modifiers.Flags]]
       * @return the modifiers of this node.
       */
     def mods: Flags
