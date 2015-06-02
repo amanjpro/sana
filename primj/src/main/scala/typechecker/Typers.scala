@@ -37,7 +37,7 @@ trait Typers extends typechecker.Typers {
     override def typeTree(tree: Tree): TypeChecker[Tree] = tree match {
       case tmpl: Template  => for {
           typedMembers <- tmpl.members.map(typeDefTree(_)).sequenceU
-          r            <- point(Template(typedMembers, tmpl.owner))
+          r            <- pointSW(Template(typedMembers, tmpl.owner))
         } yield r
       case dtree: TermTree => for {
         ttree <- typeTermTree(dtree)
@@ -53,7 +53,7 @@ trait Typers extends typechecker.Typers {
       case ttree: TermTree     => for {
         r <- typeTermTree(ttree)
       } yield r
-      case _                   => point(dtree)
+      case _                   => pointSW(dtree)
     }
 
     def typeTermTree(dtree: TermTree): TypeChecker[TermTree] = dtree match {
@@ -71,17 +71,15 @@ trait Typers extends typechecker.Typers {
       body     <- typeExpr(mdef.body)
       rhsty    <- toTypeChecker(body.tpe)
       rty      <- toTypeChecker(mdef.ret.tpe)
-      _        <- if(rty =:= VoidType) {
-      }
       _        <- (rhsty <:< rty) match {
         case false =>
           error(TYPE_MISMATCH,
             rhsty.toString, rty.toString, body.pos, mdef)
-          point(())
+          pointSW(())
         case true  =>
-          point(())
+          pointSW(())
       }
-      tree    <- point(MethodDef(mdef.mods, mdef.id, mdef.ret, mdef.name, 
+      tree    <- pointSW(MethodDef(mdef.mods, mdef.id, mdef.ret, mdef.name, 
                                   params, body, mdef.pos, mdef.owner))
     } yield tree
 
@@ -92,16 +90,16 @@ trait Typers extends typechecker.Typers {
       _        <- if(vty =:= VoidType) {
           error(VOID_TYPE_VARIABLE,
             vty.toString, vty.toString, rhs.pos, vdef)
-          point(())
+          pointSW(())
       } else (rhsty <:< vty) match {
         case false =>
           error(TYPE_MISMATCH,
             rhsty.toString, vty.toString, rhs.pos, vdef)
-          point(())
+          pointSW(())
         case true  =>
-          point(())
+          pointSW(())
       }
-      tree <- point(ValDef(vdef.mods, vdef.id, vdef.tpt, vdef.name, 
+      tree <- pointSW(ValDef(vdef.mods, vdef.id, vdef.tpt, vdef.name, 
                             rhs, vdef.pos, vdef.owner))
     } yield tree
 
@@ -116,7 +114,7 @@ trait Typers extends typechecker.Typers {
       case forloop: For           => for {
         tf <- typeFor(forloop)
       } yield tf
-      case (_: Lit) | (_: Cast)   => point(e)
+      case (_: Lit) | (_: Cast)   => pointSW(e)
       case apply: Apply           => for {
         tapp <- typeApply(apply)
       } yield tapp
@@ -132,10 +130,10 @@ trait Typers extends typechecker.Typers {
         case true => 
           error(TYPE_MISMATCH,
             tpe.toString, "boolean", wile.cond.pos, wile.cond)
-          point(()) 
-        case _    => point(())
+          pointSW(()) 
+        case _    => pointSW(())
       }
-      tree <- point(While(wile.mods, cond, body, wile.pos))
+      tree <- pointSW(While(wile.mods, cond, body, wile.pos))
     } yield tree
 
     def typeFor(forloop: For): TypeChecker[For] = for {
@@ -148,24 +146,24 @@ trait Typers extends typechecker.Typers {
         case true =>
           error(TYPE_MISMATCH,
             tpe.toString, "boolean", forloop.cond.pos, forloop.cond)
-          point(()) 
-        case _    => point(())
+          pointSW(()) 
+        case _    => pointSW(())
       }
       _     <- inits.filter(isValDefOrStatementExpression(_)) match {
         case (x::xs) =>
           error(BAD_STATEMENT, x.toString,
             "An expression statement, or variable declaration", x.pos, x)
-          point(())
-        case _       => point(())
+          pointSW(())
+        case _       => pointSW(())
       }
       _     <- steps.filter(!isValidStatementExpression(_)) match {
         case (x::xs) =>
           error(BAD_STATEMENT, x.toString,
             "An expression statement, or more", x.pos, x)
-          point(())
-        case _       => point(())
+          pointSW(())
+        case _       => pointSW(())
       }
-      tree  <- point(For(inits, cond, steps, body, forloop.pos))
+      tree  <- pointSW(For(inits, cond, steps, body, forloop.pos))
     } yield tree
 
     def typeIf(iff: If): TypeChecker[If] = for {
@@ -177,10 +175,10 @@ trait Typers extends typechecker.Typers {
         case true =>
           error(TYPE_MISMATCH,
             tpe.toString, "boolean", iff.cond.pos, iff.cond)
-          point(()) 
-        case _    => point(())
+          pointSW(()) 
+        case _    => pointSW(())
       }
-      tree  <- point(If(cond, thenp, elsep, iff.pos))
+      tree  <- pointSW(If(cond, thenp, elsep, iff.pos))
     } yield tree
 
     def typeApply(app: Apply): TypeChecker[Apply] = for {
@@ -190,18 +188,18 @@ trait Typers extends typechecker.Typers {
       argtys    <- args.map((x) => toTypeChecker(x.tpe)).sequenceU
       _         <- funty match {
         case MethodType(r, ts) if checkList[Type](argtys, ts, _ <:< _) =>
-          point(())
+          pointSW(())
         case t: MethodType                                             =>
           // TODO: Fix the error message
           error(TYPE_MISMATCH,
             "", "", app.pos, app)
-          point(())
+          pointSW(())
         case t                                                         =>
           error(BAD_STATEMENT,
             t.toString, "function/method type", app.pos, app)
-          point(())
+          pointSW(())
       }
-      tree     <- point(Apply(fun, args, app.pos, app.owner))
+      tree     <- pointSW(Apply(fun, args, app.pos, app.owner))
     } yield tree
 
 

@@ -23,7 +23,6 @@ import scalaz.Scalaz._
 trait TreeContexts {
   self: Trees with Types with MonadUtils =>
 
-  type ContextState[A] = State[TreeContext, A]
   
 
   //////////////////////////////////////////////////////////////////

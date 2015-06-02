@@ -26,34 +26,10 @@ trait AssignOwners extends passes.Phases {
         Reporting with
         MonadUtils =>
 
-  type Inner[A]                       = ReaderT[Id, Option[TreeId], A]
-  type Outer[F[_], A]                 = StateT[F, TreeContext, A]
-  type Stacked[A]                     = Outer[Inner, A]
-  type OwnerAssignerMonad[T <: Tree]  = Stacked[T]
-
-  implicit def toOwnerAssigner[A](x: Outer[Id, A]): Stacked[A] = 
-    x.lift[Inner]
-  implicit def outer2Inner[A](x: Stacked[A]): Inner[A] = x.lift[Id]
+  type OwnerAssignerMonad[T <: Tree] = StateReader[T]
 
   trait OwnerAssigner extends TransformerPhase {
-    private type ST[C, A] = StateT[Inner, C, A]
-    private type RD[C, A] = ReaderT[Id, C, A]
-    protected def point[A](t: A): Outer[Inner, A] = t.point[Stacked]
-    protected def ask: Stacked[Option[TreeId]] = 
-      MonadReader[RD, Option[TreeId]].ask.liftM[Outer]
-    protected def local[A](f: Option[TreeId] => Option[TreeId])
-        (fa: Inner[A]): Stacked[A] = {
-      val r = MonadReader[RD, Option[TreeId]].local(f)(fa)
-      r.liftM[Outer]
-    }
-    protected def get: Stacked[TreeContext] = 
-      MonadState[ST, TreeContext].get
-    protected def put(env: TreeContext): Stacked[Unit] = 
-      MonadState[ST, TreeContext].put(env)
-    protected def modify(f: TreeContext => TreeContext): Stacked[Unit] = 
-      MonadState[ST, TreeContext].modify(f)
     
-
 
     val name: String = "owner-assigner"
     override val description: Option[String] = 
@@ -91,30 +67,30 @@ trait AssignOwners extends passes.Phases {
     }
 
     def assignMethodDef(meth: MethodDef): OwnerAssignerMonad[MethodDef] = for {
-      owner   <- ask
+      owner   <- askSR
       ret     <- assignTpt(meth.ret)
       params  <- meth.params.map(assignValDef(_)).sequenceU
-      body    <- local((x) => Some(meth.id))(assignExpr(meth.body))
+      body    <- localSR((x) => Some(meth.id))(assignExpr(meth.body))
     } yield MethodDef(meth.mods, meth.id, ret, meth.name, 
                 params, body, meth.pos, owner)
 
     def assignValDef(valdef: ValDef): OwnerAssignerMonad[ValDef] = for {
-      owner   <- ask
+      owner   <- askSR
       rhs     <- assignExpr(valdef.rhs)
       tpt     <- assignTpt(valdef.tpt)
     } yield ValDef(valdef.mods, valdef.id, valdef.tpt, valdef.name, 
                     rhs, valdef.pos, owner)
 
     def assignTpt(tuse: TypeUse): OwnerAssignerMonad[TypeUse] = for {
-        owner   <- ask
-        r       <- point(TypeUse(tuse.uses, tuse.name, owner, tuse.pos))
+        owner   <- askSR
+        r       <- pointSR(TypeUse(tuse.uses, tuse.name, owner, tuse.pos))
     } yield r
 
     def assignExpr(expr: Expr): OwnerAssignerMonad[Expr] = expr match {
-      case lit: Lit                                  => point(lit)
+      case lit: Lit                                  => pointSR(lit)
       case id: Ident                                 => for {
-        owner   <- ask
-        r       <- point(Ident(id.uses, id.name, owner, id.pos))
+        owner   <- askSR
+        r       <- pointSR(Ident(id.uses, id.name, owner, id.pos))
       } yield r
       case cast: Cast                                => for {
         tpt     <- assignTpt(cast.tpt)
@@ -131,51 +107,51 @@ trait AssignOwners extends passes.Phases {
         expr    <- assignExpr(postfix.expr)
       } yield Postfix(expr, postfix.op, postfix.tpe, postfix.pos)
       case assign:Assign                             => for {
-        owner   <- ask
+        owner   <- askSR
         lhs     <- assignExpr(assign.lhs)
         rhs     <- assignExpr(assign.rhs)
       } yield Assign(lhs, rhs, assign.pos, owner)
       case ifelse:If                                 => for {
-        owner   <- ask
+        owner   <- askSR
         cond    <- assignExpr(ifelse.cond)
         thenp   <- assignExpr(ifelse.thenp)
         elsep   <- assignExpr(ifelse.elsep)
       } yield If(cond, thenp, elsep, ifelse.pos, owner)
       case wile:While                                => for {
-        owner   <- ask
+        owner   <- askSR
         cond    <- assignExpr(wile.cond)
         body    <- assignExpr(wile.body)
       } yield While(wile.mods, cond, body, wile.pos, owner)
       case block:Block                               => for {
-        owner   <- ask
+        owner   <- askSR
         stmts   <- block.stmts.map(assign(_)).sequenceU
-        r       <- point(Block(stmts, block.tpe, block.pos, owner))
+        r       <- pointSR(Block(stmts, block.tpe, block.pos, owner))
       } yield r
       case forloop:For                               => for {
-        owner   <- ask
+        owner   <- askSR
         inits   <- forloop.inits.map(assign(_)).sequenceU
         cond    <- assignExpr(forloop.cond)
         steps   <- forloop.steps.map(assignExpr(_)).sequenceU
         body    <- assignExpr(forloop.body)
       } yield For(inits, cond, steps, body, forloop.pos, owner)
       case ternary:Ternary                           => for {
-        owner   <- ask
+        owner   <- askSR
         cond    <- assignExpr(ternary.cond)
         thenp   <- assignExpr(ternary.thenp)
         elsep   <- assignExpr(ternary.elsep)
       } yield Ternary(cond, thenp, elsep, ternary.tpe, 
                       ternary.pos, owner)
       case apply:Apply                               => for {
-        owner   <- ask
+        owner   <- askSR
         fun     <- assignExpr(apply.fun)
         args    <- apply.args.map(assignExpr(_)).sequenceU
       } yield Apply(fun, args, apply.pos, owner)
       case ret:Return      if ret.expr == None       => for {
-        owner   <- ask
-        r       <- point(Return(ret.pos, owner))
+        owner   <- askSR
+        r       <- pointSR(Return(ret.pos, owner))
       } yield r
       case ret:Return                                => for {
-        owner   <- ask
+        owner   <- askSR
         expr    <- assignExpr(ret.expr.get)
       } yield Return(expr, ret.pos, owner)
     }

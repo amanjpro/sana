@@ -14,7 +14,6 @@ import calcj.ast.JavaOps._
 
 import scalaz.{Name => _, Failure => _, _}
 import scalaz.Scalaz._
-import scala.language.{higherKinds,implicitConversions}
 
 // From Java Specification 1.0 - Sect: 5.2 - p61
 // 1- Assignment Conversion
@@ -28,20 +27,23 @@ trait Typers extends passes.Phases {
         CompilationUnits with
         Reporting with
         MonadUtils =>
-  type Inner[A]               = WriterT[Id, Vector[Failure], A]
-  type Outer[F[_], A]         = StateT[F, TreeContext, A]
-  type Stacked[A]             = Outer[Inner, A]
-  type TypeChecker[T <: Tree] = Stacked[T]
 
-  implicit def toTypeChecker[A](x: Outer[Id, A]): Stacked[A] = x.lift[Inner]
-  implicit def toTypeChecker[A](x: Writer[Vector[Failure], A]): Stacked[A] = 
-    x.liftM[Outer]
-  protected def point[A](t: A): Outer[Inner, A] = t.point[Stacked]
+  type TypeChecker[T] = StateWriter[T]
 
-  implicit def tree2Writer[T](t: T): Stacked[T] =
-      point(t)
-
-
+  def toTypeChecker[A](x: ContextState[A]): StateWriter[A] =
+    toStateWriter(x)
+  def toTypeChecker[A](x: CompilerErrorMonad[A]): StateWriter[A] =
+    toStateWriter(x)
+  // def toTypeChecker = toStateWriter(_: CompilerErrorMonad[_])
+  // def toStateWriter[A](x: ContextStateT[Id, A]): StateWriter[A] =
+  //   x.lift[CompilerErrorMonad]
+  // implicit def toStateWriter[A](x: CompilerErrorMonad[A]): StateWriter[A] = 
+  //   x.liftM[ContextStateT]
+  //
+  // val toTypeChecker = toStateWriter
+  // def toStateWriter[A](x: CompilerErrorMonad[A]): StateWriter[A] = 
+  //   x.liftM[ContextStateT]
+  //
   trait Typer extends TransformerPhase {
     
     
@@ -66,7 +68,7 @@ trait Typers extends passes.Phases {
       case _             => 
         error(UNEXPETED_TREE,
           tree.toString, "an expression", tree.pos, tree)
-        point(tree)
+        pointSW(tree)
     }
 
     def typeExpr(e: Expr): TypeChecker[Expr] = e match {
@@ -76,11 +78,11 @@ trait Typers extends passes.Phases {
       case unary: Unary           => for {
         te <- typeUnary(unary)
       } yield te
-      case (_: Lit) | (_: Cast)   => point(e)
+      case (_: Lit) | (_: Cast)   => pointSW(e)
       case _                      => 
         error(UNEXPETED_TREE,
           e.toString, "an expression", e.pos, e)
-        point(e)
+        pointSW(e)
     }
 
     
@@ -89,7 +91,7 @@ trait Typers extends passes.Phases {
         etree      <- typeExpr(unary.expr)              
         etpe       <- toTypeChecker(etree.tpe)
         utpe       <- unaryTyper(etpe, unary)
-        expr       <- point {                           
+        expr       <- pointSW {                           
           utpe match {
             case u: UnaryType => castIfNeeded(etree, u.op, utpe)
             case u            => 
@@ -103,10 +105,10 @@ trait Typers extends passes.Phases {
         // that Scala has, when type checker can return a different tree 
         // type. What should we do here?
         // res        <- unary.op match {
-        //   case Pos    => point(expr)
-        //   case _      => point(Unary(unary.op, expr, point(utpe), unary.pos))
+        //   case Pos    => pointSW(expr)
+        //   case _      => pointSW(Unary(unary.op, expr, pointSW(utpe), unary.pos))
         // }
-        res        <- point(Unary(unary.op, expr,           
+        res        <- pointSW(Unary(unary.op, expr,           
                             toTypeState(utpe), unary.pos))
       } yield res 
     }
@@ -121,7 +123,7 @@ trait Typers extends passes.Phases {
         rtree                <- typeExpr(bin.rhs)
         rtpe                 <- toTypeChecker(rtree.tpe)
         // INFO:
-        // We do point, and cpoint the following call, because Scala
+        // We do pointSW, and cpointSW the following call, because Scala
         // cannot infer the type of ``let-binding'' well.
         // i.e. I cannot say btpe = binaryTyper(...) without
         // ascribing btpe's type, which results in a warning
@@ -133,7 +135,7 @@ trait Typers extends passes.Phases {
         // and it requires the monad (namely our StateMonad) to
         // have a filter method, which does not make much sense
         // for it to have it.
-        es                   <- point {
+        es                   <- pointSW {
           btpe match {
             case b: BinaryType =>
               val l = castIfNeeded(ltree, b.op1, ltpe)
@@ -143,7 +145,7 @@ trait Typers extends passes.Phases {
           }
         }
         res                  <- 
-          point(Binary(es._1, bin.op, es._2, toTypeState(btpe), bin.pos))
+          pointSW(Binary(es._1, bin.op, es._2, toTypeState(btpe), bin.pos))
       } yield res
     }
 
@@ -159,7 +161,7 @@ trait Typers extends passes.Phases {
     }
 
 
-    def unaryTyper(tpe: Type, unary: Unary): Stacked[Type] = {
+    def unaryTyper(tpe: Type, unary: Unary): TypeChecker[Type] = {
       (unary.op, tpe)  match {
         case (Not, BooleanType)                              => 
           UnaryType(BooleanType, BooleanType)
@@ -179,23 +181,23 @@ trait Typers extends passes.Phases {
         case (Not, _)                                        => for {
           _ <- toTypeChecker(error(TYPE_MISMATCH,
             tpe.toString, "boolean", unary.expr.pos, unary.expr))
-          r <- point(ErrorType)
+          r <- pointSW(ErrorType)
         } yield r
         case (Pos, _) | (Neg, _) | (Inc, _) | (Dec, _)       => for {
           _ <- toTypeChecker(error(TYPE_MISMATCH,
             tpe.toString, "a numeric type", unary.expr.pos, unary.expr))
-          r <- point(ErrorType)
+          r <- pointSW(ErrorType)
         } yield r
         case _                                               => for {
           _ <- toTypeChecker(error(TYPE_MISMATCH,
             tpe.toString, "an integral type", unary.expr.pos, unary.expr))
-          r <- point(ErrorType)
+          r <- pointSW(ErrorType)
         } yield r
       }
     }
 
     def binaryTyper(ltpe: Type, 
-      rtpe: Type, bin: Binary): Stacked[Type] = bin.op match {
+      rtpe: Type, bin: Binary): TypeChecker[Type] = bin.op match {
         case Gt | Lt | Le | Ge                      => 
           (ltpe, rtpe) match {
             case (x: NumericType, y: NumericType)   =>
@@ -204,12 +206,12 @@ trait Typers extends passes.Phases {
             case (_: NumericType, _)                => for {
               _ <- toTypeChecker(error(TYPE_MISMATCH,
                 rtpe.toString, "a numerical type", bin.rhs.pos, bin.rhs))
-              r <- point(ErrorType)
+              r <- pointSW(ErrorType)
             } yield r
             case _                                  => for {
               _ <- toTypeChecker(error(TYPE_MISMATCH,
                 ltpe.toString, "a numerical type", bin.lhs.pos, bin.lhs))
-              r <- point(ErrorType)
+              r <- pointSW(ErrorType)
             } yield r
           }
         case Eq | Neq                               => 
@@ -224,7 +226,7 @@ trait Typers extends passes.Phases {
             case _                                  => for {
               _ <- toTypeChecker(error(TYPE_MISMATCH,
                 ltpe.toString, "a primitive type", bin.pos, bin))
-              r <- point(ErrorType)
+              r <- pointSW(ErrorType)
             } yield r
           }
         case And | Or | Amp | Pipe | Xor            => 
@@ -234,12 +236,12 @@ trait Typers extends passes.Phases {
             case (BooleanType, _)                   => for {
               _ <- toTypeChecker(error(TYPE_MISMATCH,
                 rtpe.toString, "bolean", bin.rhs.pos, bin.rhs))
-              r <- point(ErrorType)
+              r <- pointSW(ErrorType)
             } yield r
             case _                                  => for {
               _ <- toTypeChecker(error(TYPE_MISMATCH,
                 ltpe.toString, "bolean", bin.lhs.pos, bin.lhs))
-              r <- point(ErrorType)
+              r <- pointSW(ErrorType)
             } yield r
 
           } 
@@ -254,12 +256,12 @@ trait Typers extends passes.Phases {
             case (_: NumericType, _)                => for {
               _ <- toTypeChecker(error(TYPE_MISMATCH,
                 rtpe.toString, "a numerical type", bin.rhs.pos, bin.rhs))
-              r <- point(ErrorType)
+              r <- pointSW(ErrorType)
             } yield r
             case _                                  => for {
               _ <- toTypeChecker(error(TYPE_MISMATCH,
                 ltpe.toString, "a numerical type", bin.lhs.pos, bin.lhs))
-              r <- point(ErrorType)
+              r <- pointSW(ErrorType)
             } yield r
           }
         case Sub | Mul | Div | Mod                  => 
@@ -270,12 +272,12 @@ trait Typers extends passes.Phases {
             case (_: NumericType, _)                => for {
               _ <- toTypeChecker(error(TYPE_MISMATCH,
                 rtpe.toString, "a numerical type", bin.rhs.pos, bin.rhs))
-              r <- point(ErrorType)
+              r <- pointSW(ErrorType)
             } yield r
             case _                                  => for {
               _ <- toTypeChecker(error(TYPE_MISMATCH,
                 ltpe.toString, "a numerical type", bin.lhs.pos, bin.lhs))
-              r <- point(ErrorType)
+              r <- pointSW(ErrorType)
             } yield r
 
           }
@@ -297,12 +299,12 @@ trait Typers extends passes.Phases {
             case (_: IntegralType, _)               => for {
               _ <- toTypeChecker(error(TYPE_MISMATCH,
                 rtpe.toString, "an integral type", bin.rhs.pos, bin.rhs))
-              r <- point(ErrorType)
+              r <- pointSW(ErrorType)
             } yield r
             case _                                  => for {
               _ <- toTypeChecker(error(TYPE_MISMATCH,
                 ltpe.toString, "an integral type", bin.lhs.pos, bin.lhs))
-              r <- point(ErrorType)
+              r <- pointSW(ErrorType)
             } yield r
           }
 

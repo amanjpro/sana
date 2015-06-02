@@ -24,26 +24,13 @@ trait Namers extends passes.Phases {
         MonadUtils with
         Reporting =>
 
-  type Inner[A]               = WriterT[Id, Vector[Failure], A]
-  type Outer[F[_], A]         = StateT[F, TreeContext, A]
-  type Stacked[A]             = Outer[Inner, A]
-  type NamerMonad[T <: Tree]  = Stacked[T]
+  type NamerMonad[T <: Tree]  = StateWriter[T]
 
-  def toNamerMonad[A](x: Outer[Id, A]): Stacked[A] = x.lift[Inner]
+  def toNamerMonad[A](x: ContextState[A]): StateWriter[A] =
+    toStateWriter(x)
+  def toNamerMonad[A](x: CompilerErrorMonad[A]): StateWriter[A] =
+    toStateWriter(x)
   trait Namer extends TransformerPhase {
-    private type ST[C, A] = StateT[Inner, C, A]
-    protected def point[A](t: A): Outer[Inner, A] = t.point[Stacked]
-    protected def get = {
-      MonadState[ST, TreeContext].get
-    }
-    protected def put(env: TreeContext) = {
-      MonadState[ST, TreeContext].put(env)
-    }
-    protected def modify(f: TreeContext => TreeContext) = {
-      MonadState[ST, TreeContext].modify(f)
-    }
-
-
     val name: String = "namer"
     override val description: Option[String] = 
       Some("The main namer phase, bind uses to definitions.")

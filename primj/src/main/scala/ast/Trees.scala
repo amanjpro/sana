@@ -9,6 +9,7 @@ import tiny.modifiers.Flags
 import tiny.source.Position
 import tiny.contexts._
 import tiny.names.Names._
+import tiny.util.MonadUtils
 import calcj.ast.JavaOps._
 import calcj.ast.Constants
 import calcj.ast
@@ -26,7 +27,7 @@ import Scalaz._
  */
 
 trait Trees extends ast.Trees {
-  self: types.Types with Constants with TreeContexts =>
+  self: types.Types with Constants with TreeContexts with MonadUtils =>
 
   /********************* AST Nodes *********************************/
 

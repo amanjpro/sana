@@ -10,6 +10,7 @@ import tiny.source.Position
 import tiny.contexts._
 import tiny.names.Names._
 import tiny.types
+import tiny.util.MonadUtils
 import calcj.ast.JavaOps._
 
 
@@ -17,7 +18,7 @@ import scalaz.Scalaz._
 import scalaz.{Name => _, _}
 
 trait Trees extends ast.Trees {
-  self: types.Types with TreeContexts with Constants =>
+  self: types.Types with TreeContexts with Constants with MonadUtils =>
   
   
   /********************* AST Nodes *********************************/

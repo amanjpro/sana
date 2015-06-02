@@ -6,6 +6,7 @@ import tiny.source.Position
 import tiny.names.Names
 import tiny.contexts._
 import tiny.modifiers._
+import tiny.util._
 import Names._
 import tiny.types._
 
@@ -42,10 +43,10 @@ import scalaz.{Name => _, _}
   * @version 0.1
   */
 trait Trees {
-  self: Types with TreeContexts =>
+  self: Types with TreeContexts with MonadUtils =>
 
   type TypeState[T <: Type] = State[TreeContext, T]
-  def toTypeState[A <: Type](t: A): State[TreeContext, A] = t.point[ContextState]
+  def toTypeState[A <: Type](t: A): ContextState[A] = t.point[ContextState]
 
  
   //////////////////////////////////////////////////////////////////

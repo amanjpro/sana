@@ -8,7 +8,7 @@ import tiny.contexts.TreeContexts
 import tiny.source.SourceFile
 import tiny.source.Position
 import tiny.contexts.NoId
-import tiny.util.CompilationUnits
+import tiny.util.{CompilationUnits, MonadUtils}
 import tiny.parser
 import calcj.ast.Constants
 import calcj.ast.JavaOps._
@@ -32,6 +32,7 @@ trait Parsers extends parser.Parsers {
   self: Trees with Constants 
               with TreeContexts
               with Types 
+              with MonadUtils
               with CompilationUnits =>
 
 
@@ -203,7 +204,7 @@ trait Parsers extends parser.Parsers {
               case kid => visitChildren(kid).asInstanceOf[Expr]
             }
           else 
-            createVarDefs(inits.variableDefinition) 
+            createVarDefs(inits.variableDefinition)
       }
       val cond  = ctx.forControl.expression match {
         case null => Empty

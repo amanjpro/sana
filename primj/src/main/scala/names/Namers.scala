@@ -44,7 +44,7 @@ trait Namers extends names.Namers {
     }
 
     def bindUseType(tuse: TypeUse): NamerMonad[TypeUse] = for {
-      env  <- get
+      env  <- getSW
       tid  = env.lookup(tuse.name)
     } yield TypeUse(tid, tuse.name, tuse.owner, tuse.pos)
 
@@ -56,9 +56,9 @@ trait Namers extends names.Namers {
     // }
 
     def bindUseExpr(expr: Expr): NamerMonad[Expr] = expr match {
-      case lit:Lit                                    => point(lit)
+      case lit:Lit                                    => pointSW(lit)
       case id: Ident                                  => for {
-       env  <- get
+       env  <- getSW
        tid  = env.lookup(id.name)
       } yield Ident(tid, id.name, id.owner, id.pos)
       case cast:Cast                                  => for {
@@ -90,7 +90,7 @@ trait Namers extends names.Namers {
       } yield While(wile.mods, cond, body, wile.pos, wile.owner)
       case block:Block                                => for {
         stmts <- block.stmts.map(bindUse(_)).sequenceU
-        r     <- point(Block(stmts, block.tpe, block.pos, block.owner))
+        r     <- pointSW(Block(stmts, block.tpe, block.pos, block.owner))
       } yield r
       case forloop:For                                => for {
         inits <- forloop.inits.map(bindUse(_)).sequenceU
@@ -108,7 +108,7 @@ trait Namers extends names.Namers {
         fun  <- bindUseExpr(apply.fun)
         args <- apply.args.map(bindUseExpr(_)).sequenceU
       } yield Apply(fun, args, apply.pos, apply.owner)
-      case ret:Return      if ret.expr == None        => point(ret)
+      case ret:Return      if ret.expr == None        => pointSW(ret)
       case ret:Return                                 => for {
         expr <- bindUseExpr(ret.expr.get)
       } yield Return(expr, ret.pos, ret.owner)

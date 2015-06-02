@@ -3,17 +3,16 @@ package ch.usi.inf.l3.sana.calcj.parser
 import ch.usi.inf.l3.sana
 import sana.tiny
 import sana.calcj
+import tiny.source.SourceFile
+import tiny.source.Position
+import tiny.util.{CompilationUnits, MonadUtils}
+import tiny.contexts.TreeContexts
+import tiny.parser
 import calcj.ast.Trees
 import calcj.ast.Constants
 import calcj.ast.JavaOps._
 import calcj.types.Types
-import tiny.contexts.TreeContexts
 import calcj.antlr._
-import tiny.source.SourceFile
-import tiny.source.Position
-import tiny.util.CompilationUnits
-import tiny.parser
-
 
 import org.antlr.v4.runtime.misc.NotNull
 import org.antlr.v4.runtime.ParserRuleContext
@@ -27,6 +26,7 @@ trait Parsers extends parser.Parsers {
   self: Trees with Constants 
               with TreeContexts
               with Types 
+              with MonadUtils
               with CompilationUnits =>
 
 
