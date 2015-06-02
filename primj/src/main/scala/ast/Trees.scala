@@ -5,7 +5,7 @@ import ch.usi.inf.l3.sana
 import sana.tiny
 import sana.calcj
 import sana.primj
-import tiny.ast.Flags
+import tiny.modifiers.Flags
 import tiny.source.Position
 import tiny.contexts._
 import tiny.names.Names._
@@ -136,7 +136,7 @@ trait Trees extends ast.Trees {
   }
 
   trait For extends Expr {
-    def inits: List[Expr]
+    def inits: List[Tree]
     def cond: Expr
     def steps: List[Expr]
     def body: Expr
@@ -214,7 +214,7 @@ trait Trees extends ast.Trees {
 
   trait ForExtractor {
     def unapply(f: For): 
-      Option[(List[Expr], Expr, List[Expr], Expr)] = f match {
+      Option[(List[Tree], Expr, List[Expr], Expr)] = f match {
       case null => None
       case _    => Some((f.inits, f.cond, f.steps, f.body))
     }
@@ -325,11 +325,11 @@ trait Trees extends ast.Trees {
   }
 
   trait ForFactory {
-    private class ForImpl(val inits: List[Expr],
+    private class ForImpl(val inits: List[Tree],
       val cond: Expr, val steps: List[Expr], val body: Expr,
         val pos: Option[Position], val owner: Option[TreeId]) extends For
 
-    def apply(inits: List[Expr], cond: Expr, steps: List[Expr], 
+    def apply(inits: List[Tree], cond: Expr, steps: List[Expr], 
       body: Expr, pos: Option[Position] = None, 
       owner: Option[TreeId] = None): For = 
         new ForImpl(inits, cond, steps, body, pos, owner)

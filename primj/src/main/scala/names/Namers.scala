@@ -93,7 +93,7 @@ trait Namers extends names.Namers {
         r     <- point(Block(stmts, block.tpe, block.pos, block.owner))
       } yield r
       case forloop:For                                => for {
-        inits <- forloop.inits.map(bindUseExpr(_)).sequenceU
+        inits <- forloop.inits.map(bindUse(_)).sequenceU
         cond  <- bindUseExpr(forloop.cond)
         steps <- forloop.steps.map(bindUseExpr(_)).sequenceU
         body  <- bindUseExpr(forloop.body)

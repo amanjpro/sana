@@ -153,7 +153,7 @@ trait AssignOwners extends passes.Phases {
       } yield r
       case forloop:For                               => for {
         owner   <- ask
-        inits   <- forloop.inits.map(assignExpr(_)).sequenceU
+        inits   <- forloop.inits.map(assign(_)).sequenceU
         cond    <- assignExpr(forloop.cond)
         steps   <- forloop.steps.map(assignExpr(_)).sequenceU
         body    <- assignExpr(forloop.body)

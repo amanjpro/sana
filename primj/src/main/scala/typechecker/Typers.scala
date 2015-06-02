@@ -139,7 +139,7 @@ trait Typer extends typechecker.Typers {
     } yield tree
 
     def typeFor(forloop: For): TypeChecker[For] = for {
-      inits <- forloop.inits.map(typeExpr(_)).sequenceU
+      inits <- forloop.inits.map(typeTree(_)).sequenceU
       cond  <- typeExpr(forloop.cond)
       steps <- forloop.steps.map(typeExpr(_)).sequenceU
       body  <- typeExpr(forloop.body)
@@ -205,7 +205,7 @@ trait Typer extends typechecker.Typers {
     } yield tree
 
 
-    protected def isValDefOrStatementExpression(v: Expr): Boolean = v match {
+    protected def isValDefOrStatementExpression(v: Tree): Boolean = v match {
       case s: ValDef => true
       case e: Expr   => isValidStatementExpression(e)
       case _         => false
