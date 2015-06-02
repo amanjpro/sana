@@ -5,7 +5,7 @@ import ch.usi.inf.l3.sana
 import sana.tiny
 import sana.calcj
 import tiny.ast
-import tiny.ast.Flags
+import tiny.modifiers.Flags
 import tiny.source.Position
 import tiny.contexts._
 import tiny.names.Names._
