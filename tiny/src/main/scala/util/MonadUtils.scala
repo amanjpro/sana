@@ -27,21 +27,20 @@ trait MonadUtils {
   type StateReader[A]             = ContextStateT[TreeIdReader, A]
 
 
-  implicit def toStateReader[A](x: ContextStateT[Id, A]): StateReader[A] = 
+  def toStateReader[A](x: ContextStateT[Id, A]): StateReader[A] = 
     x.lift[TreeIdReader]
-  implicit def toStateReader[A](x: TreeIdReader[A]): StateReader[A] =
+  def toStateReader[A](x: TreeIdReader[A]): StateReader[A] =
     x.liftM[ContextStateT]
-  implicit def outer2Inner[A](x: StateReader[A]): TreeIdReader[A] = x.lift[Id]
 
 
-  implicit def toStateWriter[A](x: ContextStateT[Id, A]): StateWriter[A] =
+  def toStateWriter[A](x: ContextStateT[Id, A]): StateWriter[A] =
     x.lift[CompilerErrorMonad]
-  implicit def toStateWriter[A](x: CompilerErrorMonad[A]): StateWriter[A] = 
+  def toStateWriter[A](x: CompilerErrorMonad[A]): StateWriter[A] = 
     x.liftM[ContextStateT]
 
-  implicit def pointSW[A](t: A): StateWriter[A] = 
+  def pointSW[A](t: A): StateWriter[A] = 
     Monad[StateWriter].point(t)
-  implicit def pointSR[A](t: A): ContextStateT[TreeIdReader, A] =
+  def pointSR[A](t: A): ContextStateT[TreeIdReader, A] =
       t.point[StateReader]
   def askSR: StateReader[Option[TreeId]] = 
     MonadReader[Reader, Option[TreeId]].ask.liftM[ContextStateT]
@@ -58,6 +57,12 @@ trait MonadUtils {
   def modifySW(f: TreeContext => TreeContext): StateWriter[Unit] = 
     MonadState[SW, TreeContext].modify(f)
     
+
+  // implicit def stateReader2Reader[S, R, A](x: StateReader[A]): TreeIdReader[A] =
+    // x.lift[Id]
+
+  implicit def stateM2M[S, A, R[A]](x: StateT[R, S, A]): R[A] =
+    x.lift[Id]
 
   // implicit def tree2Writer[T](t: T): Stacked[T] =
       // point(t)

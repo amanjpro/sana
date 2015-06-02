@@ -164,20 +164,20 @@ trait Typers extends passes.Phases {
     def unaryTyper(tpe: Type, unary: Unary): TypeChecker[Type] = {
       (unary.op, tpe)  match {
         case (Not, BooleanType)                              => 
-          UnaryType(BooleanType, BooleanType)
+          pointSW(UnaryType(BooleanType, BooleanType))
         case (Pos, x: NumericType)                           => 
           val t = unaryNumericPromotion(x)
-          UnaryType(x, x)
+          pointSW(UnaryType(x, x))
         case (Neg, x: NumericType)                           => 
           val t = unaryNumericPromotion(x)
-          UnaryType(x, x)
+          pointSW(UnaryType(x, x))
         case (BCompl, x: IntegralType)                       => 
           val t = unaryNumericPromotion(x)
-          UnaryType(t, t)
+          pointSW(UnaryType(t, t))
         case (Inc, x: NumericType)                           => 
-          UnaryType(x, x)
+          pointSW(UnaryType(x, x))
         case (Dec, x: NumericType)                           => 
-          UnaryType(x, x)
+          pointSW(UnaryType(x, x))
         case (Not, _)                                        => for {
           _ <- toTypeChecker(error(TYPE_MISMATCH,
             tpe.toString, "boolean", unary.expr.pos, unary.expr))
@@ -202,7 +202,7 @@ trait Typers extends passes.Phases {
           (ltpe, rtpe) match {
             case (x: NumericType, y: NumericType)   =>
               val t = binaryNumericPromotion(x, y)
-              BinaryType(t, t, BooleanType)
+              pointSW(BinaryType(t, t, BooleanType))
             case (_: NumericType, _)                => for {
               _ <- toTypeChecker(error(TYPE_MISMATCH,
                 rtpe.toString, "a numerical type", bin.rhs.pos, bin.rhs))
@@ -217,12 +217,12 @@ trait Typers extends passes.Phases {
         case Eq | Neq                               => 
           (ltpe, rtpe) match {
             case (BooleanType, BooleanType)         =>
-              BinaryType(BooleanType, BooleanType, BooleanType)
+              pointSW(BinaryType(BooleanType, BooleanType, BooleanType))
             case (x: NumericType, y: NumericType)   =>
               val t = binaryNumericPromotion(x, y)
-              BinaryType(t, t, BooleanType)
+              pointSW(BinaryType(t, t, BooleanType))
             case (StringType, StringType)           => 
-              BinaryType(StringType, StringType, BooleanType)
+              pointSW(BinaryType(StringType, StringType, BooleanType))
             case _                                  => for {
               _ <- toTypeChecker(error(TYPE_MISMATCH,
                 ltpe.toString, "a primitive type", bin.pos, bin))
@@ -232,7 +232,7 @@ trait Typers extends passes.Phases {
         case And | Or | Amp | Pipe | Xor            => 
           (ltpe, rtpe) match {
             case (BooleanType, BooleanType)         =>
-              BinaryType(BooleanType, BooleanType, BooleanType)
+              pointSW(BinaryType(BooleanType, BooleanType, BooleanType))
             case (BooleanType, _)                   => for {
               _ <- toTypeChecker(error(TYPE_MISMATCH,
                 rtpe.toString, "bolean", bin.rhs.pos, bin.rhs))
@@ -249,10 +249,10 @@ trait Typers extends passes.Phases {
           (ltpe, rtpe) match {
             case (x: NumericType, y: NumericType)   =>
               val t = binaryNumericPromotion(x, y)
-              BinaryType(t, t, t)
+              pointSW(BinaryType(t, t, t))
             case (StringType, _: PrimitiveType) | 
                   (_: PrimitiveType, StringType)    =>
-              BinaryType(StringType, StringType, StringType)
+              pointSW(BinaryType(StringType, StringType, StringType))
             case (_: NumericType, _)                => for {
               _ <- toTypeChecker(error(TYPE_MISMATCH,
                 rtpe.toString, "a numerical type", bin.rhs.pos, bin.rhs))
@@ -268,7 +268,7 @@ trait Typers extends passes.Phases {
           (ltpe, rtpe) match {
             case (x: NumericType, y: NumericType)   =>
               val t = binaryNumericPromotion(x, y)
-              BinaryType(t, t, t)
+              pointSW(BinaryType(t, t, t))
             case (_: NumericType, _)                => for {
               _ <- toTypeChecker(error(TYPE_MISMATCH,
                 rtpe.toString, "a numerical type", bin.rhs.pos, bin.rhs))
@@ -286,16 +286,16 @@ trait Typers extends passes.Phases {
           (ltpe, rtpe) match {
             case (x: IntegralType, y: IntegralType) =>
               val t = binaryNumericPromotion(x, y)
-              BinaryType(t, t, t)
+              pointSW(BinaryType(t, t, t))
             case _                                  => 
-              ErrorType
+              pointSW(ErrorType)
           }
         case SHL | SHR | USHR                       => 
           (ltpe, rtpe) match {
             case (x: IntegralType, y: IntegralType) =>
               val t1 = unaryNumericPromotion(x)
               val t2 = unaryNumericPromotion(y)
-              BinaryType(t1, t2, t1)
+              pointSW(BinaryType(t1, t2, t1))
             case (_: IntegralType, _)               => for {
               _ <- toTypeChecker(error(TYPE_MISMATCH,
                 rtpe.toString, "an integral type", bin.rhs.pos, bin.rhs))
