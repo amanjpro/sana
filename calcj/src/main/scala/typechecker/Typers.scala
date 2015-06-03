@@ -46,7 +46,7 @@ trait Typers extends passes.Phases {
 
 
     def startPhase(unit: CompilationUnit): 
-         (Vector[Failure], CompilationUnit) = {
+         (Vector[Report], CompilationUnit) = {
       val tree  = unit.tree
       val state = unit.state
       val (w, (s, typedTree)) = typeTree(tree).run(state).run

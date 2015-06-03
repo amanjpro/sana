@@ -38,7 +38,7 @@ trait AssignOwners extends passes.Phases {
 
 
     def startPhase(unit: CompilationUnit): 
-         (Vector[Failure], CompilationUnit) = {
+         (Vector[Report], CompilationUnit) = {
       val tree  = unit.tree
       val state = unit.state
       val (s, namedTree) = assign(tree).run(state).run(None)

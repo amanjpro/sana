@@ -10,8 +10,7 @@ package ch.usi.inf.l3.sana.tiny.report
 //   override def toString: String = "Compilation successful"
 // }
 
-// Fix error reporting
-case class Failure(kind: ErrorKind, msg: String, isTest: Boolean) { // extends Result 
+case class Report(kind: ReportKind, msg: String, isTest: Boolean) { 
   // def ++(r: Result): Result = r match {
   //   case f: Failure   => 
   //     Failure(f.kind, s"${msg}\n${f.kind}: ${f.msg}", 
@@ -41,10 +40,10 @@ case class Failure(kind: ErrorKind, msg: String, isTest: Boolean) { // extends R
     // msg + s"\n${errorFound(warningNo, errorNo)}\nCompilation Unsuccessful"
 }
 
-trait ErrorKind
-case object Error extends ErrorKind {
+trait ReportKind
+case object Error extends ReportKind {
   override def toString: String = "[error]"
 }
-case object Warning extends ErrorKind {
+case object Warning extends ReportKind {
   override def toString: String = "[warning]"
 }

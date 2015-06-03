@@ -16,7 +16,7 @@ import scala.language.{higherKinds,implicitConversions}
 trait MonadUtils {
   self: Trees with TreeContexts with Types =>
   
-  type CompilerErrorMonad[A]      = WriterT[Id, Vector[Failure], A]
+  type CompilerErrorMonad[A]      = WriterT[Id, Vector[Report], A]
   type ContextStateT[F[_], A]     = StateT[F, TreeContext, A]
   type TreeIdReader[A]            = ReaderT[Id, Option[TreeId], A]
   private type SW[C, A]           = StateT[CompilerErrorMonad, C, A]
@@ -76,7 +76,7 @@ trait MonadUtils {
   //  * S: Abstract type for the State part in ReaderWriterState
   //  */
   // type R = List[String]
-  // type W = Vector[Failure]
+  // type W = Vector[Report]
   // type S = TreeContext
   //
   // type RWST[V] = ReaderWriterState[R, W, S, V]

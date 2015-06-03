@@ -34,7 +34,7 @@ trait Namers extends passes.Phases {
 
 
     def startPhase(unit: CompilationUnit): 
-         (Vector[Failure], CompilationUnit) = {
+         (Vector[Report], CompilationUnit) = {
       val tree  = unit.tree
       val state = unit.state
       val (w, (s, namedTree)) = named(tree).run(state).run

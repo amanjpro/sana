@@ -4,7 +4,7 @@ package ch.usi.inf.l3.sana.tiny.passes
 
 import ch.usi.inf.l3.sana.tiny
 import tiny.Global
-import tiny.report.Failure
+import tiny.report.Report
 
 trait Phases {
 
@@ -24,10 +24,10 @@ trait Phases {
   }
 
   trait TransformerPhase extends Phase {
-    type R = (Vector[Failure], global.CompilationUnit)
+    type R = (Vector[Report], global.CompilationUnit)
   }
 
   trait CheckerPhase extends Phase {
-    type R = Vector[Failure]
+    type R = Vector[Report]
   }
 }

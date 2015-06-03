@@ -17,7 +17,7 @@ trait Reporting {
 
   def errorCodeToMsg(n: ErrorCode): String = n.message  
 
-  def isErroneous(v: Vector[Failure]): Boolean = 
+  def isErroneous(v: Vector[Report]): Boolean = 
     v.filter(_.isError) != Vector.empty
 
   protected def createMessage[T](code: ErrorCode, found: String,
@@ -48,15 +48,15 @@ trait Reporting {
 
   def error[T](code: ErrorCode, found: String, required: String,
     pos: Option[Position],
-    t: T): Writer[Vector[Failure], Unit] = 
-      Vector(Failure(Error, 
+    t: T): Writer[Vector[Report], Unit] = 
+      Vector(Report(Error, 
                   createMessageOrGetCode(code, found, required, pos, t),
                   isTest)).tell
 
   def warning[T](code: ErrorCode, found: String, required: String,
     pos: Option[Position],
-    t: T): Writer[Vector[Failure], Unit] = 
-      Vector(Failure(Warning, 
+    t: T): Writer[Vector[Report], Unit] = 
+      Vector(Report(Warning, 
                   createMessageOrGetCode(code, found, required, pos, t),
                   isTest)).tell
 
