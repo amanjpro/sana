@@ -3,6 +3,7 @@ import sana.calcj
 import sana.tiny
 import tiny.util._
 import tiny.report._
+import tiny.logging.Logger
 import tiny.contexts.TreeContexts
 import calcj.Global
 import calcj.ast.Trees
@@ -11,11 +12,13 @@ import calcj.types.Types
 import calcj.ast.JavaOps._
 import calcj.typechecker.Typers
 import org.scalatest._
+import java.util.logging.Level
 
 class TyperTest extends FlatSpec with Matchers with Typers {
 
   type G = Global
   val global: G = new Global {
+    val logger: Logger = new Logger(Level.OFF, "sana")
     val isTest: Boolean = true
   }
 

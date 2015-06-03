@@ -5,8 +5,11 @@ import sana.tiny
 import sana.calcj
 import tiny.settings.Configurations
 import tiny.passes.Phases
+import tiny.logging.Logger
 import parser.Parsers
 import typechecker.Typers
+import java.lang.{System => OS}
+import java.io.File
 
 object Main { 
   def main(args: Array[String]): Unit = {
@@ -39,13 +42,21 @@ object Main {
 
     val ln = langName
     val lv = langVersion
+    val sp = OS.getProperty("file.separator")
+    val loggingDir = new File(OS.getProperty("user.home") + 
+      sp + tiny.frameworkName.toLowerCase)
+    loggingDir.mkdirs
+    val loggingPath = OS.getProperty("user.home") + 
+      sp + tiny.frameworkName.toLowerCase + sp + "logs.log"
+
     val compiler = new Compiler with Parsers with Phases with Typers {
       type G = Global
-      val global: G = new Global {
-        val isTest: Boolean = c.isTest
-      }
       val configurations: cnfgs.type = cnfgs
       val config: cnfgs.ConfigType = c
+      val global: G = new Global {
+        val logger: Logger = new Logger(config.logLevel, loggingPath)
+        val isTest: Boolean = config.isTest
+      }
       val langName: String = ln
       val langVersion: String = lv
     }

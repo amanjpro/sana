@@ -1,6 +1,7 @@
 package ch.usi.inf.l3.sana.tiny.settings
 
 import scopt.OptionParser
+import java.util.logging.Level
 
 trait Configurations {
 
@@ -14,6 +15,14 @@ trait Configurations {
     def printTrees: Option[String] = this.printTrees_
     protected[Configurations] def printTrees_=(v: Option[String]): Unit =
       this.printTrees_ = v
+    /**
+      * @group Testing and Debugging
+      */
+    private[this] var logLevel_ : Level = Level.SEVERE
+    def logLevel: Level = this.logLevel_
+    protected[Configurations] def logLevel_=(l: Level): Unit =
+      this.logLevel_ = l
+
 
     /**
       * @group Testing and Debugging
@@ -84,6 +93,19 @@ trait Configurations {
           config.plugins = config.plugins ++ plugins
         } valueName("<plugin1>, <plugin2>, ...") text(
           "Comma seperated plugin names to be used.")
+        opt[String]("Slog") action { case (log, _) =>
+          config.logLevel = log match{
+            case "off"    => Level.OFF
+            case "all"    => Level.ALL
+            case "debug"  => Level.INFO
+            case "severe" => Level.SEVERE
+          }
+        } validate { x => 
+          if (! List("off", "all", "debug", "severe").contains(x))
+            failure (s"Option $x wasn't understandable")
+          else success
+        }text("Set the logging level of Sana, possible options: \n" ++ 
+          "off, all, debug, [severe].") 
         opt[String]('d', "destination") action { case (dest, _) =>
           config.destination = Some(dest)
         } text(s"Set the destination directory for the compiled classes")

@@ -34,6 +34,7 @@ trait CompilerApi {
   protected def compileUnit(unit: global.CompilationUnit): 
           (Vector[Failure], global.CompilationUnit) = {
     standardPhases.foldLeft((Vector.empty[Failure], unit))((z, y) => {
+      global.logger.info(s"Entered phase ${y.name}")
       val (fst, snd) = z
       if(global.isErroneous(fst)) {
         (fst, global.ErroneousCompilationUnit(snd.state, snd.fileName))

@@ -11,6 +11,7 @@ import tiny.util._
 import tiny.settings.Configurations
 import tiny.types.Types
 import tiny.report._
+import tiny.logging.Logger
 
 
 
@@ -21,4 +22,5 @@ trait Global extends Trees with
         TreeContexts with
         Reporting with
         MonadUtils {
+  val logger: Logger
 }
