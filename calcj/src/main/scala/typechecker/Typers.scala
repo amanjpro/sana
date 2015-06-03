@@ -3,13 +3,9 @@ package ch.usi.inf.l3.sana.calcj.typechecker
 import ch.usi.inf.l3.sana
 import sana.tiny
 import sana.calcj
-import tiny.util.CompilationUnits
-import tiny.contexts.TreeContexts
 import tiny.passes
 import tiny.report._
-import tiny.util.MonadUtils
-import calcj.ast
-import calcj.types
+import calcj.Global
 import calcj.ast.JavaOps._
 
 import scalaz.{Name => _, Failure => _, _}
@@ -21,12 +17,8 @@ import scalaz.Scalaz._
 // 3- String Conversion   Sect: 5.4 - p67
 
 trait Typers extends passes.Phases {
-  self: ast.Trees with 
-        TreeContexts with 
-        types.Types with 
-        CompilationUnits with
-        Reporting with
-        MonadUtils =>
+  type G <: Global
+  import global._
 
   type TypeChecker[T] = StateWriter[T]
 

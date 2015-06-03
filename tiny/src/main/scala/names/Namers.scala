@@ -17,12 +17,8 @@ import scala.language.higherKinds
 import Scalaz._
 
 trait Namers extends passes.Phases {
-  self: Trees with 
-        TreeContexts with 
-        Types with 
-        CompilationUnits with
-        MonadUtils with
-        Reporting =>
+
+  import global._
 
   type NamerMonad[T <: Tree]  = StateWriter[T]
 

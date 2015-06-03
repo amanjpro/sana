@@ -8,6 +8,7 @@ import tiny.source.Position
 import tiny.util.{CompilationUnits, MonadUtils}
 import tiny.contexts.TreeContexts
 import tiny.parser
+import calcj.Global
 import calcj.ast.Trees
 import calcj.ast.Constants
 import calcj.ast.JavaOps._
@@ -23,13 +24,10 @@ import scalaz.Scalaz._
 import scalaz.{Name => _, _}
 
 trait Parsers extends parser.Parsers {
-  self: Trees with Constants 
-              with TreeContexts
-              with Types 
-              with MonadUtils
-              with CompilationUnits =>
 
-
+  type G <: Global
+  import global._
+  
   def parse(source: SourceFile): CompilationUnit = {
     val tree = new CalcjVisitor(source.name).visit(source.content)
     CompilationUnit(tree, EmptyContext, source.name)

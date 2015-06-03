@@ -16,17 +16,12 @@ import tiny.report._
 
 
 trait CompilerApi {
-  self: Parsers with 
-        CompilationUnits with 
-        Phases with 
-        TreeContexts with
-        Reporting with
-        MonadUtils =>
-
+  self: Phases with Parsers =>
 
   def langName: String
   def langVersion: String
   type ConfigType <: Configurations#SanaConfig
+  val global: Global
   val configurations: Configurations
   val config: configurations.ConfigType
 
@@ -36,23 +31,22 @@ trait CompilerApi {
 
   def sourceReader: SourceReader
 
-  protected def compileUnit(unit: CompilationUnit): 
-          (Vector[Failure], CompilationUnit) = {
+  protected def compileUnit(unit: global.CompilationUnit): 
+          (Vector[Failure], global.CompilationUnit) = {
     standardPhases.foldLeft((Vector.empty[Failure], unit))((z, y) => {
       val (fst, snd) = z
-      if(isErroneous(fst)) {
-        (fst, ErroneousCompilationUnit(snd.state, snd.fileName))
+      if(global.isErroneous(fst)) {
+        (fst, global.ErroneousCompilationUnit(snd.state, snd.fileName))
       } else {
         y match {
-          case p: TransformerPhase      => 
+          case p: TransformerPhase                   => 
             val (w, cu) = p.startPhase(snd)
             (fst ++ w, cu)
-          // Not all compiler phases return compilation units,
-          // the ones that won't are checker phases, and they
-          // are not allowed to change the compilation units.
-          // that is why it is safe to return the previous one
-          // and pass it to the next one.
-          case p: CheckerPhase          => 
+          // Not all compiler phases return compilation units, the type checker
+          // phase ones, and they are not allowed to change the compilation
+          // units. That is why it is safe to return the previous one and pass
+          // it to the next one.
+          case p: CheckerPhase                       => 
             val w = p.startPhase(snd)
             (fst ++ w, snd)
         }
@@ -60,13 +54,14 @@ trait CompilerApi {
     })
   }
 
-  protected def compile(cunits: List[CompilationUnit]):
-    (Vector[Failure], List[CompilationUnit]) = {
+  protected def compile(cunits: List[global.CompilationUnit]):
+    (Vector[Failure], List[global.CompilationUnit]) = {
+    // TODO: Check if this is still broken
     // FIXME: This is really broken, what about warnings? what about compiling
     // all compilation units and not giving up?
     val (w, _, cs) = cunits.foldLeft((Vector.empty[Failure], 
-            EmptyContext: TreeContext,
-            Vector.empty[CompilationUnit]))((z, y) => {
+            global.EmptyContext: global.TreeContext,
+            Vector.empty[global.CompilationUnit]))((z, y) => {
       val (w, s, cs) = z
       val cunit = y.withState(s)
       val (w2, c2) = compileUnit(cunit)
@@ -75,12 +70,12 @@ trait CompilerApi {
     (w, cs.toList)
   }
 
-  protected def parse(files: List[String]): List[CompilationUnit] = {
+  protected def parse(files: List[String]): List[global.CompilationUnit] = {
     val sources: List[SourceFile] = sourceReader.readSources(files)
     sources.map(parse(_)) 
   }
 
-  def start: (Vector[Failure], List[CompilationUnit]) = {
+  def start: (Vector[Failure], List[global.CompilationUnit]) = {
     compile(parse(config.files.toList))
   }
 }

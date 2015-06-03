@@ -10,9 +10,8 @@ import tiny.report._
 import tiny.contexts.TreeContexts
 import calcj.typechecker
 import calcj.ast.JavaOps._
-import primj.ast
-import primj.types
 import primj.report._
+import primj.Global
 
 import scalaz.Scalaz._
 import scalaz._
@@ -25,12 +24,8 @@ import scalaz._
 // 3- String Conversion   Sect: 5.4 - p67
 
 trait Typers extends typechecker.Typers {
-  self: ast.Trees with 
-        TreeContexts with 
-        types.Types with 
-        CompilationUnits with
-        Reporting with
-        MonadUtils =>
+  override type G <: Global
+  import global._
 
   trait Typer extends super.Typer {
 

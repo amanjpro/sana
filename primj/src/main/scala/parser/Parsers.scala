@@ -12,10 +12,10 @@ import tiny.util.{CompilationUnits, MonadUtils}
 import tiny.parser
 import calcj.ast.Constants
 import calcj.ast.JavaOps._
-import primj.types.Types
-import primj.ast.Trees
+import primj.Global
 import primj.antlr._
 import primj.modifiers._
+
 
 
 import org.antlr.v4.runtime.misc.NotNull
@@ -29,13 +29,10 @@ import scalaz.{Name => _, _}
 import scala.collection.JavaConverters._
 
 trait Parsers extends parser.Parsers {
-  self: Trees with Constants 
-              with TreeContexts
-              with Types 
-              with MonadUtils
-              with CompilationUnits =>
 
-
+  type G = Global
+  import global._
+ 
   def parse(source: SourceFile): CompilationUnit = {
     val tree = new PrimjVisitor(source.name).visit(source.content)
     CompilationUnit(tree, EmptyContext, source.name)

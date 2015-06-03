@@ -4,6 +4,7 @@ import sana.tiny
 import tiny.util._
 import tiny.report._
 import tiny.contexts.TreeContexts
+import calcj.Global
 import calcj.ast.Trees
 import calcj.ast.Constants
 import calcj.types.Types
@@ -11,9 +12,14 @@ import calcj.ast.JavaOps._
 import calcj.typechecker.Typers
 import org.scalatest._
 
-class TyperTest extends FlatSpec with Matchers with Trees with 
-  Constants with Types with Typers with CompilationUnits 
-  with TreeContexts with MonadUtils with Reporting {
+class TyperTest extends FlatSpec with Matchers with Typers {
+
+  type G = Global
+  val global: G = new Global {
+    val isTest: Boolean = true
+  }
+
+  import global._
   val isTest: Boolean = true
   def getTpe(ts: TypeChecker[Tree]): Type = {
     val (_, (_, tree)) = ts.run(EmptyContext).run

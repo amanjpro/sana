@@ -10,8 +10,7 @@ import tiny.contexts.TreeId
 import tiny.report._
 import tiny.passes
 import tiny.names
-import primj.ast.Trees
-import primj.types.Types
+import primj.Global
 
  
 import scalaz.{Name => _, Failure => _, _}
@@ -19,12 +18,8 @@ import scala.language.higherKinds
 import Scalaz._
 
 trait Namers extends names.Namers {
-  self: Trees with 
-        TreeContexts with 
-        Types with 
-        CompilationUnits with
-        Reporting with
-        MonadUtils =>
+  type G = Global
+  import global._
 
   trait Namer extends super.Namer {
     def canRedefine: Boolean
