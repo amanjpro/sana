@@ -24,7 +24,7 @@ trait Namers extends passes.Phases {
 
   def toNamerMonad[A](x: ContextState[A]): StateWriter[A] =
     toStateWriter(x)
-  def toNamerMonad[A](x: CompilerErrorMonad[A]): StateWriter[A] =
+  def toNamerMonad[A](x: ErrorReportingMonad[A]): StateWriter[A] =
     toStateWriter(x)
   trait Namer extends TransformerPhase {
     val name: String = "namer"
