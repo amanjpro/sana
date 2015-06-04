@@ -35,7 +35,7 @@ trait TreeContexts {
    */
   trait TreeContext {
     /** A unique id generator */
-    protected val idGen: IDGen
+    protected def idGen: IDGen
 
     /**
      * A map from ids to the [[CompilationUnitContext]]s that they 
@@ -172,7 +172,7 @@ trait TreeContexts {
    */
   case object EmptyContext extends TreeContext {
     // this field should never be used
-    protected val idGen: IDGen = ???
+    protected def idGen: IDGen = ???
     lazy val compilationUnits: Map[Int, CompilationUnitContext] = Map.empty
     def lookup(name: String, id: Option[TreeId]): Option[TreeId] = None
     override def getTpe(id: TreeId): Option[Type] = None
@@ -186,7 +186,7 @@ trait TreeContexts {
    * @group Compilation Unit Contexts
    */
   trait CompilationUnitContext {
-    protected val idGen: IDGen
+    protected def idGen: IDGen
 
     /**
      * A map from ids to the [[ast.Trees#IdentifiedTree]]s that they 
@@ -278,7 +278,7 @@ trait TreeContexts {
    */
   case object MissingUnitContext extends CompilationUnitContext {
     // this field should never be used
-    protected val idGen: IDGen = ???
+    protected def idGen: IDGen = ???
     protected def decls: Map[TreeId, IdentifiedTree] = Map.empty
     protected def insert(id: TreeId, 
       tree: IdentifiedTree): CompilationUnitContext = 
