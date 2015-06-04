@@ -5,6 +5,7 @@ import sana.tiny
 import sana.primj
 import tiny.source.Position
 import tiny.report.Report
+import tiny.contexts.TreeId
 import tiny.passes
 import tiny.names
 import primj.Global
@@ -17,15 +18,20 @@ import Scalaz._
 trait AssignOwners extends passes.Phases {
   type G = Global
   import global._
-  type OwnerAssignerMonad[T <: Tree] = StateReader[T]
+
+  val factory = new StateReaderFactory[Option[TreeId]]
+  type OwnerAssignerMonad[T] = factory.StateReader[T]
+
+  // type RD[A] = Reader[Option[TreeId], A]
+  // type OwnerAssignerMonad[T] = StateT[RD, TreeContext, T]
 
   trait OwnerAssigner extends TransformerPhase {
     
 
     val name: String = "owner-assigner"
     override val description: Option[String] = 
-      Some("Identify tree owners and assign them.")
-    override def runRightAfter: Option[String] = Some("parser")
+      Some("Add contextual owners to trees.")
+    override def runRightAfter: Option[String] = Some("id-assigner")
 
 
     def startPhase(unit: CompilationUnit): 
@@ -61,7 +67,7 @@ trait AssignOwners extends passes.Phases {
       owner   <- askSR
       ret     <- assignTpt(meth.ret)
       params  <- meth.params.map(assignValDef(_)).sequenceU
-      body    <- localSR((x) => Some(meth.id))(assignExpr(meth.body))
+      body    <- localSR((_: Option[TreeId]) => Some(meth.id))(assignExpr(meth.body))
     } yield MethodDef(meth.mods, meth.id, ret, meth.name, 
                 params, body, meth.pos, owner)
 

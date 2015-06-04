@@ -4,65 +4,122 @@ import ch.usi.inf.l3.sana
 import sana.tiny
 import tiny.types.Types
 import tiny.contexts.{TreeContexts,TreeId}
-import tiny.ast.Trees
 import tiny.report._
 
-// Exclude Success and Failure in scalaz
-import scalaz.{Name => _, Failure => _, _}
+import scalaz._
 import scalaz.Scalaz._
 
 import scala.language.{higherKinds,implicitConversions}
 
-trait MonadUtils {
-  self: Trees with TreeContexts with Types =>
-  
-  type CompilerErrorMonad[A]      = WriterT[Id, Vector[Report], A]
-  type ContextStateT[F[_], A]     = StateT[F, TreeContext, A]
-  type TreeIdReader[A]            = ReaderT[Id, Option[TreeId], A]
-  private type SW[C, A]           = StateT[CompilerErrorMonad, C, A]
+/*!!! CAUTION: This trait is meant to blow your mind! It heavily employs
+types.
 
+Google "Type Lambdas in Scala"
+*/
+trait MonadUtils {
+  self: TreeContexts =>
+  
+  /*
+    INFO:
+    Type Lambdas in Scala are not as useful as it seems. It is basically 
+    broken on the type system level. One cannot mix implicit conversion
+    type lambdas (that is why you cannot make use of this feature with
+    Scalaz which heavily uses implicit.
+
+    For more information see this bug:
+      https://issues.scala-lang.org/browse/SI-2712
+
+
+    For now, you should create new state-reader monads using StateReaderFactory.
+
+    Until the bugs gets fixed, we mark StateReader as private, and 
+    StateReaderFactory as public
+  */
+  class StateReaderFactory[μ] {
+    type ρ[α] = Reader[μ, α]
+    type λ[α] = ContextStateT[ρ, α]
+    type StateReader[α] = λ[α]
+  }
+
+  // private[this] def reader[P] = new RF[P]()
+
+  type ErrorReportingMonad[A]     = WriterT[Id, Vector[Report], A]
+  type ContextStateT[F[_], A]     = StateT[F, TreeContext, A]
 
   type ContextState[A]            = ContextStateT[Id, A]
-  type StateWriter[A]             = ContextStateT[CompilerErrorMonad, A]
-  type StateReader[A]             = ContextStateT[TreeIdReader, A]
+  type StateWriter[A]             = ContextStateT[ErrorReportingMonad, A]
 
+  // type RD[A] = Reader[Option[TreeId], A]
+  // type OwnerAssignerMonad[T] = StateT[RD, TreeContext, T]
+  private type StateReader[R, A]          = StateReaderFactory[R]#λ[A]
 
-  def toStateReader[A](x: ContextStateT[Id, A]): StateReader[A] = 
-    x.lift[TreeIdReader]
-  def toStateReader[A](x: TreeIdReader[A]): StateReader[A] =
+    
+  //   trait[R] RF{
+  //   type τ[a] = Reader[R, a]
+  //   type λ   = ContextStateT[τ, A]
+  // })#λ
+  //
+    // StateT[({type l[a] = Reader[R, a]})#l, TreeContext, A]
+
+  // type `SanaReader[R]`[A]         = Reader[R, A]
+  // type StateReader[R, A]          = 
+    // StateT[`SanaReader[R]`, TreeContext, A]
+
+  def toStateReader[A, R](x: ContextStateT[Id, A]): StateReader[R, A] = {
+    type RD[a] = Reader[R, a]
+    x.lift[RD]
+  }
+
+  def toStateReader[R, A](x: Reader[R, A]): StateReader[R, A] =
     x.liftM[ContextStateT]
 
 
   def toStateWriter[A](x: ContextStateT[Id, A]): StateWriter[A] =
-    x.lift[CompilerErrorMonad]
-  def toStateWriter[A](x: CompilerErrorMonad[A]): StateWriter[A] = 
+    x.lift[ErrorReportingMonad]
+
+  def toStateWriter[A](x: ErrorReportingMonad[A]): StateWriter[A] = 
     x.liftM[ContextStateT]
 
   def pointSW[A](t: A): StateWriter[A] = 
     Monad[StateWriter].point(t)
-  def pointSR[A](t: A): ContextStateT[TreeIdReader, A] =
-      t.point[StateReader]
-  def askSR: StateReader[Option[TreeId]] = 
-    MonadReader[Reader, Option[TreeId]].ask.liftM[ContextStateT]
-  def localSR[A](f: Option[TreeId] => Option[TreeId])
-      (fa: TreeIdReader[A]): StateReader[A] = {
-    val r = MonadReader[Reader, Option[TreeId]].local(f)(fa)
+
+  def pointSR[R, A](t: A): StateReader[R, A] = {
+    type RD[a] = Reader[R, a]
+    type SR[a] = ContextStateT[RD, a]
+    Monad[SR].point(t)
+  }
+                              
+  def askSR[R]: StateReader[R, R] = 
+    MonadReader[Reader, R].ask.liftM[ContextStateT]
+
+  def localSR[R, RT <: R, A](f: R => RT)(fa: Reader[R, A]): 
+      StateReader[R, A] = {
+    val r = MonadReader[Reader, R].local(f)(fa)
     r.liftM[ContextStateT]
   }
+  
 
+  private type SW[C, A]           = StateT[ErrorReportingMonad, C, A]
   def getSW: StateWriter[TreeContext] = 
     MonadState[SW, TreeContext].get
+
   def putSW(env: TreeContext): StateWriter[Unit] = 
     MonadState[SW, TreeContext].put(env)
+
   def modifySW(f: TreeContext => TreeContext): StateWriter[Unit] = 
     MonadState[SW, TreeContext].modify(f)
     
 
-  // implicit def stateReader2Reader[S, R, A](x: StateReader[A]): TreeIdReader[A] =
-    // x.lift[Id]
-
-  implicit def stateM2M[S, A, R[A]](x: StateT[R, S, A]): R[A] =
+  implicit def stateR2R[R, A](x: StateReader[R, A]): Reader[R, A] =
     x.lift[Id]
+
+  implicit def stateW2W[A](x: StateWriter[A]): Writer[Vector[Report], A] =
+    x.lift[Id]
+
+
+  class Dummy[A](dummy: A)
+  // implicit val dummyInt: Dummy[Int] = new Dummy(1)
+  // implicit val dummyId: Dummy[Option[TreeId]] = new Dummy(None)
 
   // implicit def tree2Writer[T](t: T): Stacked[T] =
       // point(t)
