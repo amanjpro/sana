@@ -24,7 +24,7 @@ trait Typers extends passes.Phases {
 
   def toTypeChecker[A](x: ContextState[A]): StateWriter[A] =
     toStateWriter(x)
-  def toTypeChecker[A](x: CompilerErrorMonad[A]): StateWriter[A] =
+  def toTypeChecker[A](x: ErrorReportingMonad[A]): StateWriter[A] =
     toStateWriter(x)
   // def toTypeChecker = toStateWriter(_: CompilerErrorMonad[_])
   // def toStateWriter[A](x: ContextStateT[Id, A]): StateWriter[A] =
