@@ -3,7 +3,7 @@ package ch.usi.inf.l3.sana.calcj
 import ch.usi.inf.l3.sana
 import sana.tiny
 import sana.calcj
-import tiny.settings.Configurations
+import tiny.settings.{SanaConfig,CommandLineArgumentParser}
 import tiny.passes.Phases
 import tiny.logging.Logger
 import parser.Parsers
@@ -12,13 +12,10 @@ import java.lang.{System => OS}
 import java.io.File
 
 object Main { 
-  def main(args: Array[String]): Unit = {
-    val cnfgs = new Configurations {
-      type ConfigType = SanaConfig
-      def processOptions(args: Array[String],
+  def processOptions(args: Array[String],
                         ln: String, 
                         lv: String, 
-                        fn: String): Either[String, ConfigType] = {
+                        fn: String): Either[String, SanaConfig] = {
         val config = new SanaConfig
         val processor = new CommandLineArgumentParser(config, ln, lv, fn)
         if(processor.parser.parse(args)) {
@@ -27,11 +24,11 @@ object Main {
           Left("Bad set of arguments\n" ++ processor.parser.usage)
         }
       }
-    }
+
+  def main(args: Array[String]): Unit = {
 
 
-    val c: cnfgs.ConfigType = 
-      cnfgs.processOptions(args, langName, langVersion, 
+    val c = processOptions(args, langName, langVersion, 
           tiny.frameworkName) match {
         case Right(config) => config
         case Left(msg)     => 
@@ -43,16 +40,16 @@ object Main {
     val ln = langName
     val lv = langVersion
     val sp = OS.getProperty("file.separator")
-    val loggingDir = new File(OS.getProperty("user.home") + 
-      sp + tiny.frameworkName.toLowerCase)
+    val commonPath = OS.getProperty("user.home") + sp + 
+      tiny.frameworkName.toLowerCase
+    val loggingDir = new File(commonPath)
     loggingDir.mkdirs
-    val loggingPath = OS.getProperty("user.home") + 
-      sp + tiny.frameworkName.toLowerCase + sp + "logs.log"
+    val loggingPath = commonPath + sp + "logs.log"
 
     val compiler = new Compiler with Parsers with Phases with Typers {
       type G = Global
-      val configurations: cnfgs.type = cnfgs
-      val config: cnfgs.ConfigType = c
+      type ConfigType = SanaConfig
+      val config = c
       val global: G = new Global {
         val logger: Logger = new Logger(config.logLevel, loggingPath)
         val isTest: Boolean = config.isTest

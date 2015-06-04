@@ -4,14 +4,10 @@ import ch.usi.inf.l3.sana
 import sana.tiny
 import sana.primj
 import tiny.source.Position
-import tiny.contexts.TreeContexts
-import tiny.util.{CompilationUnits,MonadUtils}
-import tiny.contexts.TreeId
-import tiny.report._
+import tiny.report.Report
 import tiny.passes
 import tiny.names
-import primj.ast.Trees
-import primj.types.Types
+import primj.Global
 
  
 import scalaz.{Name => _, Failure => _, _}
@@ -19,13 +15,8 @@ import scala.language.{higherKinds,implicitConversions}
 import Scalaz._
 
 trait AssignOwners extends passes.Phases {
-  self: Trees with 
-        TreeContexts with 
-        Types with 
-        CompilationUnits with
-        Reporting with
-        MonadUtils =>
-
+  type G = Global
+  import global._
   type OwnerAssignerMonad[T <: Tree] = StateReader[T]
 
   trait OwnerAssigner extends TransformerPhase {

@@ -8,7 +8,6 @@ import tiny.contexts.TreeContexts
 import tiny.ast.Trees
 import tiny.ast.TreeGen
 import tiny.util._
-import tiny.settings.Configurations
 import tiny.types.Types
 import tiny.report._
 import tiny.logging.Logger

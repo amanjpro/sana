@@ -1,26 +1,28 @@
-package ch.usi.inf.l3.sana.tiny.settings
+package ch.usi.inf.l3.sana.tiny
 
 import scopt.OptionParser
 import java.util.logging.Level
 
-trait Configurations {
-
-
-
+/* We preferred using object instead of package here,
+   to make sure that nobody accidentally have access
+   to the private setters in class SanaConfig, by simply
+   naming their packages after this one.
+ */
+object settings {
   class SanaConfig {
     /**
       * @group Testing and Debugging
       */
     private[this] var printTrees_ : Option[String] = None
     def printTrees: Option[String] = this.printTrees_
-    protected[Configurations] def printTrees_=(v: Option[String]): Unit =
+    private[settings] def printTrees_=(v: Option[String]): Unit =
       this.printTrees_ = v
     /**
       * @group Testing and Debugging
       */
     private[this] var logLevel_ : Level = Level.SEVERE
     def logLevel: Level = this.logLevel_
-    protected[Configurations] def logLevel_=(l: Level): Unit =
+    private[settings] def logLevel_=(l: Level): Unit =
       this.logLevel_ = l
 
 
@@ -29,7 +31,7 @@ trait Configurations {
       */
     private[this] var isTest_ : Boolean = false
     def isTest: Boolean = this.isTest_
-    protected[Configurations] def isTest_=(v: Boolean): Unit =
+    private[settings] def isTest_=(v: Boolean): Unit =
       this.isTest_ = v
 
     /**
@@ -37,7 +39,7 @@ trait Configurations {
       */
     private[this] var isVerbose_ : Boolean = false
     def isVerbose: Boolean = this.isVerbose_
-    protected[Configurations] def isVerbose_=(v: Boolean): Unit =
+    private[settings] def isVerbose_=(v: Boolean): Unit =
       this.isVerbose_ = v
 
 
@@ -46,7 +48,7 @@ trait Configurations {
       */
     private[this] var plugins_ : Vector[String] = Vector()
     def plugins: Vector[String] = this.plugins_
-    protected[Configurations] def plugins_=(v: Vector[String]): Unit =
+    private[settings] def plugins_=(v: Vector[String]): Unit =
       this.plugins_ = v
 
     /**
@@ -54,7 +56,7 @@ trait Configurations {
       */
     private[this] var classpath_ : Vector[String] = Vector()
     def classpath: Vector[String] = this.classpath_
-    protected[Configurations] def classpath_=(v: Vector[String]): Unit =
+    private[settings] def classpath_=(v: Vector[String]): Unit =
       this.classpath_ = v
 
     /**
@@ -62,7 +64,7 @@ trait Configurations {
       */
     private[this] var files_ : Vector[String] = Vector()
     def files: Vector[String] = this.files_
-    protected[Configurations] def files_=(v: Vector[String]): Unit =
+    private[settings] def files_=(v: Vector[String]): Unit =
       this.files_ = v
 
     /**
@@ -70,13 +72,12 @@ trait Configurations {
       */
     private[this] var destination_ : Option[String] = None
     def destination: Option[String] = this.destination_
-    protected[Configurations] def destination_=(v: Option[String]): Unit =
+    private[settings] def destination_=(v: Option[String]): Unit =
       this.destination_ = v
   }
 
-  type ConfigType <: SanaConfig
 
-  class CommandLineArgumentParser(val config: ConfigType,
+  class CommandLineArgumentParser(val config: SanaConfig,
                                   val langName: String,
                                   val langVersion: String,
                                   val fmName: String) {
@@ -122,10 +123,4 @@ trait Configurations {
           // config.copy(foo = x) } text("To active testing mode for Sana")
       }
   }
-
-
-  def processOptions(args: Array[String],
-                  ln: String, 
-                  lv: String, 
-                  fn: String): Either[String, ConfigType]
 }
