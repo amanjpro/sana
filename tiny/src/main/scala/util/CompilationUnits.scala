@@ -23,8 +23,6 @@ trait CompilationUnits {
     def state: TreeContext
     // def treeState: CUState
     def fileName: String
-    val idGen = new IDGen
-
 
     def withState(state: TreeContext): CompilationUnit
     override def toString: String = s"compilation unit for $fileName"
