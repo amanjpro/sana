@@ -9,7 +9,7 @@ import tiny.contexts.TreeContexts
 import tiny.ast.Trees
 import tiny.ast.TreeGen
 import tiny.util._
-import tiny.settings.Configurations
+import tiny.settings.SanaConfig
 import tiny.types.Types
 import tiny.passes.Phases
 import tiny.report._
@@ -20,10 +20,9 @@ trait CompilerApi {
 
   def langName: String
   def langVersion: String
-  type ConfigType <: Configurations#SanaConfig
+  type ConfigType <: SanaConfig
   val global: Global
-  val configurations: Configurations
-  val config: configurations.ConfigType
+  val config: ConfigType
 
   lazy val isTest: Boolean = config.isTest
 
@@ -75,6 +74,9 @@ trait CompilerApi {
     val sources: List[SourceFile] = sourceReader.readSources(files)
     sources.map(parse(_)) 
   }
+
+
+
 
   def start: (Vector[Report], List[global.CompilationUnit]) = {
     compile(parse(config.files.toList))
