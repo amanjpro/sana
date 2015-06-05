@@ -8,6 +8,7 @@ import tiny.contexts.TreeContexts
 import tiny.source.SourceFile
 import tiny.source.Position
 import tiny.contexts.NoId
+import tiny.names.Name
 import tiny.util.{CompilationUnits, MonadUtils}
 import tiny.parser
 import calcj.ast.Constants
@@ -108,7 +109,7 @@ trait Parsers extends parser.Parsers {
         case tu: TypeUse =>
           names.map {
             case name =>
-              ValDef(NoFlags, NoId, tu, name, Empty, pos(ctx), None)
+              ValDef(NoFlags, NoId, tu, Name(name), Empty, pos(ctx), None)
           }
         case _           =>
           // TODO: report an error
@@ -128,7 +129,7 @@ trait Parsers extends parser.Parsers {
           for {
             name  <- names
             expr  <- exprs
-          } yield ValDef(NoFlags, NoId, tu, name, expr, pos(ctx), None)
+          } yield ValDef(NoFlags, NoId, tu, Name(name), expr, pos(ctx), None)
         case _           =>
           // TODO: report an error
           throw new Exception("Expression is expected")
@@ -160,7 +161,7 @@ trait Parsers extends parser.Parsers {
       val body   = visitChildren(ctx.methodBody)
       (tpe, body) match {
         case (tu: TypeUse, b: Block) =>
-          MethodDef(NoFlags, NoId, tu, name, params, b,
+          MethodDef(NoFlags, NoId, tu, Name(name), params, b,
             pos(ctx), None)
         case _                       =>
           // TODO: report an error
@@ -169,7 +170,7 @@ trait Parsers extends parser.Parsers {
     }
 		
 		override def visitVoidType(ctx: PrimjParser.VoidTypeContext): Tree = { 
-      TypeUse(None, ctx.getText, None, pos(ctx))
+      TypeUse(None, Some(ctx.getText), None, pos(ctx))
     }
 		override def visitBlock(ctx: PrimjParser.BlockContext): Tree = { 
       val stmts   = ctx.blockStatement.asScala.toList.map {
@@ -264,7 +265,7 @@ trait Parsers extends parser.Parsers {
 
 		override def visitAssign(ctx: PrimjParser.AssignContext): Tree = {
       val name   = ctx.Identifier.getText
-      val id     = Ident(None, name, None, None)
+      val id     = Ident(None, Some(name), None, None)
       val rhs    = visitChildren(ctx.expression)
       rhs match {
         case e: Expr          =>
@@ -291,7 +292,7 @@ trait Parsers extends parser.Parsers {
     }
 		override def visitApply(ctx: PrimjParser.ApplyContext): Tree = {
       val name   = ctx.Identifier.getText
-      val id     = Ident(None, name, None, None)
+      val id     = Ident(None, Some(name), None, None)
       val args   = ctx.arguments.expressionList.expression match {
         case null           => Nil
         case es             => es.asScala.toList.map {
@@ -316,7 +317,7 @@ trait Parsers extends parser.Parsers {
 
     override def visitPrimitiveType(
       @NotNull ctx: PrimjParser.PrimitiveTypeContext): Tree = { 
-      TypeUse(None, ctx.getText, None, pos(ctx))
+      TypeUse(None, Some(ctx.getText), None, pos(ctx))
     }
 
     override def visitCast(@NotNull ctx: PrimjParser.CastContext): Tree = { 

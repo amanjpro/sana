@@ -147,7 +147,7 @@ trait Typers extends passes.Phases {
         val pos = e.pos
         // TODO: Assign TreeId to primitive types
         // TODO: Type names
-        val id = TypeUse(None, t1.toString, e.owner, pos)
+        val id = TypeUse(None, e.owner, pos)
         Cast(id, e, pos)
       }
     }

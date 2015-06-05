@@ -8,7 +8,7 @@ import tiny.ast
 import tiny.modifiers.Flags
 import tiny.source.Position
 import tiny.contexts._
-import tiny.names.Names._
+import tiny.names._
 import tiny.types
 import tiny.util.MonadUtils
 import calcj.ast.JavaOps._

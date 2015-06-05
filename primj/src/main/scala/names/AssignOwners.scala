@@ -80,14 +80,14 @@ trait AssignOwners extends passes.Phases {
 
     def assignTpt(tuse: TypeUse): OwnerAssignerMonad[TypeUse] = for {
         owner   <- askSR
-        r       <- pointSR(TypeUse(tuse.uses, tuse.name, owner, tuse.pos))
+        r       <- pointSR(TypeUse(tuse.uses, owner, tuse.pos))
     } yield r
 
     def assignExpr(expr: Expr): OwnerAssignerMonad[Expr] = expr match {
       case lit: Lit                                  => pointSR(lit)
       case id: Ident                                 => for {
         owner   <- askSR
-        r       <- pointSR(Ident(id.uses, id.name, owner, id.pos))
+        r       <- pointSR(Ident(id.uses, owner, id.pos))
       } yield r
       case cast: Cast                                => for {
         tpt     <- assignTpt(cast.tpt)

@@ -9,7 +9,6 @@ import tiny.ast.Trees
 import tiny.types.Types
 import tiny.report._
 import tiny.passes
-import Names._
 
  
 import scalaz.{Name => _, Failure => _, _}

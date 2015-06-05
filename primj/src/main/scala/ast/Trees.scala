@@ -8,7 +8,7 @@ import sana.primj
 import tiny.modifiers.Flags
 import tiny.source.Position
 import tiny.contexts._
-import tiny.names.Names._
+import tiny.names.Name
 import tiny.util.MonadUtils
 import calcj.ast.JavaOps._
 import calcj.ast.Constants

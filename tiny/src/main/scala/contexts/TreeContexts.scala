@@ -4,6 +4,7 @@ import ch.usi.inf.l3.sana.tiny
 import tiny.ast.Trees
 import tiny.util.MonadUtils
 import tiny.report._
+import tiny.names.Name
 import tiny.types.Types
 
 import scalaz.{StateT, State, Monoid, Applicative, ReaderWriterStateT}
@@ -100,7 +101,7 @@ trait TreeContexts {
      *              then the owner is None
      * @return Optionally the id of the [[ast.Trees#IdentifiedTree]]
      */
-    def lookup(name: String, owner: Option[TreeId]): Option[TreeId]
+    def lookup(name: Name, owner: Option[TreeId]): Option[TreeId]
 
     // = for {
     //   env     <- compiler.rwst.get
@@ -145,6 +146,22 @@ trait TreeContexts {
     }
 
     /**
+     * Returns the name of the tree that has the given id
+     *
+     * @see [[contexts.TreeId]]
+     * @param id the id of the tree which we want to query its name.
+     * @return Optionally the name of the tree that has the given id.
+     *         In case the current scope has no bindings for the given
+     *         id, None is returned.
+     */
+    def getName(id: TreeId): Option[Name] = for {
+      tree <- unit(id.unitId).lookup(id)
+    } yield {
+      tree.name
+      // val (_, r, _) = run(tree.tpe, Nil, this)
+      // r
+    }
+    /**
      * Returns the type of the tree that has the given id
      *
      * @see [[types.Types.Type]]
@@ -174,7 +191,7 @@ trait TreeContexts {
     // this field should never be used
     protected def idGen: IDGen = ???
     lazy val compilationUnits: Map[Int, CompilationUnitContext] = Map.empty
-    def lookup(name: String, id: Option[TreeId]): Option[TreeId] = None
+    def lookup(name: Name, id: Option[TreeId]): Option[TreeId] = None
     override def getTpe(id: TreeId): Option[Type] = None
     protected def newContext(idGen: IDGen,
       cus: Map[Int, CompilationUnitContext]): TreeContext = EmptyContext
@@ -319,7 +336,7 @@ trait TreeContexts {
       new TreeContextImpl(idGen, cus)
 
     // TODO: Implement this, and its logic
-    def lookup(name: String, id: Option[TreeId]): Option[TreeId] = None
+    def lookup(name: Name, id: Option[TreeId]): Option[TreeId] = None
   }
 
 

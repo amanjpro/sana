@@ -3,11 +3,10 @@ package ch.usi.inf.l3.sana.tiny.ast
 
 import ch.usi.inf.l3.sana.tiny
 import tiny.source.Position
-import tiny.names.Names
+import tiny.names._
 import tiny.contexts._
 import tiny.modifiers._
 import tiny.util._
-import Names._
 import tiny.types._
 
 import scalaz.Scalaz._
@@ -102,27 +101,19 @@ trait Trees {
       * @return The id for this AST node.
       */
     def id: TreeId
-  }
 
-  /**
-    * The base trait for all trees that have a name.
-    *
-    * @group Api
-    */
-  trait NamedTree extends Tree {
     /**
       * @return The name of this tree.
       */
     def name: Name
   }
 
-  
   /**
     * The base trait for all trees that introduce a new name.
     *
     * @group Api
     */
-  trait DefTree extends IdentifiedTree with NamedTree with Modifiable
+  trait DefTree extends IdentifiedTree with Modifiable
 
   /**
     * The base trait for all trees that introduce a new type.
@@ -178,6 +169,25 @@ trait Trees {
       * @return Optionally the id for the [[DefTree]] that this tree uses.
       */
     def uses: Option[TreeId]
+
+    def nameAtParser: Option[String]
+
+    def name: ContextState[Name] = {
+      State {
+        (ctx: TreeContext) => {
+          val n = for {
+            i <- uses
+            r <- ctx.getName(i)
+          } yield r
+          val r = (n, nameAtParser) match {
+            case (None, None)    => ERROR_NAME
+            case (None, Some(n)) => Name(n)
+            case (Some(n), _)    => n
+          }
+          (ctx, r)
+        }
+      }
+    }
   }
 
   // Really common ASTs, I cannot imagine a compiler without them
@@ -187,7 +197,7 @@ trait Trees {
     *
     * @group Api
     */
-  trait TypeUse extends UseTree with NamedTree {
+  trait TypeUse extends UseTree {
     def tpe: TypeState[Type] = {
       State {
         (ctx: TreeContext) => {
@@ -199,7 +209,7 @@ trait Trees {
         }
       }
     }
-    override def toString: String = name
+    // override def toString: String = name
 
 
     // Traverser functions
@@ -213,7 +223,7 @@ trait Trees {
     *
     * @group Api
     */
-  trait Ident extends Expr with UseTree with NamedTree {
+  trait Ident extends Expr with UseTree {
     def tpe: TypeState[Type] = {
        State {
         (ctx: TreeContext) => {
@@ -225,7 +235,7 @@ trait Trees {
         }
       }
     }
-    override def toString: String = name
+    // override def toString: String = name
 
 
     // // Traverser functions
@@ -245,21 +255,39 @@ trait Trees {
     * @group Factories
     */
   trait TypeUseFactory {
-    private class TypeUseImpl(val uses: Option[TreeId], val name: Name, 
+    private class TypeUseImpl(val uses: Option[TreeId], 
+      val nameAtParser: Option[String],
       val owner: Option[TreeId], val pos: Option[Position]) extends TypeUse
 
     /**
       * Creates a [[TypeUse]] instance.
       *
+      * You don't need to use this constructor after parsing
+      *
       * @param uses the id of the [[DefTree]] that this instance uses
-      * @param name the name of this identifier
+      * @param nameAtParser the name of this type-use when parsed
       * @param owner the owner of this tree
       * @param pos the position of this tree
       * @return a new [[TypeUse]] instance.
       */
-    def apply(uses: Option[TreeId], name: Name, 
+    def apply(uses: Option[TreeId], nameAtParser: Option[String], 
       owner: Option[TreeId], pos: Option[Position]): TypeUse = 
-        new TypeUseImpl(uses, name, owner, pos)
+        new TypeUseImpl(uses, nameAtParser, owner, pos)
+
+    /**
+      * Creates a [[TypeUse]] instance.
+      *
+      * Please be reminded, you almost always need this this constructor
+      * after parser phase.
+      *
+      * @param uses the id of the [[DefTree]] that this instance uses
+      * @param owner the owner of this tree
+      * @param pos the position of this tree
+      * @return a new [[TypeUse]] instance.
+      */
+    def apply(uses: Option[TreeId], 
+      owner: Option[TreeId], pos: Option[Position]): TypeUse = 
+        new TypeUseImpl(uses, None, owner, pos)
   }
 
   /**
@@ -268,21 +296,38 @@ trait Trees {
     * @group Factories
     */
   trait IdentFactory {
-    private class IdentImpl(val uses: Option[TreeId], val name: Name, 
+    private class IdentImpl(val uses: Option[TreeId], 
+      val nameAtParser: Option[String], 
       val owner: Option[TreeId], val pos: Option[Position]) extends Ident 
 
     /**
       * Creates a [[Ident]] instance.
       *
       * @param uses the id of the [[DefTree]] that this instance uses
-      * @param name the name of this identifier
+      * @param nameAtParser the name of this identifier when parsed
       * @param owner the owner of this tree
       * @param pos the position of this tree
       * @return a new [[Ident]] instance.
       */
-    def apply(uses: Option[TreeId], name: Name, 
+    def apply(uses: Option[TreeId], nameAtParser: Option[String], 
       owner: Option[TreeId], pos: Option[Position]): Ident = 
-        new IdentImpl(uses, name, owner, pos)
+        new IdentImpl(uses, nameAtParser, owner, pos)
+
+
+    /**
+      * Creates a [[Ident]] instance. 
+      *
+      * Please be reminded, you almost always need this this constructor
+      * after parser phase.
+      *
+      * @param uses the id of the [[DefTree]] that this instance uses
+      * @param owner the owner of this tree
+      * @param pos the position of this tree
+      * @return a new [[Ident]] instance.
+      */
+    def apply(uses: Option[TreeId], owner: Option[TreeId], 
+      pos: Option[Position]): Ident = new IdentImpl(uses, None, owner, pos)
+
   }
 
 
@@ -329,6 +374,7 @@ trait Trees {
     val tpe: TypeState[Type] = toTypeState(notype)
     val owner: Option[TreeId] = None
     val pos: Option[Position] = None
+    val name: Name            = ERROR_NAME
   }
 
   //////////////////////////////////////////////////////////////////
