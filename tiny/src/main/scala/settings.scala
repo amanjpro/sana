@@ -84,17 +84,17 @@ object settings {
 
     def parser = new OptionParser[Unit]("scopt") {
         head(langName, langVersion)
-        opt[Unit]("Stest") action { case _ =>
+        opt[Unit]("Ytest") action { case _ =>
           config.isTest = true
         } text(s"To active testing mode for $fmName")
         opt[Unit]('v', "verbose") action { case _ =>
           config.isVerbose = true
         } text(s"Set verbose flag to $fmName")
-        opt[Seq[String]]("SPlugin") action { case (plugins, _) =>
+        opt[Seq[String]]("XPlugin") action { case (plugins, _) =>
           config.plugins = config.plugins ++ plugins
-        } valueName("<plugin1>, <plugin2>, ...") text(
+        } valueName("<plugin1>,<plugin2>,...") text(
           "Comma seperated plugin names to be used.")
-        opt[String]("Slog") action { case (log, _) =>
+        opt[String]("Xlog") action { case (log, _) =>
           config.logLevel = log match{
             case "off"    => Level.OFF
             case "all"    => Level.ALL
@@ -116,8 +116,8 @@ object settings {
         opt[Seq[String]]("classpath") abbr("cp") action { case (cp, _) =>
           config.classpath = config.classpath ++ cp
           // config.copy(libName = k, maxCount = v)
-        } valueName("<cp1>:<cp2>, ...") text(
-          "Colon seperated classpath paths.")
+        } valueName("<cp1>,<cp2>, ...") text(
+          "Comma seperated classpath paths.")
         help("help") text("prints this usage text")
         // opt[Boolean]("-SPlugin") action { (x, c) =>
           // config.copy(foo = x) } text("To active testing mode for Sana")
