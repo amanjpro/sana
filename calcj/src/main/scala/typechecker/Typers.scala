@@ -50,7 +50,7 @@ trait Typers extends passes.Phases {
       val tree  = unit.tree
       val state = unit.state
       val (w, (s, typedTree)) = typeTree(tree).run(state).run
-      (w, CompilationUnit(typedTree, s, unit.fileName))
+      (w, CompilationUnit(unit.id, typedTree, s, unit.fileName))
     }
 
     def typeTree(tree: Tree): TypeChecker[Tree] = tree match {

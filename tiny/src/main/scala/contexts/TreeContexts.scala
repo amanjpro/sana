@@ -66,6 +66,17 @@ trait TreeContexts {
       }
 
     /**
+     * This thread-safe method to generate the next `id` of a compilation unit.
+     *
+     * @param unitid The id of the compilation unit that we want to have its 
+     *               next id.
+     * @return an integer value that is different from all
+     *         the values that are produced so far in this
+     *         compilation unit.
+     */
+    def nextId(unitId: Int): Int = unit(unitId).nextId
+
+    /**
      * Factory method for creating a new context
      * 
      * @param idGen An id generator
@@ -117,11 +128,14 @@ trait TreeContexts {
      *
      * @see [[CompilationUnitContext]]
      * @param unitContext The compilation unit context to be added to this context
-     * @return A new instance of tree context with the given compilation unit context
+     * @return A tuple of the id of the new compilation-unit-context and a new
+     *         instance of tree context with the given compilation unit context
      *         added to it.
      */
-    def extend(unitContext: CompilationUnitContext): TreeContext = {
-      newContext(idGen, compilationUnits + (idGen.getNextId -> unitContext))
+    def extend(unitContext: CompilationUnitContext): (Int, TreeContext) = {
+      val id = idGen.nextId 
+      val ctx = newContext(idGen, compilationUnits + (id -> unitContext))
+      (id, ctx)
     }
 
     /**
@@ -267,6 +281,17 @@ trait TreeContexts {
       tree: IdentifiedTree): CompilationUnitContext
 
     /**
+     * This thread-safe method to generate the next `id`. 
+     *
+     * Generated ''id''s are of type integer.
+     * 
+     * @return an integer value that is different from all
+     *         the values that are produced so far by this
+     *         instance.
+     */
+    def nextId(): Int = idGen.nextId
+
+    /**
      * Checks if any tree with the given [[TreeId]] is already defined by
      * this context.
      *
@@ -339,7 +364,7 @@ trait TreeContexts {
     def lookup(name: Name, id: Option[TreeId]): Option[TreeId] = None
   }
 
-
+  
   /**
    * A factory method for creating empty tree contexts.
    *

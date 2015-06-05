@@ -97,7 +97,25 @@ trait MonadUtils {
     val r = MonadReader[Reader, R].local(f)(fa)
     r.liftM[ContextStateT]
   }
-  
+
+  def getSR[R]: StateReader[R, TreeContext] = {
+    type RD[a] = Reader[R, a]
+    type SR[c, a] = StateT[RD, c, a]
+    MonadState[SR, TreeContext].get
+  }
+
+  def putSR[R](env: TreeContext): StateReader[R, Unit] = {
+    type RD[a] = Reader[R, a]
+    type SR[c, a] = StateT[RD, c, a]
+    MonadState[SR, TreeContext].put(env)
+  }
+
+  def modifySR[R](f: TreeContext => TreeContext): StateReader[R, Unit] = {
+    type RD[a] = Reader[R, a]
+    type SR[c, a] = StateT[RD, c, a]
+    MonadState[SR, TreeContext].modify(f)
+  }
+
 
   private type SW[C, A]           = StateT[ErrorReportingMonad, C, A]
   def getSW: StateWriter[TreeContext] = 

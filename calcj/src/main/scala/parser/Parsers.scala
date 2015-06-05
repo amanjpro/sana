@@ -6,7 +6,7 @@ import sana.calcj
 import tiny.source.SourceFile
 import tiny.source.Position
 import tiny.util.{CompilationUnits, MonadUtils}
-import tiny.contexts.TreeContexts
+import tiny.contexts._
 import tiny.parser
 import calcj.Global
 import calcj.ast.Trees
@@ -30,7 +30,7 @@ trait Parsers extends parser.Parsers {
   
   def parse(source: SourceFile): CompilationUnit = {
     val tree = new CalcjVisitor(source.name).visit(source.content)
-    CompilationUnit(tree, EmptyContext, source.name)
+    CompilationUnit(NO_COMPILATION_UNIT_ID, tree, EmptyContext, source.name)
   }
 
   class CalcjVisitor(val source: String) extends CalcjBaseVisitor[Tree] {

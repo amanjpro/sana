@@ -37,7 +37,7 @@ trait Namers extends passes.Phases {
       val tree  = unit.tree
       val state = unit.state
       val (w, (s, namedTree)) = named(tree).run(state).run
-      (w, CompilationUnit(namedTree, s, unit.fileName))
+      (w, CompilationUnit(unit.id, namedTree, s, unit.fileName))
     }
     def canRedefine: Boolean
 

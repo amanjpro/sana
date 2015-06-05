@@ -39,7 +39,7 @@ trait AssignOwners extends passes.Phases {
       val tree  = unit.tree
       val state = unit.state
       val (s, namedTree) = assign(tree).run(state).run(None)
-      (Vector.empty, CompilationUnit(namedTree, s, unit.fileName))
+      (Vector.empty, CompilationUnit(unit.id, namedTree, s, unit.fileName))
     }
 
     def assign(tree: Tree): OwnerAssignerMonad[Tree] = tree match {
@@ -75,7 +75,7 @@ trait AssignOwners extends passes.Phases {
       owner   <- askSR
       rhs     <- assignExpr(valdef.rhs)
       tpt     <- assignTpt(valdef.tpt)
-    } yield ValDef(valdef.mods, valdef.id, valdef.tpt, valdef.name, 
+    } yield ValDef(valdef.mods, valdef.id, tpt, valdef.name, 
                     rhs, valdef.pos, owner)
 
     def assignTpt(tuse: TypeUse): OwnerAssignerMonad[TypeUse] = for {

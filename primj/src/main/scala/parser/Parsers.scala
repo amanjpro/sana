@@ -7,7 +7,7 @@ import sana.primj
 import tiny.contexts.TreeContexts
 import tiny.source.SourceFile
 import tiny.source.Position
-import tiny.contexts.NoId
+import tiny.contexts._
 import tiny.names.Name
 import tiny.util.{CompilationUnits, MonadUtils}
 import tiny.parser
@@ -36,7 +36,7 @@ trait Parsers extends parser.Parsers {
  
   def parse(source: SourceFile): CompilationUnit = {
     val tree = new PrimjVisitor(source.name).visit(source.content)
-    CompilationUnit(tree, EmptyContext, source.name)
+    CompilationUnit(NO_COMPILATION_UNIT_ID, tree, EmptyContext, source.name)
   }
 
   class PrimjVisitor(val source: String) extends PrimjBaseVisitor[Tree] {

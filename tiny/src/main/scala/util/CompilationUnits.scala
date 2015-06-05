@@ -4,8 +4,7 @@ package ch.usi.inf.l3.sana.tiny.util
 
 import ch.usi.inf.l3.sana.tiny
 import tiny.ast.Trees
-import tiny.contexts.TreeContexts
-import tiny.contexts.IDGen
+import tiny.contexts._
 
 import scalaz.Scalaz._
 import scalaz.{Name => _, _}
@@ -21,6 +20,7 @@ trait CompilationUnits {
   trait CompilationUnit {
     def tree: Tree
     def state: TreeContext
+    def id: Int
     // def treeState: CUState
     def fileName: String
 
@@ -29,17 +29,18 @@ trait CompilationUnits {
   }
 
   trait CompilationUnitFactory {
-    class CompilationUnitImpl(val tree: Tree, val state: TreeContext,
+    class CompilationUnitImpl(val id: Int, val tree: Tree, 
+      val state: TreeContext,
       val fileName: String) extends CompilationUnit {
 
 
       def withState(st: TreeContext): CompilationUnit = 
-        apply(tree, st, fileName)
+        apply(id, tree, st, fileName)
     }
 
-    def apply(tree: Tree, state: TreeContext,
+    def apply(id: Int, tree: Tree, state: TreeContext,
       fileName: String): CompilationUnit = 
-      new CompilationUnitImpl(tree, state, fileName)
+      new CompilationUnitImpl(id, tree, state, fileName)
 
   }
 
@@ -50,6 +51,7 @@ trait CompilationUnits {
       override def toString: String = 
         s"erroneous compilation unit for $fileName"
       val tree: Tree = Empty
+      val id: Int = NO_COMPILATION_UNIT_ID
       def withState(st: TreeContext): CompilationUnit = {
         apply(st, fileName)
       }
