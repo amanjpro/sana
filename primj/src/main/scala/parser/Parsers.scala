@@ -109,7 +109,7 @@ trait Parsers extends parser.Parsers {
         case tu: TypeUse =>
           names.map {
             case name =>
-              ValDef(NoFlags, NoId, tu, Name(name), Empty, pos(ctx), None)
+              ValDef(NoFlags, NoId, tu, Name(name), Empty, pos(ctx), NoId)
           }
         case _           =>
           // TODO: report an error
@@ -129,7 +129,7 @@ trait Parsers extends parser.Parsers {
           for {
             name  <- names
             expr  <- exprs
-          } yield ValDef(NoFlags, NoId, tu, Name(name), expr, pos(ctx), None)
+          } yield ValDef(NoFlags, NoId, tu, Name(name), expr, pos(ctx), NoId)
         case _           =>
           // TODO: report an error
           throw new Exception("Expression is expected")
@@ -144,7 +144,7 @@ trait Parsers extends parser.Parsers {
         else
           createVarDefs(kid.variableDefinition)
       }
-      Template(defs, None)
+      Template(defs, NoId)
     }
 
 		override def visitMethodDeclaration(ctx: 
@@ -162,7 +162,7 @@ trait Parsers extends parser.Parsers {
       (tpe, body) match {
         case (tu: TypeUse, b: Block) =>
           MethodDef(NoFlags, NoId, tu, Name(name), params, b,
-            pos(ctx), None)
+            pos(ctx), NoId)
         case _                       =>
           // TODO: report an error
           throw new Exception("Bad tree shape")
@@ -170,13 +170,13 @@ trait Parsers extends parser.Parsers {
     }
 		
 		override def visitVoidType(ctx: PrimjParser.VoidTypeContext): Tree = { 
-      TypeUse(None, Some(ctx.getText), None, pos(ctx))
+      TypeUse(NoId, Some(ctx.getText), NoId, pos(ctx))
     }
 		override def visitBlock(ctx: PrimjParser.BlockContext): Tree = { 
       val stmts   = ctx.blockStatement.asScala.toList.map {
         case kid => visitChildren(kid)
       }
-      Block(stmts, toTypeState(notype), pos(ctx), None)
+      Block(stmts, toTypeState(notype), pos(ctx), NoId)
     }
 		override def visitIf(ctx: PrimjParser.IfContext): Tree = { 
       val cond  = visitChildren(ctx.parExpression)
@@ -187,7 +187,7 @@ trait Parsers extends parser.Parsers {
       }
       (cond, thenp, elsep) match {
         case (c: Expr, t: Expr, e: Expr) =>
-          If(c, t, e, pos(ctx), None)
+          If(c, t, e, pos(ctx), NoId)
         case _                           =>
           // TODO: report an error
           throw new Exception("Bad tree shape")
@@ -218,7 +218,7 @@ trait Parsers extends parser.Parsers {
       val body  = visitChildren(ctx.statement)
       (cond, body) match {
         case (c: Expr, b: Expr) =>
-          For(inits, c, steps, b, pos(ctx), None)
+          For(inits, c, steps, b, pos(ctx), NoId)
         case _                  =>
           // TODO: report an error
           throw new Exception("Bad tree shape")
@@ -229,7 +229,7 @@ trait Parsers extends parser.Parsers {
       val body = visitChildren(ctx.statement)
       (cond, body) match {
         case (c: Expr, b: Expr) =>
-          While(NoFlags, c, b, pos(ctx), None)
+          While(NoFlags, c, b, pos(ctx), NoId)
         case _                  =>
           // TODO: report an error
           throw new Exception("Bad tree shape")
@@ -240,7 +240,7 @@ trait Parsers extends parser.Parsers {
       val body = visitChildren(ctx.statement)
       (cond, body) match {
         case (c: Expr, b: Expr) =>
-          While(Flags(FlagSet.DO_WHILE), c, b, pos(ctx), None)
+          While(Flags(FlagSet.DO_WHILE), c, b, pos(ctx), NoId)
         case _                  =>
           // TODO: report an error
           throw new Exception("Bad tree shape")
@@ -250,12 +250,12 @@ trait Parsers extends parser.Parsers {
 		override def visitReturn(ctx: PrimjParser.ReturnContext): Tree = {
       ctx.expression match {
         case null                => 
-          Return(pos(ctx), None)
+          Return(pos(ctx), NoId)
         case expr                =>
           val e = visitChildren(expr)
           e match {
             case e: Expr         =>
-              Return(e, pos(ctx), None)
+              Return(e, pos(ctx), NoId)
           case _                 =>
             // TODO: report an error
             throw new Exception("Bad tree shape")
@@ -265,11 +265,11 @@ trait Parsers extends parser.Parsers {
 
 		override def visitAssign(ctx: PrimjParser.AssignContext): Tree = {
       val name   = ctx.Identifier.getText
-      val id     = Ident(None, Some(name), None, None)
+      val id     = Ident(NoId, Some(name), NoId, pos(ctx))
       val rhs    = visitChildren(ctx.expression)
       rhs match {
         case e: Expr          =>
-          Assign(id, e, None, None)
+          Assign(id, e, pos(ctx), NoId)
         case _                 =>
           // TODO: report an error
           throw new Exception("Bad tree shape")
@@ -284,7 +284,7 @@ trait Parsers extends parser.Parsers {
       val elsep = visitChildren(ctx.expression.get(1))
       (cond, thenp, elsep) match {
         case (c: Expr, t: Expr, e: Expr) =>
-          Ternary(c, t, e, toTypeState(notype), pos(ctx), None)
+          Ternary(c, t, e, toTypeState(notype), pos(ctx), NoId)
         case _                           =>
           // TODO: report an error
           throw new Exception("Bad tree shape")
@@ -292,14 +292,14 @@ trait Parsers extends parser.Parsers {
     }
 		override def visitApply(ctx: PrimjParser.ApplyContext): Tree = {
       val name   = ctx.Identifier.getText
-      val id     = Ident(None, Some(name), None, None)
+      val id     = Ident(NoId, Some(name), NoId, pos(ctx))
       val args   = ctx.arguments.expressionList.expression match {
         case null           => Nil
         case es             => es.asScala.toList.map {
           case kid => visitChildren(kid).asInstanceOf[Expr]
         }
       }
-      Apply(id, args, None, None)
+      Apply(id, args, pos(ctx), NoId)
     }
 
 
@@ -317,7 +317,7 @@ trait Parsers extends parser.Parsers {
 
     override def visitPrimitiveType(
       @NotNull ctx: PrimjParser.PrimitiveTypeContext): Tree = { 
-      TypeUse(None, Some(ctx.getText), None, pos(ctx))
+      TypeUse(NoId, Some(ctx.getText), NoId, pos(ctx))
     }
 
     override def visitCast(@NotNull ctx: PrimjParser.CastContext): Tree = { 

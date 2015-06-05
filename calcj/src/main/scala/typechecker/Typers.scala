@@ -5,6 +5,7 @@ import sana.tiny
 import sana.calcj
 import tiny.passes
 import tiny.report._
+import tiny.contexts._
 import calcj.Global
 import calcj.ast.JavaOps._
 
@@ -147,7 +148,7 @@ trait Typers extends passes.Phases {
         val pos = e.pos
         // TODO: Assign TreeId to primitive types
         // TODO: Type names
-        val id = TypeUse(None, e.owner, pos)
+        val id = TypeUse(NoId, e.owner, pos)
         Cast(id, e, pos)
       }
     }

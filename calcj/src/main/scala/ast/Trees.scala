@@ -27,7 +27,7 @@ trait Trees extends ast.Trees {
   trait Cast extends Expr {
     def tpt: TypeUse
     def expr: Expr
-    def owner: Option[TreeId] = None
+    val owner: TreeId = expr.owner
     override def tpe: TypeState[Type] = tpt.tpe
   }
 
@@ -37,7 +37,7 @@ trait Trees extends ast.Trees {
     def op: BOp
     def rhs: Expr
 
-    def owner: Option[TreeId] = None
+    val owner: TreeId = lhs.owner
     override def toString: String = 
       s"(${lhs.toString} ${op.toString} ${rhs.toString})"
   
@@ -47,7 +47,7 @@ trait Trees extends ast.Trees {
     def op: POp
     def expr: Expr
 
-    def owner: Option[TreeId] = None
+    val owner: TreeId = expr.owner
     override def toString: String = s"(${op.toString}${expr.toString})"
   }
 
@@ -55,14 +55,14 @@ trait Trees extends ast.Trees {
     def op: UOp
     def expr: Expr
 
-    def owner: Option[TreeId] = None
+    val owner: TreeId = expr.owner
     override def toString: String = s"(${expr.toString}${op.toString})"
   }
 
   // Literals
   trait Lit extends Expr {
     def const: Constant
-    def owner: Option[TreeId] = None
+    val owner: TreeId = NoId
     override def tpe: TypeState[Type] = toTypeState(const.tpe)
   }
 

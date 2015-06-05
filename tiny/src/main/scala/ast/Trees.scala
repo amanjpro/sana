@@ -72,9 +72,9 @@ trait Trees {
       * 
       *
       * @see [[tiny.contexts.TreeId]]
-      * @return Optionally the owner of this AST node.
+      * @return The owner of this AST node, or returns NoId if not found.
       */
-    def owner: Option[TreeId]
+    def owner: TreeId
 
     /**
       * Returns the position of this AST node in the parsed source file.
@@ -142,9 +142,9 @@ trait Trees {
     * @group Api
     */
   trait Empty extends Expr {
-    def tpe: TypeState[Type]     = toTypeState(notype)
-    def owner: Option[TreeId]    = None
-    def pos: Option[Position]    = None
+    val tpe: TypeState[Type]     = toTypeState(notype)
+    val owner: TreeId            = NoId
+    val pos: Option[Position]    = None
 
 
     override def toString: String = ";"
@@ -168,7 +168,7 @@ trait Trees {
       * @see [[tiny.contexts.TreeId]]
       * @return Optionally the id for the [[DefTree]] that this tree uses.
       */
-    def uses: Option[TreeId]
+    def uses: TreeId
 
     def nameAtParser: Option[String]
 
@@ -176,8 +176,7 @@ trait Trees {
       State {
         (ctx: TreeContext) => {
           val n = for {
-            i <- uses
-            r <- ctx.getName(i)
+            r <- ctx.getName(uses)
           } yield r
           val r = (n, nameAtParser) match {
             case (None, None)    => ERROR_NAME
@@ -202,8 +201,7 @@ trait Trees {
       State {
         (ctx: TreeContext) => {
           val r = for {
-            i <- uses
-            r <- ctx.getTpe(i)
+            r <- ctx.getTpe(uses)
           } yield r
           (ctx, r.getOrElse(ErrorType))
         }
@@ -228,8 +226,7 @@ trait Trees {
        State {
         (ctx: TreeContext) => {
           val r = for {
-            i <- uses
-            r <- ctx.getTpe(i)
+            r <- ctx.getTpe(uses)
           } yield r
           (ctx, r.getOrElse(ErrorType))
         }
@@ -255,9 +252,9 @@ trait Trees {
     * @group Factories
     */
   trait TypeUseFactory {
-    private class TypeUseImpl(val uses: Option[TreeId], 
+    private class TypeUseImpl(val uses: TreeId, 
       val nameAtParser: Option[String],
-      val owner: Option[TreeId], val pos: Option[Position]) extends TypeUse
+      val owner: TreeId, val pos: Option[Position]) extends TypeUse
 
     /**
       * Creates a [[TypeUse]] instance.
@@ -270,8 +267,8 @@ trait Trees {
       * @param pos the position of this tree
       * @return a new [[TypeUse]] instance.
       */
-    def apply(uses: Option[TreeId], nameAtParser: Option[String], 
-      owner: Option[TreeId], pos: Option[Position]): TypeUse = 
+    def apply(uses: TreeId, nameAtParser: Option[String], 
+      owner: TreeId, pos: Option[Position]): TypeUse = 
         new TypeUseImpl(uses, nameAtParser, owner, pos)
 
     /**
@@ -285,8 +282,7 @@ trait Trees {
       * @param pos the position of this tree
       * @return a new [[TypeUse]] instance.
       */
-    def apply(uses: Option[TreeId], 
-      owner: Option[TreeId], pos: Option[Position]): TypeUse = 
+    def apply(uses: TreeId, owner: TreeId, pos: Option[Position]): TypeUse = 
         new TypeUseImpl(uses, None, owner, pos)
   }
 
@@ -296,9 +292,9 @@ trait Trees {
     * @group Factories
     */
   trait IdentFactory {
-    private class IdentImpl(val uses: Option[TreeId], 
+    private class IdentImpl(val uses: TreeId, 
       val nameAtParser: Option[String], 
-      val owner: Option[TreeId], val pos: Option[Position]) extends Ident 
+      val owner: TreeId, val pos: Option[Position]) extends Ident 
 
     /**
       * Creates a [[Ident]] instance.
@@ -309,8 +305,8 @@ trait Trees {
       * @param pos the position of this tree
       * @return a new [[Ident]] instance.
       */
-    def apply(uses: Option[TreeId], nameAtParser: Option[String], 
-      owner: Option[TreeId], pos: Option[Position]): Ident = 
+    def apply(uses: TreeId, nameAtParser: Option[String], 
+      owner: TreeId, pos: Option[Position]): Ident = 
         new IdentImpl(uses, nameAtParser, owner, pos)
 
 
@@ -325,7 +321,7 @@ trait Trees {
       * @param pos the position of this tree
       * @return a new [[Ident]] instance.
       */
-    def apply(uses: Option[TreeId], owner: Option[TreeId], 
+    def apply(uses: TreeId, owner: TreeId, 
       pos: Option[Position]): Ident = new IdentImpl(uses, None, owner, pos)
 
   }
@@ -370,9 +366,9 @@ trait Trees {
     * @group Trees
     */
   case object BadTree extends IdentifiedTree {
-    val id: TreeId = NoId
-    val tpe: TypeState[Type] = toTypeState(notype)
-    val owner: Option[TreeId] = None
+    val id: TreeId            = NoId
+    val tpe: TypeState[Type]  = toTypeState(notype)
+    val owner: TreeId         = NoId
     val pos: Option[Position] = None
     val name: Name            = ERROR_NAME
   }

@@ -110,9 +110,9 @@ trait TreeContexts {
      * @param name The name of the [[ast.Trees#IdentifiedTree]]
      * @param owner The owner of this name, if the tree is top-level 
      *              then the owner is None
-     * @return Optionally the id of the [[ast.Trees#IdentifiedTree]]
+     * @return The id of the [[ast.Trees#IdentifiedTree]], or `NoId` if not found
      */
-    def lookup(name: Name, owner: Option[TreeId]): Option[TreeId]
+    def lookup(name: Name, owner: TreeId): TreeId
 
     // = for {
     //   env     <- compiler.rwst.get
@@ -205,7 +205,7 @@ trait TreeContexts {
     // this field should never be used
     protected def idGen: IDGen = ???
     lazy val compilationUnits: Map[Int, CompilationUnitContext] = Map.empty
-    def lookup(name: Name, id: Option[TreeId]): Option[TreeId] = None
+    def lookup(name: Name, id: TreeId): TreeId = NoId
     override def getTpe(id: TreeId): Option[Type] = None
     protected def newContext(idGen: IDGen,
       cus: Map[Int, CompilationUnitContext]): TreeContext = EmptyContext
@@ -361,7 +361,7 @@ trait TreeContexts {
       new TreeContextImpl(idGen, cus)
 
     // TODO: Implement this, and its logic
-    def lookup(name: Name, id: Option[TreeId]): Option[TreeId] = None
+    def lookup(name: Name, id: TreeId): TreeId = NoId
   }
 
   

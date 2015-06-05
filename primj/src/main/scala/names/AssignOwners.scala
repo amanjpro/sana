@@ -5,7 +5,7 @@ import sana.tiny
 import sana.primj
 import tiny.source.Position
 import tiny.report.Report
-import tiny.contexts.TreeId
+import tiny.contexts._
 import tiny.passes
 import tiny.names
 import primj.Global
@@ -19,7 +19,7 @@ trait AssignOwners extends passes.Phases {
   type G = Global
   import global._
 
-  val factory = new StateReaderFactory[Option[TreeId]]
+  val factory = new StateReaderFactory[TreeId]
   type OwnerAssignerMonad[T] = factory.StateReader[T]
 
   // type RD[A] = Reader[Option[TreeId], A]
@@ -38,7 +38,7 @@ trait AssignOwners extends passes.Phases {
          (Vector[Report], CompilationUnit) = {
       val tree  = unit.tree
       val state = unit.state
-      val (s, namedTree) = assign(tree).run(state).run(None)
+      val (s, namedTree) = assign(tree).run(state).run(NoId)
       (Vector.empty, CompilationUnit(unit.id, namedTree, s, unit.fileName))
     }
 
@@ -67,7 +67,7 @@ trait AssignOwners extends passes.Phases {
       owner   <- askSR
       ret     <- assignTpt(meth.ret)
       params  <- meth.params.map(assignValDef(_)).sequenceU
-      body    <- localSR((_: Option[TreeId]) => Some(meth.id))(assignExpr(meth.body))
+      body    <- localSR((_: TreeId) => meth.id)(assignExpr(meth.body))
     } yield MethodDef(meth.mods, meth.id, ret, meth.name, 
                 params, body, meth.pos, owner)
 
