@@ -25,8 +25,12 @@ trait Namers extends names.Namers {
     def canRedefine: Boolean
 
     def named(tree: Tree): NamerMonad[Tree] 
-    def nameDef(defTree: TermTree): NamerMonad[TermTree]
+    def nameDef(defTree: DefTree): NamerMonad[DefTree]
     def bindUse(tree: Tree): NamerMonad[Tree] = tree match {
+      case tmpl: Template  => for {
+        members <- tmpl.members.map(nameDef(_)).sequenceU
+        r       <- pointSW(Template(members, tmpl.owner))
+      } yield r
       case deftree: TermTree                          => for {
        r <- bindUseDefs(deftree)
       } yield r

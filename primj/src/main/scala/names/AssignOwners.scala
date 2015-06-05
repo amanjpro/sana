@@ -22,9 +22,6 @@ trait AssignOwners extends passes.Phases {
   val factory = new StateReaderFactory[TreeId]
   type OwnerAssignerMonad[T] = factory.StateReader[T]
 
-  // type RD[A] = Reader[Option[TreeId], A]
-  // type OwnerAssignerMonad[T] = StateT[RD, TreeContext, T]
-
   trait OwnerAssigner extends TransformerPhase {
     
 
@@ -43,6 +40,10 @@ trait AssignOwners extends passes.Phases {
     }
 
     def assign(tree: Tree): OwnerAssignerMonad[Tree] = tree match {
+      case tmpl: Template  => for {
+        members <- tmpl.members.map(assignDef(_)).sequenceU
+        r       <- pointSR(Template(members, tmpl.owner))
+      } yield r
       case dtree: TermTree                           => for {
         r       <- assignDef(dtree)
       } yield r
@@ -54,14 +55,16 @@ trait AssignOwners extends passes.Phases {
       } yield e
     }
 
-    def assignDef(dtree: TermTree): OwnerAssignerMonad[TermTree] = dtree match {
-      case meth: MethodDef                           => for {
-        r       <- assignMethodDef(meth)
-      } yield r
-      case valdef: ValDef                            => for {
-        r       <- assignValDef(valdef)
-      } yield r
-    }
+    def assignDef(dtree: DefTree): OwnerAssignerMonad[DefTree]
+    def assignTerm(dtree: TermTree): OwnerAssignerMonad[TermTree] = 
+      dtree match {
+        case meth: MethodDef                           => for {
+          r       <- assignMethodDef(meth)
+        } yield r
+        case valdef: ValDef                            => for {
+          r       <- assignValDef(valdef)
+        } yield r
+      }
 
     def assignMethodDef(meth: MethodDef): OwnerAssignerMonad[MethodDef] = for {
       owner   <- askSR

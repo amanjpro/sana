@@ -50,6 +50,10 @@ trait IDAssigners extends passes.Phases {
     }
 
     def assign(tree: Tree): IDAssignerMonad[Tree] = tree match {
+      case tmpl: Template  => for {
+        members <- tmpl.members.map(assignDef(_)).sequenceU
+        r       <- pointSR(Template(members, tmpl.owner))
+      } yield r
       case dtree: DefTree                            => for {
         r       <- assignDef(dtree)
       } yield r
