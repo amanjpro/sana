@@ -40,6 +40,7 @@ object SharedSettings {
       "-feature", "-Xlint", "-Xfatal-warnings"), 
     scalacOptions in (Compile, doc) ++= Seq("-groups", "-implicits",
          "-diagrams", "-author", "-explaintypes",
+         "-doc-title", "Sana Compiler Framework",
          "-language:implicitConversions,higherKinds"),
     // Help SBT to find Api docs for libraries that don't provide any in
     // their artifacts
