@@ -3,7 +3,6 @@ package ch.usi.inf.l3.sana.primj.names
 import ch.usi.inf.l3.sana
 import sana.tiny
 import sana.primj
-import tiny.source.Position
 import tiny.report.Report
 import tiny.contexts._
 import tiny.passes
@@ -15,6 +14,34 @@ import scalaz.{Name => _, Failure => _, _}
 import scala.language.{higherKinds,implicitConversions}
 import Scalaz._
 
+/**
+ * This trait contains a compilation phase which adds contextual
+ * owner information of trees, for example in `java` if we have 
+ * the following example:
+ * 
+ * {{{ 
+ * int m(int x, int y) {
+ *   int z = x;
+ *   while(z > 0 && y != x) {
+ *     int v = 10;
+ *     z--;
+ *   }
+ *   return x + y + z;
+ * }
+ * }}}
+ * 
+ * The owner of method `m` is the containing class that contains it,
+ * the owner of variables `x`, `y`, `z`, `v` is method `m`. 
+ * 
+ * Since at this phase, the uses are not bound to the definitions (i.e. 
+ * `uses` field is not assigned to the definitions they refer to), it is 
+ * essential to keep the `nameAtParser` as is, otherwise the compiler 
+ * cannot resolve them.
+ *
+ * @author Amanj Sherwany
+ * @since 0.1
+ * @version 0.1
+ */
 trait AssignOwners extends passes.Phases {
   type G = Global
   import global._
@@ -48,7 +75,7 @@ trait AssignOwners extends passes.Phases {
         r       <- assignDef(dtree)
       } yield r
       case tuse: TypeUse                             => for {
-        r       <- assignTpt(tuse)
+        r       <- assignTypeUse(tuse)
       } yield r
       case e: Expr                                   => for {
         e       <- assignExpr(e)
@@ -68,7 +95,7 @@ trait AssignOwners extends passes.Phases {
 
     def assignMethodDef(meth: MethodDef): OwnerAssignerMonad[MethodDef] = for {
       owner   <- askSR
-      ret     <- assignTpt(meth.ret)
+      ret     <- assignTypeUse(meth.ret)
       params  <- meth.params.map(assignValDef(_)).sequenceU
       body    <- localSR((_: TreeId) => meth.id)(assignExpr(meth.body))
     } yield MethodDef(meth.mods, meth.id, ret, meth.name, 
@@ -77,23 +104,23 @@ trait AssignOwners extends passes.Phases {
     def assignValDef(valdef: ValDef): OwnerAssignerMonad[ValDef] = for {
       owner   <- askSR
       rhs     <- assignExpr(valdef.rhs)
-      tpt     <- assignTpt(valdef.tpt)
+      tpt     <- assignTypeUse(valdef.tpt)
     } yield ValDef(valdef.mods, valdef.id, tpt, valdef.name, 
                     rhs, valdef.pos, owner)
 
-    def assignTpt(tuse: TypeUse): OwnerAssignerMonad[TypeUse] = for {
+    def assignTypeUse(tuse: TypeUse): OwnerAssignerMonad[TypeUse] = for {
         owner   <- askSR
-        r       <- pointSR(TypeUse(tuse.uses, owner, tuse.pos))
+        r       <- pointSR(TypeUse(tuse.uses, tuse.nameAtParser, owner, tuse.pos))
     } yield r
 
     def assignExpr(expr: Expr): OwnerAssignerMonad[Expr] = expr match {
       case lit: Lit                                  => pointSR(lit)
       case id: Ident                                 => for {
         owner   <- askSR
-        r       <- pointSR(Ident(id.uses, owner, id.pos))
+        r       <- pointSR(Ident(id.uses, id.nameAtParser, owner, id.pos))
       } yield r
       case cast: Cast                                => for {
-        tpt     <- assignTpt(cast.tpt)
+        tpt     <- assignTypeUse(cast.tpt)
         expr    <- assignExpr(cast.expr)
       } yield Cast(tpt, expr, cast.pos)
       case bin: Binary                               => for {
@@ -123,11 +150,24 @@ trait AssignOwners extends passes.Phases {
         body    <- assignExpr(wile.body)
       } yield While(wile.mods, cond, body, wile.pos, owner)
       case block:Block                               => for {
+        // FIXME: 
+        // Every block has a new scope, which means variables 
+        // defined in it should have the block as its owner.
+        // And since We resole owners by their IDs, that means
+        // not all IDs need to have a name.
+        // Another thing to notice is that, we need to extend
+        // CompilationUnitContext to somehow store these kinds
+        // of scoping too.
         owner   <- askSR
         stmts   <- block.stmts.map(assign(_)).sequenceU
         r       <- pointSR(Block(stmts, block.tpe, block.pos, owner))
       } yield r
       case forloop:For                               => for {
+        // FIXME: 
+        // The issue with for loops is similar to the one mentioned
+        // in the Block, but here we also should include the variables
+        // defined in the inits clause of a for-loop in the newly
+        // created scope.
         owner   <- askSR
         inits   <- forloop.inits.map(assign(_)).sequenceU
         cond    <- assignExpr(forloop.cond)
