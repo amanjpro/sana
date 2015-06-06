@@ -170,11 +170,15 @@ trait TreeContexts {
      */
     def getName(id: TreeId): Option[Name] = for {
       tree <- unit(id.unitId).lookup(id)
-    } yield {
-      tree.name
+      r    <- tree match {
+        case n: NamedTree => Some(n.name)
+        case _            => None
+      }
+    } yield r
+      // tree.name
       // val (_, r, _) = run(tree.tpe, Nil, this)
       // r
-    }
+    // }
     /**
      * Returns the type of the tree that has the given id
      *

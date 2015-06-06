@@ -102,24 +102,32 @@ trait Trees {
       */
     def id: TreeId
 
+  }
+
+  /**
+   * The base trait for all AST nodes that have a nam
+   *
+   * @group Api
+   */
+  trait NamedTree extends Tree {
     /**
-      * @return The name of this tree.
-      */
+     * @return The name of this tree.
+     */
     def name: Name
   }
 
   /**
-    * The base trait for all trees that introduce a new name.
-    *
-    * @group Api
-    */
-  trait DefTree extends IdentifiedTree with Modifiable
+   * The base trait for all trees that introduce a new name.
+   *
+   * @group Api
+   */
+  trait DefTree extends IdentifiedTree with Modifiable with NamedTree
 
   /**
-    * The base trait for all trees that introduce a new type.
-    *
-    * @group Api
-    */
+   * The base trait for all trees that introduce a new type.
+   *
+   * @group Api
+   */
   trait TypeTree extends DefTree
       
   /**
