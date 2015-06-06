@@ -351,28 +351,28 @@ trait Trees {
   // Factory and Extractor instances
   //////////////////////////////////////////////////////////////////
   /**
-    * AST tree for identifiers that point to terms
-    * 
-    * @group Trees
-    */
+   * AST tree for identifiers that point to terms
+   * 
+   * @group Trees
+   */
   val Ident   = new IdentFactory {}
   /**
-    * AST tree for identifiers that point to types
-    * 
-    * @group Trees
-    */
+   * AST tree for identifiers that point to types
+   * 
+   * @group Trees
+   */
   val TypeUse = new TypeUseFactory {}
   /**
-    * AST tree for empty statements and trees
-    *
-    * @group Trees
-    */
+   * AST tree for empty statements and trees
+   *
+   * @group Trees
+   */
   val Empty     = new Empty {}
   /**
-    * AST tree to represent erroneous trees
-    *
-    * @group Trees
-    */
+   * AST tree to represent erroneous trees
+   *
+   * @group Trees
+   */
   case object BadTree extends IdentifiedTree {
     val id: TreeId            = NoId
     val tpe: TypeState[Type]  = toTypeState(notype)
