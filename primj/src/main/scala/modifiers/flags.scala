@@ -4,12 +4,17 @@ import ch.usi.inf.l3.sana.tiny
 import tiny.modifiers.Flag
 
 trait Flags extends tiny.modifiers.Flags {
-  val isDoWhile: Boolean = hasFlag(FlagSet.DO_WHILE)
+  val isDoWhile: Boolean       = hasFlag(FlagSet.DO_WHILE)
+  val isParam:   Boolean       = hasFlag(FlagSet.PARAM)
+  val isLocalVariable: Boolean = hasFlag(FlagSet.LOCAL_VARIABLE)
+  val isField: Boolean         = hasFlag(FlagSet.FIELD)
 }
 
-private class FlagsImpl(val mask: Flag) extends Flags {
-}
+private class FlagsImpl(val mask: Flag) extends Flags
 
 trait FlagSet {
-  val DO_WHILE: Flag = Flag(0 << 1)
+  val DO_WHILE: Flag        = Flag(1 << 1)
+  val PARAM: Flag           = Flag(1 << 2)
+  val LOCAL_VARIABLE: Flag  = Flag(1 << 3)
+  val FIELD: Flag           = Flag(1 << 4)
 }
