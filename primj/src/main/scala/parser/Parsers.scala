@@ -102,14 +102,15 @@ trait Parsers extends parser.Parsers {
     }
     
     def createVarDecls(ctx: 
-      PrimjParser.VariableDeclarationContext): List[ValDef] = {
+      PrimjParser.VariableDeclarationContext,
+      mods: Flags): List[ValDef] = {
       val tpe    = visitChildren(ctx.`type`)
       val names  = ctx.Identifier.asScala.toList.map(_.getText)
       tpe match {
         case tu: TypeUse =>
           names.map {
             case name =>
-              ValDef(NoFlags, NoId, tu, Name(name), Empty, pos(ctx), NoId)
+              ValDef(mods, NoId, tu, Name(name), Empty, pos(ctx), NoId)
           }
         case _           =>
           // TODO: report an error
@@ -118,7 +119,8 @@ trait Parsers extends parser.Parsers {
     }
 
     def createVarDefs(ctx: 
-      PrimjParser.VariableDefinitionContext): List[ValDef] = {
+      PrimjParser.VariableDefinitionContext,
+      mods: Flags): List[ValDef] = {
       val tpe    = visitChildren(ctx.`type`)
       val names  = ctx.Identifier.asScala.toList.map(_.getText)
       val exprs  = ctx.expression.asScala.toList.map {
@@ -129,7 +131,7 @@ trait Parsers extends parser.Parsers {
           for {
             name  <- names
             expr  <- exprs
-          } yield ValDef(NoFlags, NoId, tu, Name(name), expr, pos(ctx), NoId)
+          } yield ValDef(mods, NoId, tu, Name(name), expr, pos(ctx), NoId)
         case _           =>
           // TODO: report an error
           throw new Exception("Expression is expected")
@@ -140,9 +142,9 @@ trait Parsers extends parser.Parsers {
         if(kid.methodDeclaration != null)
           List(visitChildren(kid.methodDeclaration).asInstanceOf[DefTree])
         else if(kid.variableDeclaration != null)
-          createVarDecls(kid.variableDeclaration)
+          createVarDecls(kid.variableDeclaration, Flags(FlagSet.FIELD))
         else
-          createVarDefs(kid.variableDefinition)
+          createVarDefs(kid.variableDefinition, Flags(FlagSet.FIELD))
       }
       Template(defs, NoId)
     }
@@ -202,7 +204,8 @@ trait Parsers extends parser.Parsers {
               case kid => visitChildren(kid).asInstanceOf[Expr]
             }
           else 
-            createVarDefs(inits.variableDefinition)
+            createVarDefs(inits.variableDefinition, 
+              Flags(FlagSet.LOCAL_VARIABLE))
       }
       val cond  = ctx.forControl.expression match {
         case null => Empty
