@@ -1,4 +1,7 @@
 
-for(int i; i < 10; i++) {
-  int k = i;
+void m() {
+  for(int i = 0; i < 10; i++) {
+    int k = i;
+  }
+  int n = m();
 }
