@@ -19,6 +19,17 @@ Google "Type Lambdas in Scala"
 trait MonadUtils {
   self: TreeContexts =>
   
+  
+
+  // private[this] def reader[P] = new RF[P]()
+
+  type ErrorReportingMonad[A]     = WriterT[Id, Vector[Report], A]
+  type ContextStateT[F[_], A]     = StateT[F, Context, A]
+
+  type ContextState[A]            = ContextStateT[Id, A]
+  type StateWriter[A]             = ContextStateT[ErrorReportingMonad, A]
+
+
   /*
     INFO:
     Type Lambdas in Scala are not as useful as it seems. It is basically 
@@ -35,19 +46,12 @@ trait MonadUtils {
     Until the bugs gets fixed, we mark StateReader as private, and 
     StateReaderFactory as public
   */
-  class StateReaderFactory[μ] {
+  class StateReaderFactory[μ]() {
     type ρ[α] = Reader[μ, α]
     type λ[α] = ContextStateT[ρ, α]
     type StateReader[α] = λ[α]
   }
 
-  // private[this] def reader[P] = new RF[P]()
-
-  type ErrorReportingMonad[A]     = WriterT[Id, Vector[Report], A]
-  type ContextStateT[F[_], A]     = StateT[F, Context, A]
-
-  type ContextState[A]            = ContextStateT[Id, A]
-  type StateWriter[A]             = ContextStateT[ErrorReportingMonad, A]
 
   // type RD[A] = Reader[Option[TreeId], A]
   // type OwnerAssignerMonad[T] = StateT[RD, Context, T]
