@@ -140,7 +140,7 @@ trait Parsers extends parser.Parsers {
     override def visitProgram(ctx: PrimjParser.ProgramContext): Tree = { 
       val defs = ctx.defDecleration.asScala.toList.flatMap { (kid) => 
         if(kid.methodDeclaration != null)
-          List(visitChildren(kid.methodDeclaration).asInstanceOf[DefTree])
+          List(visitChildren(kid).asInstanceOf[DefTree])
         else if(kid.variableDeclaration != null)
           createVarDecls(kid.variableDeclaration, Flags(FlagSet.FIELD))
         else
@@ -156,9 +156,17 @@ trait Parsers extends parser.Parsers {
       val params = ctx.formalParameters match {
         case null         => List()
         case ps           =>
-        ps.formalParameterList.formalParameter.asScala.toList.map {
-            case kid => visitChildren(kid).asInstanceOf[ValDef]
-          }
+        ps.formalParameterList match {
+          case null       => List()
+          case ps         =>
+            ps.formalParameter match {
+              case null   => Nil
+              case ps     =>
+                ps.asScala.toList.map {
+                case kid => visitChildren(kid).asInstanceOf[ValDef]
+              }
+            }
+        }
       }
       val body   = visitChildren(ctx.methodBody)
       (tpe, body) match {
