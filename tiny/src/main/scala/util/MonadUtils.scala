@@ -132,7 +132,8 @@ trait MonadUtils {
     MonadState[SW, Context].modify(f)
     
 
-  def const[T](a: T)(b: T): T = a
+  def const[T, B](a: T)(b: B): T = a
+
   implicit def stateR2R[R, A](x: StateReader[R, A]): Reader[R, A] =
     x.lift[Id]
 

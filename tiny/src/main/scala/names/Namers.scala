@@ -29,21 +29,20 @@ trait Namers extends passes.Phases {
     val name: String = "namer"
     override val description: Option[String] = 
       Some("The main namer phase, bind uses to definitions.")
-    override def runRightAfter: Option[String] = Some("owner-assigner")
+    override def runRightAfter: Option[String] = Some("id-assigner")
 
 
     def startPhase(state: Context, unit: CompilationUnit): 
          (Vector[Report], CompilationUnit, Context) = {
       val tree  = unit.tree
-      val (w, (s, namedTree)) = named(tree).run(state).run
+      val (w, (s, namedTree)) = nameTrees(tree).run(state).run
       (w, CompilationUnit(unit.id, namedTree, unit.fileName), s)
     }
-    def canRedefine: Boolean
 
-    def named(tree: Tree): NamerMonad[Tree]
-    def nameDefs(defTree: DefTree): NamerMonad[DefTree]
-    def bindUses(tree: Tree): NamerMonad[Tree]
-
+    def nameTrees(tree: Tree): NamerMonad[Tree]
+    // def nameDefs(defTree: DefTree): NamerMonad[DefTree]
+    // def bindUses(tree: Tree): NamerMonad[Tree]
+    //
     // def bind(id: TreeId, tree: IdentifiedTree): TreeState[IdentifiedTree] =
     //   for {
     //     env    <- compiler.rwst.get
