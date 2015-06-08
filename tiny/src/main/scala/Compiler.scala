@@ -60,7 +60,7 @@ trait CompilerApi {
     // FIXME: This is really broken, what about warnings? what about compiling
     // all compilation units and not giving up?
     val (w, _, cs) = cunits.foldLeft((Vector.empty[Report], 
-            global.EmptyContext: global.TreeContext,
+            global.Context(): global.Context,
             Vector.empty[global.CompilationUnit]))((z, y) => {
       val (w, s, cs) = z
       val cunit = y.withState(s)

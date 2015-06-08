@@ -44,7 +44,7 @@ import scalaz.{Name => _, _}
 trait Trees {
   self: Types with TreeContexts with MonadUtils =>
 
-  type TypeState[T <: Type] = State[TreeContext, T]
+  type TypeState[T <: Type] = State[Context, T]
   def toTypeState[A <: Type](t: A): ContextState[A] = t.point[ContextState]
 
  
@@ -182,7 +182,7 @@ trait Trees {
 
     def name: ContextState[Name] = {
       State {
-        (ctx: TreeContext) => {
+        (ctx: Context) => {
           val n = for {
             r <- ctx.getName(uses)
           } yield r
@@ -207,7 +207,7 @@ trait Trees {
   trait TypeUse extends UseTree {
     def tpe: TypeState[Type] = {
       State {
-        (ctx: TreeContext) => {
+        (ctx: Context) => {
           val r = for {
             r <- ctx.getTpe(uses)
           } yield r
@@ -232,7 +232,7 @@ trait Trees {
   trait Ident extends Expr with UseTree {
     def tpe: TypeState[Type] = {
        State {
-        (ctx: TreeContext) => {
+        (ctx: Context) => {
           val r = for {
             r <- ctx.getTpe(uses)
           } yield r

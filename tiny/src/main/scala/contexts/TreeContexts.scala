@@ -30,133 +30,187 @@ trait TreeContexts {
   // Contexts
   //////////////////////////////////////////////////////////////////
   /**
-   * The base trait for tree contexts.
+   * The base trait for all contexts.
    *
    * @group Tree Contexts
    */
-  trait TreeContext {
+  trait Context {
     /** A unique id generator */
     protected def idGen: IDGen
 
     /**
-     * A map from ids to the [[CompilationUnitContext]]s that they 
-     * represent.
+     * A map from ids to [[Context]]s.
      * 
-     * Each [[CompilationUnitContext]] in `Sana` is assigned a unique 
-     * number to it to be distinguishable from all other unit contexts.
-     *
-     * @see [[CompilationUnitContext]]
-     * @return A map from integer ids to compilation units.
+     * Every instance of [[Context]] in `Sana` is assigned a unique *id* to it
+     * to be distinguishable from all other instances.
      */
-    protected def compilationUnits: Map[Int, CompilationUnitContext]
-
-    /**
-     * Given an id of a compilation unit, returns the compilation unit context 
-     * that has the given id.
-     *
-     * @see [[CompilationUnitContext]]
-     * @param index The id of the compilation unit
-     * @return The compilation unit that has the given id. If there is none with
-     *         this id, [[MissingUnitContext]] is returned.
-     */
-    def unit(index: Int): CompilationUnitContext = 
-      compilationUnits.get(index) match {
-        case Some(cu) => cu
-        case None     => MissingUnitContext
-      }
-
-    /**
-     * This thread-safe method to generate the next `id` of a compilation unit.
-     *
-     * @param unitid The id of the compilation unit that we want to have its 
-     *               next id.
-     * @return an integer value that is different from all
-     *         the values that are produced so far in this
-     *         compilation unit.
-     */
-    def nextId(unitId: Int): Int = unit(unitId).nextId
+    protected def decls: Map[TreeId, Context]
 
     /**
      * Factory method for creating a new context
      * 
      * @param idGen An id generator
-     * @param cus a dictionary of already defined compilation unit contexts
-     * @return a newly instanciated tree context, with the given idGen and 
-     *         compilation unit contexts.
+     * @param decls a dictionary of already defined members of this context
+     * @return a newly instantiated tree context, with the given idGen and 
+     *         context.
      */
-    protected def newContext(idGen: IDGen,
-        cus: Map[Int, CompilationUnitContext]): TreeContext
-    
+    protected def newContext(idGen: IDGen, 
+      binds: Map[TreeId, Context]): Context
+
     /**
-     * Checks if any tree with the given [[TreeId]] is already defined by
-     * this context.
+     * Deletes the tree that has `id`, and all its children from this context
+     *
+     * @param id the id of the tree to be deleted, needs to be unique
+     * @return a new compilation unit context with `id` and all 
+     *         its children removed
+     */
+    def delete(id: TreeId): Context = id match {
+      case NoId                => this
+      case _: SimpleId         => newContext(idGen, decls - id)
+      case _: CompositeId      =>
+        val ctx = decls.get(id)
+        ctx match {
+          case None            => this
+          case Some(ctx)       =>
+            val newCtx = ctx.delete(id.forward)
+            update(id, newCtx)
+        }
+    }
+
+    /**
+     * This thread-safe method to generate the next `id` in a context.
+     *
+     * @param owner The id of the context that we want to have its next id.
+     * @return an *id* that is different from all the values that are produced
+     *         so far by the context with the given `id`.
+     */
+    def nextId(owner: TreeId): TreeId = {
+      if(owner == NoId) TreeId(NoId, idGen.nextId)
+      else {
+        decls.get(owner) match {
+          case None                          => 
+            // FIXME
+            TreeId(NoId, idGen.nextId)
+          case Some(ctx) if owner.isSimple   => 
+            TreeId(owner, ctx.idGen.nextId)
+          case Some(ctx)                     =>
+            ctx.nextId(owner.forward)
+        }
+      }
+    }
+
+    /**
+     * Checks if there is a binding for the given [[TreeId]] id.
      *
      * @see [[contexts.TreeId]]
      * @param id The id that we want to check
      * @return True if the id is defined, and false otherwise
      */
     def defines(id: TreeId): Boolean = {
-      compilationUnits.get(id.unitId) match {
-        case None       => false
-        case Some(unit) => unit.defines(id)
+      lazy val r = decls.get(id) match {
+        case None                                => false
+        case _: NamedContext if id.isSimple      => true
+        case c: Context                          => id match {
+          case _: SimpleId    => true
+          case _              => c.defines(id.forward)
+        }
       }
+
+      id != NoId && r
     }
 
     /**
-     * In the current context, looks up for a [[ast.Trees#IdentifiedTree]] that has
+     * In the current context, looks up for a [[ast.Trees#NamedTree]] that has
      * the given name.
      *
      * @see [[contexts.TreeId]]
-     * @param name The name of the [[ast.Trees#IdentifiedTree]]
+     * @param name The name of the [[ast.Trees#NamedTree]]
      * @param owner The owner of this name, if the tree is top-level 
-     *              then the owner is None
-     * @return The id of the [[ast.Trees#IdentifiedTree]], or `NoId` if not found
+     *              then the owner is the id of the compilation unit
+     * @return The id of the [[ast.Trees#NamedTree]], or `NoId` if not found
      */
-    def lookup(name: Name, owner: TreeId): TreeId
-
-    // = for {
-    //   env     <- compiler.rwst.get
-    //   tree    <- env.unit(id.unitId).decls.get(id) match  {
-    //                case Some(t) => point(t)
-    //                case None    => point(BadTree)
-    //              }
-    // } yield tree
-
+    def lookup(name: Name, owner: TreeId): TreeId = ???
 
     /**
-     * Extends this context with a given [[CompilationUnitContext]].
+     * Extends this context with a given [[Context]].
      *
-     * @see [[CompilationUnitContext]]
-     * @param unitContext The compilation unit context to be added to this context
-     * @return A tuple of the id of the new compilation-unit-context and a new
-     *         instance of tree context with the given compilation unit context
-     *         added to it.
+     * @param decl The declaration to be added to this context
+     * @return A tuple of the id of the new declaration and a new instance of
+     *         a context with the given declaration added to it.
      */
-    def extend(unitContext: CompilationUnitContext): (Int, TreeContext) = {
-      val id = idGen.nextId 
-      val ctx = newContext(idGen, compilationUnits + (id -> unitContext))
-      (id, ctx)
+    def extend(owner: TreeId, decl: Context): (TreeId, Context) = {
+      owner match {
+        case NoId        => 
+          val id = TreeId(owner, idGen.nextId)
+          val ctx = newContext(idGen, decls + (id -> decl))
+          (id, ctx)
+        case _          => decls.get(owner) match {
+          case None          => (NoId, this)
+          case Some(ctx)     =>
+            val (id, ctx2) = ctx.extend(owner.forward, decl)
+            val ctx3       = update(owner, ctx2)
+            (id, ctx3)
+        }
+      }
     }
 
     /**
-     * Updates the bindings of the given id with a given 
-     * [[CompilationUnitContext]].
+     * Updates the bindings of the given id with a [[tiny.ast.Trees#Tree]]
      *
-     * @see [[CompilationUnitContext]]
-     * @param id The id of the compilation unit context to be updated
-     * @param unitContext The compilation unit context to be updated
-     * @return A new instance of tree context with the mapping of the given
-     *         id updated to the given compilation context. In case the binding
-     *         of the id was missing, `this` will be returned.
+     * Note that this method only performs if the *id* points to a 
+     * [[TreeContexts#NamedContext]]
+     *
+     * @param id The id of the context to be updated
+     * @param tree The new tree of the context
+     * @return A new instance of this context with the mapping of the given
+     *         id updated to the given tree. In case the binding of the id
+     *         was missing, `this` will be returned.
      */
-    def update(id: Int, 
-      unitContext: CompilationUnitContext): TreeContext = {
-      compilationUnits.get(id) match {
+    def update(id: TreeId, tree: Tree): Context = {
+      decls.get(id) match {
+        case None                                     =>
+          this
+        case Some(ctx: NamedContext) if id.isSimple   =>
+          val ctx2 = ctx.updateTree(tree)
+          update(id, ctx2)
+        case Some(ctx)                                =>
+          val ctx2 = ctx.update(id.forward, tree)
+          update(id, ctx2)
+      }
+    }
+    /**
+     * Updates the bindings of the given id with a new [[Context]].
+     *
+     * @param id The id of the context to be updated
+     * @param bind The new value of the context
+     * @return A new instance of this context with the mapping of the given
+     *         id updated to the given context. In case the binding of the id
+     *         was missing, `this` will be returned.
+     */
+    def update(id: TreeId, 
+      bind: Context): Context = {
+      decls.get(id) match {
         case None =>
           this
         case _    =>
-          newContext(idGen, compilationUnits + (id -> unitContext))
+          newContext(idGen, decls + (id -> bind))
       }
+    }
+
+    /**
+     * Get the tree bound to the given `id`
+     *
+     * @param id the id of the tree
+     * @return optionally returns the tree that is bound to this id
+     */
+    def getTree(id: TreeId): Option[Tree] = id match {
+      case NoId              => None
+      case _: SimpleId       => decls.get(id) match {
+        case c: NamedContext        => Some(c.tree)
+        case _                      => None
+      }
+      case _: CompositeId    => 
+        decls.get(id).flatMap(_.getTree(id.forward)) 
     }
 
     /**
@@ -169,16 +223,13 @@ trait TreeContexts {
      *         id, None is returned.
      */
     def getName(id: TreeId): Option[Name] = for {
-      tree <- unit(id.unitId).lookup(id)
+      tree <- getTree(id)
       r    <- tree match {
         case n: NamedTree => Some(n.name)
         case _            => None
       }
     } yield r
-      // tree.name
-      // val (_, r, _) = run(tree.tpe, Nil, this)
-      // r
-    // }
+
     /**
      * Returns the type of the tree that has the given id
      *
@@ -190,196 +241,114 @@ trait TreeContexts {
      *         id, None is returned.
      */
     def getTpe(id: TreeId): Option[Type] = for {
-      tree <- unit(id.unitId).lookup(id)
+      tree <- getTree(id)
     } yield {
       tree.tpe.run(this)._2
-      // val (_, r, _) = run(tree.tpe, Nil, this)
-      // r
     }
   }
 
   /**
-   * This object represents an empty context for trees. 
-   * 
-   * This means it doesn't (and cannot) define tree definitions.
+   * The base trait for contexts that represent a named tree
    *
    * @group Tree Contexts
    */
-  case object EmptyContext extends TreeContext {
-    // this field should never be used
-    protected def idGen: IDGen = ???
-    lazy val compilationUnits: Map[Int, CompilationUnitContext] = Map.empty
-    def lookup(name: Name, id: TreeId): TreeId = NoId
-    override def getTpe(id: TreeId): Option[Type] = None
-    protected def newContext(idGen: IDGen,
-      cus: Map[Int, CompilationUnitContext]): TreeContext = EmptyContext
+  trait NamedContext extends Context {
+    def tree: Tree
+    def updateTree(tree: Tree): NamedContext
   }
+  
 
   /**
-   * A trait to represent Compilation Unit Contexts. 
+   * A class to represent a block of contexts, this can be
+   * a programming block, or a compilation unit or any other
+   * nameless context
    *
    * @group Compilation Unit Contexts
    */
-  trait CompilationUnitContext {
-    protected def idGen: IDGen
+  class BlockContext(protected val idGen: IDGen, 
+    protected val decls: Map[TreeId, Context] = Map.empty) extends Context {
 
-    /**
-     * A map from ids to the [[ast.Trees#IdentifiedTree]]s that they 
-     * represent.
-     * 
-     * @return A map from [[contexts.TreeId]] to AST trees.
-     */
-    protected def decls: Map[TreeId, IdentifiedTree]
-
-    /**
-     * Deletes the tree that has `id`, and all its children from this context
-     *
-     * @param id the id of the tree to be deleted, needs to be unique
-     * @return a new compilation unit context with `id` and all 
-     *         its children removed
-     */
-    def delete(id: TreeId): CompilationUnitContext
-
-    /**
-     * Extends this context with a given [[ast.Trees#IdentifiedTree]].
-     *
-     * @param id the id of the tree to be added, needs to be unique
-     * @param tree The compilation unit context to be added to this context
-     * @return A new instance of [[CompilationUnitContext]] with the given
-     *         tree added to it. In case id is already already dfeined,
-     *         `this` is returned.
-     */
-    def extend(id: TreeId, tree: IdentifiedTree): CompilationUnitContext =
-      defines(id) match {
-        case true   => this
-        case false  => insert(id, tree)
-      }
-
-    /**
-     * Updates the bindings of the given id with a given 
-     * [[ast.Trees#IdentifiedTree]].
-     *
-     * @param id The id of the tree to be updated
-     * @param tree The tree to be updated
-     * @return A new instance of compilation unit context with the 
-     *         mapping of the given id updated to the given tree.
-     *         In case the binding of the id was missing, `this` will be
-     *         returned.
-     */
-    def update(id: TreeId, tree: IdentifiedTree): CompilationUnitContext =
-      defines(id) match {
-        case false => this
-        case true  => insert(id, tree)
-      }
-
-    /**
-     * Inserts the bindings of the given id with a given 
-     * [[ast.Trees#IdentifiedTree]].
-     *
-     * @param id The id of the tree to be updated/added
-     * @param tree The tree to be updated/added
-     * @return A new instance of compilation unit context with the 
-     *         mapping of the given id updated/added to the given tree.
-     */
-    protected def insert(id: TreeId, 
-      tree: IdentifiedTree): CompilationUnitContext
-
-    /**
-     * This thread-safe method to generate the next `id`. 
-     *
-     * Generated ''id''s are of type integer.
-     * 
-     * @return an integer value that is different from all
-     *         the values that are produced so far by this
-     *         instance.
-     */
-    def nextId(): Int = idGen.nextId
-
-    /**
-     * Checks if any tree with the given [[TreeId]] is already defined by
-     * this context.
-     *
-     * @see [[contexts.TreeId]]
-     * @param id The id that we want to check
-     * @return True if the id is defined, and false otherwise
-     */
-    def defines(id: TreeId): Boolean = decls.contains(id)
-
-    /**
-     * Looks up for a tree with the given [[TreeId]]
-     *
-     * @see [[contexts.TreeId]]
-     * @param id The id go be looked up
-     * @return optionally the tree that has the given `id`
-     */
-    def lookup(id: TreeId): Option[IdentifiedTree] = 
-      decls.get(id)
-
+    protected def newContext(idGen: IDGen, 
+      binds: Map[TreeId, Context]): Context = 
+        new BlockContext(idGen, binds)
   }
+
+
+  class AtomicContext(val tree: Tree) extends NamedContext {
+    final protected val decls: Map[TreeId, Context] = Map.empty
+    final protected def idGen: IDGen = ???
+    protected def newContext(idGen: IDGen, 
+      binds: Map[TreeId, Context]): Context = this
+    def updateTree(tree: Tree): NamedContext = new AtomicContext(tree)
+    override def defines(id: TreeId): Boolean = false
+    override def lookup(name: Name, owner: TreeId): TreeId = NoId
+    override def extend(owner: TreeId, decl: Context): (TreeId, Context) = 
+      (NoId, this)
+    override def update(id: TreeId, bind: Context): Context = this
+    override def getTree(id: TreeId): Option[Tree] = None
+    override def getName(id: TreeId): Option[Name] = None
+    override def getTpe(id: TreeId): Option[Type] = None
+    override def delete(id: TreeId): Context = this
+  }
+
+  class MethodContext(val tree: Tree, protected val idGen: IDGen, 
+    val decls: Map[TreeId, Context] = Map.empty) extends NamedContext {
+    
+    
+    def updateTree(tree: Tree): NamedContext = 
+      new MethodContext(tree, idGen, decls)
+    protected def newContext(idGen: IDGen, 
+      binds: Map[TreeId, Context]): Context = 
+        new MethodContext(tree, idGen, binds)
+  }
+  
+
 
   /**
    * An object to represent missing compilation units. 
    *
    * @group Compilation Unit Contexts
    */
-  case object MissingUnitContext extends CompilationUnitContext {
+  case object InvalidContext extends Context {
     // this field should never be used
     protected def idGen: IDGen = ???
-    protected def decls: Map[TreeId, IdentifiedTree] = Map.empty
-    protected def insert(id: TreeId, 
-      tree: IdentifiedTree): CompilationUnitContext = 
-        MissingUnitContext
-    def delete(id: TreeId): CompilationUnitContext =
-      MissingUnitContext
+    protected def decls: Map[TreeId, Context] = Map.empty
+    protected def newContext(idGen: IDGen, 
+      binds: Map[TreeId, Context]): Context = InvalidContext
+    override def defines(id: TreeId): Boolean = false
+    override def lookup(name: Name, owner: TreeId): TreeId = NoId
+    override def extend(owner: TreeId, decl: Context): (TreeId, Context) = 
+      (NoId, InvalidContext)
+    override def update(id: TreeId, bind: Context): Context = InvalidContext
+    override def getTree(id: TreeId): Option[Tree] = None
+    override def getName(id: TreeId): Option[Name] = None
+    override def getTpe(id: TreeId): Option[Type] = None
+    override def delete(id: TreeId): Context =
+      InvalidContext
   }
 
-  private class CompilationUnitContextImpl(
-    protected val idGen: IDGen,
-    protected val decls: Map[TreeId, IdentifiedTree]) 
-    extends CompilationUnitContext {
-    
-    def insert(id: TreeId, tree: IdentifiedTree): CompilationUnitContext = 
-      new CompilationUnitContextImpl(idGen, decls + (id -> tree))
-
-    def delete(id: TreeId): CompilationUnitContext =
-      new CompilationUnitContextImpl(idGen, decls - id)
+  private class ContextImpl(protected val idGen: IDGen,
+    val decls: Map[TreeId, Context]) extends Context {
+    protected def newContext(idGen: IDGen, 
+      binds: Map[TreeId, Context]): Context = 
+        new ContextImpl(idGen, binds)
   }
 
-  /**
-   * A factory method for creating empty compilation unit contexts.
-   *
-   * Every time this method is called, a new instance is returned.
-   * @group Factory Methods
-   * @return a new instance of CompilationUnitContext.
-   */
-  def compilationUnitContext: CompilationUnitContext = 
-    new CompilationUnitContextImpl(new IDGen, Map.empty)
-
-
-  private class TreeContextImpl(val idGen: IDGen,
-    val compilationUnits: Map[Int, CompilationUnitContext]) 
-    extends TreeContext {
-
-    protected def newContext(idGen: IDGen,
-        cus: Map[Int, CompilationUnitContext]): TreeContext = 
-      new TreeContextImpl(idGen, cus)
-
-    // TODO: Implement this, and its logic
-    def lookup(name: Name, id: TreeId): TreeId = NoId
+  object Context {
+    def apply(idGen: IDGen, decls: Map[TreeId, Context]): Context = 
+      new ContextImpl(idGen, decls)
+    def apply(idGen: IDGen): Context = 
+      new ContextImpl(idGen, Map.empty)
+    def apply(): Context = 
+      new ContextImpl(new IDGen, Map.empty)
   }
 
-  
-  /**
-   * A factory method for creating empty tree contexts.
-   *
-   * Every time this method is called, a new instance is returned.
-   * @group Factory Methods
-   * @return a new instance of TreeContext.
-   */
-  def treeContext: TreeContext = 
-    new TreeContextImpl(new IDGen, Map.empty)
-
-
+  def emptyContext: Context = Context.apply()
+  def methodContext(tree: Tree): MethodContext = 
+    new MethodContext(tree, new IDGen)
+  def atomicContext(tree: Tree): AtomicContext = 
+    new AtomicContext(tree)
+  def blockContext: BlockContext = new BlockContext(new IDGen)
 }
 
 

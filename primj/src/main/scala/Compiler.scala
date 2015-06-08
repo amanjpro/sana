@@ -12,7 +12,7 @@ import tiny.source.SourceReader
 import tiny.source.SourceFile
 import calcj.ast.Constants
 import typechecker.Typers
-import names.{Namers, AssignOwners}
+import names.{Namers, IDAssigners}
 import ast.Trees
 import antlr._
 import types.Types
@@ -29,8 +29,8 @@ trait Compiler extends tiny.CompilerApi {
   self: Phases with 
         Parsers with
         Typers with
-        Namers with
-        AssignOwners =>
+        IDAssigners with
+        Namers =>
 
 
   val global: Global
@@ -42,5 +42,6 @@ trait Compiler extends tiny.CompilerApi {
     def parserStart(parser: PrimjParser): ParseTree = parser.program
   }
 
-  val standardPhases: List[Phase] = List(new Typer {})
+  val standardPhases: List[Phase] = List(new Typer {},
+    new IDAssigners{})
 }

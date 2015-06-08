@@ -44,13 +44,13 @@ trait MonadUtils {
   // private[this] def reader[P] = new RF[P]()
 
   type ErrorReportingMonad[A]     = WriterT[Id, Vector[Report], A]
-  type ContextStateT[F[_], A]     = StateT[F, TreeContext, A]
+  type ContextStateT[F[_], A]     = StateT[F, Context, A]
 
   type ContextState[A]            = ContextStateT[Id, A]
   type StateWriter[A]             = ContextStateT[ErrorReportingMonad, A]
 
   // type RD[A] = Reader[Option[TreeId], A]
-  // type OwnerAssignerMonad[T] = StateT[RD, TreeContext, T]
+  // type OwnerAssignerMonad[T] = StateT[RD, Context, T]
   private type StateReader[R, A]          = StateReaderFactory[R]#λ[A]
 
     
@@ -59,11 +59,11 @@ trait MonadUtils {
   //   type λ   = ContextStateT[τ, A]
   // })#λ
   //
-    // StateT[({type l[a] = Reader[R, a]})#l, TreeContext, A]
+    // StateT[({type l[a] = Reader[R, a]})#l, Context, A]
 
   // type `SanaReader[R]`[A]         = Reader[R, A]
   // type StateReader[R, A]          = 
-    // StateT[`SanaReader[R]`, TreeContext, A]
+    // StateT[`SanaReader[R]`, Context, A]
 
   def toStateReader[A, R](x: ContextStateT[Id, A]): StateReader[R, A] = {
     type RD[a] = Reader[R, a]
@@ -83,51 +83,56 @@ trait MonadUtils {
   def pointSW[A](t: A): StateWriter[A] = 
     Monad[StateWriter].point(t)
 
-  def pointSR[R, A](t: A): StateReader[R, A] = {
-    type RD[a] = Reader[R, a]
-    type SR[a] = ContextStateT[RD, a]
-    Monad[SR].point(t)
+  def point[R, A](t: A)
+    (implicit factory: StateReaderFactory[R]): factory.StateReader[A] = {
+    Monad[factory.StateReader].point(t)
   }
                               
-  def askSR[R]: StateReader[R, R] = 
+  def ask[R](implicit factory: StateReaderFactory[R]): 
+      factory.StateReader[R] = 
     MonadReader[Reader, R].ask.liftM[ContextStateT]
 
-  def localSR[R, RT <: R, A](f: R => RT)(fa: Reader[R, A]): 
-      StateReader[R, A] = {
+  def local[R, A](f: R => R)(fa: Reader[R, A])(
+    implicit factory: StateReaderFactory[R]): 
+      factory.StateReader[A] = {
     val r = MonadReader[Reader, R].local(f)(fa)
     r.liftM[ContextStateT]
   }
 
-  def getSR[R]: StateReader[R, TreeContext] = {
+  def get[R](implicit factory: StateReaderFactory[R]): 
+      factory.StateReader[Context] = {
     type RD[a] = Reader[R, a]
     type SR[c, a] = StateT[RD, c, a]
-    MonadState[SR, TreeContext].get
+    MonadState[SR, Context].get
   }
 
-  def putSR[R](env: TreeContext): StateReader[R, Unit] = {
+  def put[R](env: Context)
+    (implicit factory: StateReaderFactory[R]): factory.StateReader[Unit] = {
     type RD[a] = Reader[R, a]
     type SR[c, a] = StateT[RD, c, a]
-    MonadState[SR, TreeContext].put(env)
+    MonadState[SR, Context].put(env)
   }
 
-  def modifySR[R](f: TreeContext => TreeContext): StateReader[R, Unit] = {
+  def modify[R](f: Context => Context)
+    (implicit factory: StateReaderFactory[R]): factory.StateReader[Unit] = {
     type RD[a] = Reader[R, a]
     type SR[c, a] = StateT[RD, c, a]
-    MonadState[SR, TreeContext].modify(f)
+    MonadState[SR, Context].modify(f)
   }
 
 
   private type SW[C, A]           = StateT[ErrorReportingMonad, C, A]
-  def getSW: StateWriter[TreeContext] = 
-    MonadState[SW, TreeContext].get
+  def getSW: StateWriter[Context] = 
+    MonadState[SW, Context].get
 
-  def putSW(env: TreeContext): StateWriter[Unit] = 
-    MonadState[SW, TreeContext].put(env)
+  def putSW(env: Context): StateWriter[Unit] = 
+    MonadState[SW, Context].put(env)
 
-  def modifySW(f: TreeContext => TreeContext): StateWriter[Unit] = 
-    MonadState[SW, TreeContext].modify(f)
+  def modifySW(f: Context => Context): StateWriter[Unit] = 
+    MonadState[SW, Context].modify(f)
     
 
+  def const[T](a: T)(b: T): T = a
   implicit def stateR2R[R, A](x: StateReader[R, A]): Reader[R, A] =
     x.lift[Id]
 
@@ -152,7 +157,7 @@ trait MonadUtils {
   //  */
   // type R = List[String]
   // type W = Vector[Report]
-  // type S = TreeContext
+  // type S = Context
   //
   // type RWST[V] = ReaderWriterState[R, W, S, V]
   //
@@ -169,7 +174,7 @@ trait MonadUtils {
   //       Applicative[Id].point((Vector.empty, t, newState))
   //   }
   //
-  // def run[A](m: RWST[A], s: TreeContext,
+  // def run[A](m: RWST[A], s: Context,
   //     r: R): (W, A, S) = {
   //   m.run(r, s)
   // }
