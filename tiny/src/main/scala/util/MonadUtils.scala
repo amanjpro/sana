@@ -141,7 +141,7 @@ trait MonadUtils {
     x.lift[Id]
 
 
-  class Dummy[A](dummy: A)
+  // class Dummy[A](dummy: A)
   // implicit val dummyInt: Dummy[Int] = new Dummy(1)
   // implicit val dummyId: Dummy[Option[TreeId]] = new Dummy(None)
 
