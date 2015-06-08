@@ -296,10 +296,16 @@ trait Parsers extends parser.Parsers {
 		override def visitApply(ctx: PrimjParser.ApplyContext): Tree = {
       val name   = ctx.Identifier.getText
       val id     = Ident(NoId, Some(name), NoId, pos(ctx))
-      val args   = ctx.arguments.expressionList.expression match {
+      val args   = ctx.arguments match {
         case null           => Nil
-        case es             => es.asScala.toList.map {
-          case kid => visitChildren(kid).asInstanceOf[Expr]
+        case args           => args.expressionList match {
+          case null         => Nil
+          case args         => args.expression match {
+            case null           => Nil
+            case es             => es.asScala.toList.map {
+              case kid => visitChildren(kid).asInstanceOf[Expr]
+            }
+          }
         }
       }
       Apply(id, args, pos(ctx), NoId)
