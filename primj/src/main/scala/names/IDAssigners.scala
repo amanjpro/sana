@@ -36,7 +36,7 @@ trait IDAssigners extends passes.Phases {
   implicit val factory = new StateReaderFactory[TreeId]
   type IDAssignerMonad[T] = factory.StateReader[T]
 
-  trait IDAssigners extends TransformerPhase {
+  trait IDAssigner extends TransformerPhase {
 
     val name: String = "id-assigner"
     override val description: Option[String] = 

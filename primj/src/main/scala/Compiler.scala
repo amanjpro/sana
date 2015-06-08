@@ -42,6 +42,9 @@ trait Compiler extends tiny.CompilerApi {
     def parserStart(parser: PrimjParser): ParseTree = parser.program
   }
 
-  val standardPhases: List[Phase] = List(new Typer {},
-    new IDAssigners{})
+  val standardPhases: List[Phase] = List(
+    new IDAssigner {},
+    new Namer {},
+    new Typer {}
+  )
 }
