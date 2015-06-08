@@ -33,7 +33,7 @@ trait IDAssigners extends passes.Phases {
 
   // INFO: Making this implicit helps us having a better looking local
   // call, again thanks to lambda types
-  implicit val factory = new StateReaderFactory[TreeId]
+  implicit lazy val factory = new StateReaderFactory[TreeId]
   type IDAssignerMonad[T] = factory.StateReader[T]
 
   trait IDAssigner extends TransformerPhase {
