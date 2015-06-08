@@ -46,12 +46,11 @@ trait Typers extends passes.Phases {
     override def runRightAfter: Option[String] = Some("namer")
 
 
-    def startPhase(unit: CompilationUnit): 
-         (Vector[Report], CompilationUnit) = {
+    def startPhase(state: Context, unit: CompilationUnit): 
+         (Vector[Report], CompilationUnit, Context) = {
       val tree  = unit.tree
-      val state = unit.state
       val (w, (s, typedTree)) = typeTree(tree).run(state).run
-      (w, CompilationUnit(unit.id, typedTree, s, unit.fileName))
+      (w, CompilationUnit(unit.id, typedTree, unit.fileName), s)
     }
 
     def typeTree(tree: Tree): TypeChecker[Tree] = tree match {

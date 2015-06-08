@@ -30,7 +30,7 @@ trait Parsers extends parser.Parsers {
   
   def parse(source: SourceFile): CompilationUnit = {
     val tree = new CalcjVisitor(source.name).visit(source.content)
-    CompilationUnit(NO_COMPILATION_UNIT_ID, tree, emptyContext, source.name)
+    CompilationUnit(NO_COMPILATION_UNIT_ID, tree, source.name)
   }
 
   class CalcjVisitor(val source: String) extends CalcjBaseVisitor[Tree] {

@@ -44,13 +44,13 @@ trait IDAssigners extends passes.Phases {
     override def runRightAfter: Option[String] = Some("parser")
 
 
-    def startPhase(unit: CompilationUnit): 
-         (Vector[Report], CompilationUnit) = {
+    def startPhase(state: Context, unit: CompilationUnit): 
+         (Vector[Report], CompilationUnit, Context) = {
       val tree  = unit.tree
       // Extend the tree context with an empty compilation unit context
-      val (id, state) = unit.state.extend(NoId, emptyContext)
-      val (s, namedTree) = assign(tree).run(state).run(id)
-      (Vector.empty, CompilationUnit(id, namedTree, s, unit.fileName))
+      val (id, state2) = state.extend(NoId, state)
+      val (s, namedTree) = assign(tree).run(state2).run(id)
+      (Vector.empty, CompilationUnit(id, namedTree, unit.fileName), s)
     }
 
     def assign(tree: Tree): IDAssignerMonad[Tree] = tree match {

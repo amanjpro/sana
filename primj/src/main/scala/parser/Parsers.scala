@@ -36,7 +36,7 @@ trait Parsers extends parser.Parsers {
  
   def parse(source: SourceFile): CompilationUnit = {
     val tree = new PrimjVisitor(source.name).visit(source.content)
-    CompilationUnit(NO_COMPILATION_UNIT_ID, tree, emptyContext, source.name)
+    CompilationUnit(NO_COMPILATION_UNIT_ID, tree, source.name)
   }
 
   class PrimjVisitor(val source: String) extends PrimjBaseVisitor[Tree] {

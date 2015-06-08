@@ -19,12 +19,12 @@ trait Phases {
     def runRightAfter: Option[String] = None
     def runAfter: List[String] = runRightAfter.toList
     def runBefore: List[String] = Nil
-    def startPhase(unit: global.CompilationUnit): R
+    def startPhase(ctx: global.Context, unit: global.CompilationUnit): R
     def processOptions(options: List[String]): Unit = ()
   }
 
   trait TransformerPhase extends Phase {
-    type R = (Vector[Report], global.CompilationUnit)
+    type R = (Vector[Report], global.CompilationUnit, global.Context)
   }
 
   trait CheckerPhase extends Phase {

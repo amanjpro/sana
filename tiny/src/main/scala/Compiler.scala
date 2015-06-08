@@ -30,25 +30,27 @@ trait CompilerApi {
 
   def sourceReader: SourceReader
 
-  protected def compileUnit(unit: global.CompilationUnit): 
-          (Vector[Report], global.CompilationUnit) = {
-    standardPhases.foldLeft((Vector.empty[Report], unit))((z, y) => {
+  protected def compileUnit(context: global.Context,
+          unit: global.CompilationUnit): 
+          (Vector[Report], global.CompilationUnit, global.Context) = {
+    standardPhases.foldLeft((Vector.empty[Report], unit, 
+            context))((z, y) => {
       global.logger.info(s"Entered phase ${y.name}")
-      val (fst, snd) = z
-      if(global.isErroneous(fst)) {
-        (fst, global.ErroneousCompilationUnit(snd.state, snd.fileName))
+      val (report, unit, ctx) = z
+      if(global.isErroneous(report)) {
+        (report, global.ErroneousCompilationUnit(unit.fileName), ctx)
       } else {
         y match {
           case p: TransformerPhase                   => 
-            val (w, cu) = p.startPhase(snd)
-            (fst ++ w, cu)
+            val (w, cu, ctx2) = p.startPhase(ctx, unit)
+            (report ++ w, unit, ctx2)
           // Not all compiler phases return compilation units, the type checker
           // phase ones, and they are not allowed to change the compilation
           // units. That is why it is safe to return the previous one and pass
           // it to the next one.
           case p: CheckerPhase                       => 
-            val w = p.startPhase(snd)
-            (fst ++ w, snd)
+            val w = p.startPhase(ctx, unit)
+            (report ++ w, unit, ctx)
         }
       }
     })
@@ -59,13 +61,12 @@ trait CompilerApi {
     // TODO: Check if this is still broken
     // FIXME: This is really broken, what about warnings? what about compiling
     // all compilation units and not giving up?
-    val (w, _, cs) = cunits.foldLeft((Vector.empty[Report], 
-            global.Context(): global.Context,
-            Vector.empty[global.CompilationUnit]))((z, y) => {
-      val (w, s, cs) = z
-      val cunit = y.withState(s)
-      val (w2, c2) = compileUnit(cunit)
-      (w ++ w2, c2.state, cs ++ Vector(c2))
+    val (w, cs, _) = cunits.foldLeft((Vector.empty[Report], 
+            Vector.empty[global.CompilationUnit],
+            global.Context()))((z, y) => {
+      val (w, cs, ctx) = z
+      val (w2, u2, ctx2) = compileUnit(ctx, y)
+      (w ++ w2, cs ++ Vector(u2), ctx2)
     })
     (w, cs.toList)
   }

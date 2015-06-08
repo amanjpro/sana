@@ -32,12 +32,11 @@ trait Namers extends passes.Phases {
     override def runRightAfter: Option[String] = Some("owner-assigner")
 
 
-    def startPhase(unit: CompilationUnit): 
-         (Vector[Report], CompilationUnit) = {
+    def startPhase(state: Context, unit: CompilationUnit): 
+         (Vector[Report], CompilationUnit, Context) = {
       val tree  = unit.tree
-      val state = unit.state
       val (w, (s, namedTree)) = named(tree).run(state).run
-      (w, CompilationUnit(unit.id, namedTree, s, unit.fileName))
+      (w, CompilationUnit(unit.id, namedTree, unit.fileName), s)
     }
     def canRedefine: Boolean
 
