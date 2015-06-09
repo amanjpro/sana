@@ -1,4 +1,4 @@
-package ch.usi.inf.l3.sana.tiny.logging
+package ch.usi.inf.l3.sana.tiny.debug
 
 import java.util.logging.{Logger => JLogger, Level, 
   FileHandler, SimpleFormatter}

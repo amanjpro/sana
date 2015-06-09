@@ -5,7 +5,7 @@ import sana.tiny
 import sana.primj
 import tiny.settings.{SanaConfig,CommandLineArgumentParser}
 import tiny.passes.Phases
-import tiny.logging.Logger
+import tiny.debug.Logger
 import parser.Parsers
 import typechecker.Typers
 import names.{Namers, IDAssigners}

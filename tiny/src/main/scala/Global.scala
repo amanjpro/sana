@@ -10,7 +10,7 @@ import tiny.ast.TreeGen
 import tiny.util._
 import tiny.types.Types
 import tiny.report._
-import tiny.logging.Logger
+import tiny.debug.Logger
 
 
 
