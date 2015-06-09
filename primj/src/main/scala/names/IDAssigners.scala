@@ -31,12 +31,11 @@ trait IDAssigners extends passes.Phases {
   import global._
 
 
-  // INFO: Making this implicit helps us having a better looking local
-  // call, again thanks to lambda types
-  implicit lazy val factory = new StateReaderFactory[TreeId]
-  type IDAssignerMonad[T] = factory.StateReader[T]
-
   trait IDAssigner extends TransformerPhase {
+
+    type IDAssignerMonad[T] = RWST[TreeId, T]
+    lazy val rwst = RWST[TreeId]
+    import rwst.{local => _, _}
 
     val name: String = "id-assigner"
     override val description: Option[String] = 
@@ -49,8 +48,8 @@ trait IDAssigners extends passes.Phases {
       val tree  = unit.tree
       // Extend the tree context with an empty compilation unit context
       val (id, state2) = state.extend(NoId, state)
-      val (s, namedTree) = assign(tree).run(state2).run(id)
-      (Vector.empty, CompilationUnit(id, namedTree, unit.fileName), s)
+      val (w, namedTree, s) = assign(tree).run(id, state2)
+      (w, CompilationUnit(id, namedTree, unit.fileName), s)
     }
 
     def assign(tree: Tree): IDAssignerMonad[Tree] = tree match {
@@ -61,7 +60,9 @@ trait IDAssigners extends passes.Phases {
       case dtree: DefTree                            => for {
         r       <- assignDef(dtree)
       } yield r
-      case tuse: TypeUse                             => point(tuse)
+      case tuse: TypeUse                             => for {
+        r       <- point(tuse)
+      } yield r
       case e: Expr                                   => for {
         e       <- assignExpr(e)
       } yield e
@@ -84,7 +85,8 @@ trait IDAssigners extends passes.Phases {
       ctx2    <- point(id_ctx2._2)
       _       <- put(ctx2)
       params  <- meth.params.map {
-        (v: ValDef) => local[TreeId, ValDef](const(id))(assignValDef(v))
+        (v: ValDef) => local(const(id))(assignValDef(v))
+          // assignValDef(v)
       }.sequenceU
       body    <- assignExpr(meth.body)
       m       <- point(MethodDef(meth.mods, id, meth.ret, meth.name, 
@@ -115,11 +117,14 @@ trait IDAssigners extends passes.Phases {
 
     def assignTypeUse(tuse: TypeUse): IDAssignerMonad[TypeUse] = for {
         owner   <- ask
-        r       <- point(TypeUse(tuse.uses, tuse.nameAtParser, owner, tuse.pos))
+        r       <- point(TypeUse(tuse.uses, 
+          tuse.nameAtParser, owner, tuse.pos))
     } yield r
 
     def assignExpr(expr: Expr): IDAssignerMonad[Expr] = expr match {
-      case lit: Lit                                  => point(lit)
+      case lit: Lit                                  => for {
+        r       <- point(lit)
+      } yield r
       case id: Ident                                 => for {
         owner   <- ask
         r       <- point(Ident(id.uses, id.nameAtParser, owner, id.pos))
@@ -173,6 +178,7 @@ trait IDAssigners extends passes.Phases {
             local(const(id))(assign(t))).sequenceU
         r       <- point(Block(stmts, block.tpe, block.pos, owner))
       } yield r
+
       case forloop:For                               => for {
         // INFO: 
         // The issue with for loops is similar to the one mentioned
