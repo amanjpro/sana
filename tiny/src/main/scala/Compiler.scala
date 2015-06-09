@@ -78,6 +78,10 @@ trait CompilerApi {
 
 
 
+  def attach(units: List[global.CompilationUnit]): 
+      (Vector[Report], List[global.CompilationUnit]) = {
+    compile(units)
+  }
 
   def start: (Vector[Report], List[global.CompilationUnit]) = {
     compile(parse(config.files.toList))
