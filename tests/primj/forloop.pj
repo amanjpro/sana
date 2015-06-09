@@ -5,9 +5,11 @@ int x = 10;
 int y = 10;
 void z = x;
 
-int m() {
+int m(int l) {
   for(int k=0, z = 10; k < 10; k++,k--) {
     y = 10;
+    int k =1;
+    1;
   }
   return 10;
 }

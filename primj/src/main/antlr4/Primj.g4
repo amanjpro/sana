@@ -35,8 +35,7 @@ program
 
 defDecleration
     : methodDeclaration
-    | variableDefinition SEMI
-    | variableDeclaration SEMI
+    | variableDeclaration ';'
     ;
 
 methodDeclaration
@@ -44,12 +43,12 @@ methodDeclaration
     ;
 
 
-variableDefinition
-    : type Identifier '=' expression (',' Identifier '=' expression)*
+variableDeclaration
+    : type Identifier varRHS (',' Identifier varRHS)*
     ;
 
-variableDeclaration
-    : type Identifier (',' Identifier)*
+varRHS
+    : ('=' expression)?
     ;
 
 type
@@ -80,7 +79,6 @@ formalParameters
 
 formalParameterList
     :   formalParameter (',' formalParameter)* 
-    |   formalParameter
     ;
 
 formalParameter
@@ -104,35 +102,47 @@ literal
 // STATEMENTS / BLOCKS
 
 block
-    :   '{' blockStatement* '}'
+    :   '{' statement* '}'
     ;
-
-blockStatement
-    :   localVariableDeclarationStatement
-    |   statement
-    ;
-
-localVariableDeclarationStatement
-    :    variableDefinition ';'
-    |    variableDeclaration ';'
-    ;
-
 
 statement
-    :   block                                                           # Unused1
+    :   block                                                           # BlockStmt
+    |   variableDeclaration ';'                                         # VarStmt
     |   'if' parExpression statement ('else' statement)?                # If
     |   'for' '(' forControl ')' statement                              # For
     |   'while' parExpression statement                                 # While
     |   'do' statement 'while' parExpression ';'                        # DoWhile
     |   'return' expression? ';'                                        # Return
-    |   Identifier '=' expression ';'                                   # Assign
+    |   assign ';'                                                      # AssignStmt
     |   ';'                                                             # Empty
-    |   expression ';'                                                  # Unused2
+    |   expression ';'                                                  # ExprStmt
     ;
+
+assign
+    : <assoc=right> Identifier op=('+='
+                                  |'-='
+                                  |'*='
+                                  |'/='
+                                  |'&='
+                                  |'|='
+                                  |'^='
+                                  |'%='
+                                  |'<<='
+                                  |'>>='
+                                  |'>>>='
+                                  |'=') expression
+    ;
+
+
 
 forControl
     :   forInit? ';' expression? ';' forUpdate?
     ;
+
+variableDefinition
+    : type Identifier '=' expression (',' Identifier '=' expression)*
+    ;
+
 
 forInit
     :   variableDefinition
@@ -158,6 +168,9 @@ expressionList
 expression
     :   Identifier arguments                                             # Apply
     |   primary                                                          # Primaries
+    |   op=('+'|'-'|'++'|'--') expression                                # UnaryNum
+    |   op=('~'|'!') expression                                          # UnaryElse
+    |   expression op=('++' | '--')                                      # Postfix
     |   parExpression '?' expression ':' expression                      # Ternary
     |   expression op=('*'|'/'|'%') expression                           # Mul
     |   expression op=('+'|'-') expression                               # Add
@@ -170,15 +183,12 @@ expression
     |   expression '&&' expression                                       # And
     |   expression '||' expression                                       # Or
     |   '(' primitiveType ')' expression                                 # Cast
-    |   op=('+'|'-'|'++'|'--') expression                                # UnaryNum
-    |   op=('~'|'!') expression                                          # UnaryElse
-    |   expression op=('++' | '--')                                      # Postfix
     ;
 
 primary
-    :   parExpression                                                    
-    |   literal                                                          
-    |   Identifier
+    :   parExpression                                                    # Paren
+    |   literal                                                          # Lit
+    |   Identifier                                                       # Id
     ;
 
 arguments
@@ -498,18 +508,17 @@ BITAND          : '&';
 BITOR           : '|';
 CARET           : '^';
 MOD             : '%';
-
-// ADD_ASSIGN      : '+=';
-// SUB_ASSIGN      : '-=';
-// MUL_ASSIGN      : '*=';
-// DIV_ASSIGN      : '/=';
-// AND_ASSIGN      : '&=';
-// OR_ASSIGN       : '|=';
-// XOR_ASSIGN      : '^=';
-// MOD_ASSIGN      : '%=';
-// LSHIFT_ASSIGN   : '<<=';
-// RSHIFT_ASSIGN   : '>>=';
-// URSHIFT_ASSIGN  : '>>>=';
+ADD_ASSIGN      : '+=';
+SUB_ASSIGN      : '-=';
+MUL_ASSIGN      : '*=';
+DIV_ASSIGN      : '/=';
+AND_ASSIGN      : '&=';
+OR_ASSIGN       : '|=';
+XOR_ASSIGN      : '^=';
+MOD_ASSIGN      : '%=';
+LSHIFT_ASSIGN   : '<<=';
+RSHIFT_ASSIGN   : '>>=';
+URSHIFT_ASSIGN  : '>>>=';
 
 // §3.8 Identifiers (must appear after all keywords in the grammar)
 
