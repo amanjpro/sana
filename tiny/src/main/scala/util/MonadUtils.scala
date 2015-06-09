@@ -87,42 +87,45 @@ trait MonadUtils {
   def pointSW[A](t: A): StateWriter[A] = 
     Monad[StateWriter].point(t)
 
-  def point[R, A](t: A)
-    (implicit factory: StateReaderFactory[R]): factory.StateReader[A] = {
-    Monad[factory.StateReader].point(t)
-  }
-                              
-  def ask[R](implicit factory: StateReaderFactory[R]): 
-      factory.StateReader[R] = 
-    MonadReader[Reader, R].ask.liftM[ContextStateT]
-
-  def local[R, A](f: R => R)(fa: Reader[R, A])(
-    implicit factory: StateReaderFactory[R]): 
-      factory.StateReader[A] = {
-    val r = MonadReader[Reader, R].local(f)(fa)
-    r.liftM[ContextStateT]
-  }
-
-  def get[R](implicit factory: StateReaderFactory[R]): 
-      factory.StateReader[Context] = {
-    type RD[a] = Reader[R, a]
-    type SR[c, a] = StateT[RD, c, a]
-    MonadState[SR, Context].get
-  }
-
-  def put[R](env: Context)
-    (implicit factory: StateReaderFactory[R]): factory.StateReader[Unit] = {
-    type RD[a] = Reader[R, a]
-    type SR[c, a] = StateT[RD, c, a]
-    MonadState[SR, Context].put(env)
-  }
-
-  def modify[R](f: Context => Context)
-    (implicit factory: StateReaderFactory[R]): factory.StateReader[Unit] = {
-    type RD[a] = Reader[R, a]
-    type SR[c, a] = StateT[RD, c, a]
-    MonadState[SR, Context].modify(f)
-  }
+  // def point[R, A](t: A)
+  //   (implicit factory: StateReaderFactory[R]): factory.StateReader[A] = {
+  //   Monad[factory.StateReader].point(t)
+  // }
+  //                             
+  // def ask[R](implicit factory: StateReaderFactory[R]): 
+  //     factory.StateReader[R] = 
+  //   MonadReader[Reader, R].ask.liftM[ContextStateT]
+  //
+  // def local[R, A](f: R => R)(fa: StateReader[R, A])(
+  //   implicit factory: StateReaderFactory[R]): 
+  //     factory.StateReader[A] = {
+  //   // val factory = new StateReaderFactory[R]
+  //   // StateReader((r, s) => fa.run(f(r), s))
+  //   // val r = MonadReader[Reader, R].local(f)(fa)
+  //   // r.liftM[ContextStateT]
+  //   ???
+  // }
+  //
+  // def get[R](implicit factory: StateReaderFactory[R]): 
+  //     factory.StateReader[Context] = {
+  //   type RD[a] = Reader[R, a]
+  //   type SR[c, a] = StateT[RD, c, a]
+  //   MonadState[SR, Context].get
+  // }
+  //
+  // def put[R](env: Context)
+  //   (implicit factory: StateReaderFactory[R]): factory.StateReader[Unit] = {
+  //   type RD[a] = Reader[R, a]
+  //   type SR[c, a] = StateT[RD, c, a]
+  //   MonadState[SR, Context].put(env)
+  // }
+  //
+  // def modify[R](f: Context => Context)
+  //   (implicit factory: StateReaderFactory[R]): factory.StateReader[Unit] = {
+  //   type RD[a] = Reader[R, a]
+  //   type SR[c, a] = StateT[RD, c, a]
+  //   MonadState[SR, Context].modify(f)
+  // }
 
 
   private type SW[C, A]           = StateT[ErrorReportingMonad, C, A]
@@ -138,11 +141,16 @@ trait MonadUtils {
 
   def const[T, B](a: T)(b: B): T = a
 
-  implicit def stateR2R[R, A](x: StateReader[R, A]): Reader[R, A] =
-    x.lift[Id]
+  // implicit def stateR2R[R, A](x: StateReaderFactory[R]#StateReader[A]): Reader[R, A] = {
+    // type RD[a] = Reader[R, a]
+    // x.lift[RD]
+    // x.liftM[ContextStateT]
+  // }
+    // x.liftM[ContextStateT]
+    // x.lift[Id]
 
-  implicit def stateW2W[A](x: StateWriter[A]): Writer[Vector[Report], A] =
-    x.lift[Id]
+  // implicit def stateW2W[A](x: StateWriter[A]): Writer[Vector[Report], A] =
+    // x.lift[Id]
 
 
   // class Dummy[A](dummy: A)
@@ -153,8 +161,8 @@ trait MonadUtils {
       // point(t)
 
 
-  // // TODO: This trait is not needed at all, we can get rid of it completely
-  // // (at least so far)
+  // TODO: This trait is not needed at all, we can get rid of it completely
+  // (at least so far)
   // /*
   //  * R: Abstract type for the Reader part in ReaderWriterState
   //  * W: Abstract type for the Writer part in ReaderWriterState
@@ -163,40 +171,44 @@ trait MonadUtils {
   // type R = List[String]
   // type W = Vector[Report]
   // type S = Context
-  //
-  // type RWST[V] = ReaderWriterState[R, W, S, V]
-  //
-  // // Move the following two functions to some Monad utility class
-  // protected def toRWST[A](st: State[S, A]): RWST[A] = {
-  //   st.rwst[W, R]
+
+  type RWST[R, A] = ReaderWriterState[R, Vector[Report], Context, A]
+
+  // Move the following two functions to some Monad utility class
+  implicit def toRWST[A, R](st: StateT[Id, Context, A]): RWST[R, A] = {
+    st.rwst[Vector[Report], R]
+  }
+
+
+  // def point[A, R](a: => A): RWST[R, A] = {
+  //   Monad[RWST].point(f)
   // }
-  //
-  //
-  // def newRWST[A](f: S => (S, A)): RWST[A] = 
-  //   ReaderWriterStateT { 
-  //     (config: R, oldState: S) => 
-  //       val (newState, t) = f(oldState)
-  //       Applicative[Id].point((Vector.empty, t, newState))
-  //   }
-  //
+    // Applicative[Id].point((Vector.empty, t, newState))
+
   // def run[A](m: RWST[A], s: Context,
   //     r: R): (W, A, S) = {
   //   m.run(r, s)
   // }
-  //
-  // // point is equivalent to ``pure'' and ``return'' in Haskell
-  // // def point[A](t: A): RWST[A] = t.point[RWST]
-  //
-  //
-  // // Stolen from: http://git.io/vf4L6
-  // // Bring the RWST syntax into scope.
-  // // This will bring into scope methods which return things of type RWST[_].
-  // // example syntax methods:
-  // // get    -- gets the current state
-  // // put    -- replaces the current state
-  // // modify -- alter the current state
-  // // tell   -- append to the writer
-  // // ask    -- read from the reader
-  // val rwst = ReaderWriterStateT.rwstMonad[Id, R, W, S]
-  // import rwst._
+
+  // point is equivalent to ``pure'' and ``return'' in Haskell
+  // def point[A](t: A): RWST[A] = t.point[RWST]
+
+
+  // Stolen from: http://git.io/vf4L6
+  // Bring the RWST syntax into scope.
+  // This will bring into scope methods which return things of type RWST[_].
+  // example syntax methods:
+  // get    -- gets the current state
+  // put    -- replaces the current state
+  // modify -- alter the current state
+  // tell   -- append to the writer
+  // ask    -- read from the reader
+  // local  -- locally run the reader
+  def RWST[R] = ReaderWriterStateT.rwstMonad[Id, R, Vector[Report], Context]
+
+  def local[A, R](f: R => R)(fa: RWST[R, A]): RWST[R, A] =
+    ReaderWriterStateT((r, s) => fa.run(f(r), s))
+
+  // def mapM[A,M[_]:Monad](xs:List[A])(f:A=>M[A]) : M[List[A]] =
+    // xs.map(f).sequence 
 }
