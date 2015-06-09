@@ -35,8 +35,8 @@ program
 
 defDecleration
     : methodDeclaration
-    | variableDefinition ';'
-    | variableDeclaration ';'
+    | variableDefinition SEMI
+    | variableDeclaration SEMI
     ;
 
 methodDeclaration
@@ -159,13 +159,9 @@ expression
     :   Identifier arguments                                             # Apply
     |   primary                                                          # Primaries
     |   parExpression '?' expression ':' expression                      # Ternary
-    |   '(' primitiveType ')' expression                                 # Cast
-    |   expression op=('++' | '--')                                      # Postfix
-    |   op=('+'|'-'|'++'|'--') expression                                # UnaryNum
-    |   op=('~'|'!') expression                                          # UnaryElse
     |   expression op=('*'|'/'|'%') expression                           # Mul
     |   expression op=('+'|'-') expression                               # Add
-    |   expression op=('<<' | '>>>' | '>>') expression       # Shifts
+    |   expression op=('<<' | '>>>' | '>>') expression                   # Shifts
     |   expression op=('<=' | '>=' | '>' | '<') expression               # Rel  
     |   expression op=('==' | '!=') expression                           # Equ 
     |   expression '&' expression                                        # BAnd
@@ -173,6 +169,10 @@ expression
     |   expression '|' expression                                        # BOr
     |   expression '&&' expression                                       # And
     |   expression '||' expression                                       # Or
+    |   '(' primitiveType ')' expression                                 # Cast
+    |   op=('+'|'-'|'++'|'--') expression                                # UnaryNum
+    |   op=('~'|'!') expression                                          # UnaryElse
+    |   expression op=('++' | '--')                                      # Postfix
     ;
 
 primary
