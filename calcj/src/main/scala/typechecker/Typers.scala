@@ -71,6 +71,7 @@ trait Typers extends passes.Phases {
         te <- typeUnary(unary)
       } yield te
       case (_: Lit) | (_: Cast)   => pointSW(e)
+      case Empty                  => pointSW(Empty)
       case _                      => 
         error(UNEXPETED_TREE,
           e.toString, "an expression", e.pos, e)

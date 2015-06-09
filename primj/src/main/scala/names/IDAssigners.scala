@@ -218,6 +218,11 @@ trait IDAssigners extends passes.Phases {
         owner   <- ask
         expr    <- assignExpr(ret.expr.get)
       } yield Return(expr, ret.pos, owner)
+      case Empty                                     => for {
+        r <- point(Empty)
+      } yield {
+        r
+      }
     }
   }
 }

@@ -133,6 +133,11 @@ trait Namers extends names.Namers {
       case ret:Return                                 => for {
         expr <- nameExprs(ret.expr.get)
       } yield Return(expr, ret.pos, ret.owner)
+      case Empty                                      => for {
+        r <- pointSW(Empty)
+      } yield {
+        r
+      }
     }
   }
 }
