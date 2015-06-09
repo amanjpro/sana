@@ -24,6 +24,9 @@ trait Constants {
     type VType
     def value: VType
     def tpe: Type
+
+    final def show: String = s"Constant(Type=${tpe.show}, value=${value}"
+    override final def toString: String = show
   }
 
   /**************************** Extractors **************************/

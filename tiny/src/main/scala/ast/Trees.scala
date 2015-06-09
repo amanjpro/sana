@@ -92,6 +92,9 @@ trait Trees {
       * purposes.
       */
     def show(ctx: Context): String
+
+
+    override def toString: String = show(emptyContext)
   }
 
   /**
@@ -164,7 +167,7 @@ trait Trees {
     val pos: Option[Position]    = None
 
 
-    def show(ctx: Context): String = ";"
+    def show(ctx: Context): String = "<empty-tree>"
 
 
     // Traverser functions

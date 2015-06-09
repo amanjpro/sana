@@ -45,7 +45,7 @@ trait Types extends types.Types {
 
     
 
-    override def toString = s"(${params.mkString(", ")}) => ${ret}"
+    def show: String = s"MethodType((${params.mkString(", ")}) => ${ret})"
   }
 
   def checkList[T](ts1: List[T], ts2: List[T], 

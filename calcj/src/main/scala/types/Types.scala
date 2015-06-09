@@ -37,43 +37,43 @@ trait Types extends types.Types {
 
 
   object ByteType extends IntegralType {
-    override def toString = "byte"
+    override def show: String = "byte type"
   }
 
   object ShortType extends IntegralType {
-    override def toString = "short"
+    override def show: String = "short type"
   }
 
   object IntType extends IntegralType {
-    override def toString = "int"
+    override def show: String = "int type"
   }
 
   object LongType extends IntegralType {
-    override def toString = "long"
+    override def show: String = "long type"
   }
 
   object CharType extends IntegralType {
-    override def toString = "char"
+    override def show: String = "char type"
   }
 
 
 
   trait FloatingPointType extends NumericType
   object FloatType extends FloatingPointType {
-    override def toString = "float"
+    override def show: String = "float type"
   }
 
   object DoubleType extends FloatingPointType {
-    override def toString = "double"
+    override def show: String = "double type"
   }
 
 
   object BooleanType extends PrimitiveType {
-    override def toString = "boolean"
+    override def show: String = "boolean type"
   }
   
   object StringType extends PrimitiveType {
-    override def toString = "String"
+    override def show: String = "String type"
   }
 
 
@@ -91,7 +91,7 @@ trait Types extends types.Types {
     def =/=(t: Type): Boolean = !(this =:= t)
     def <:<(t: Type): Boolean = t =:= this
     def >:>(t: Type): Boolean = t =:= this
-    override def toString: String = s"BinaryType(${op1}, {$op2}) => ${ret}"
+    override def show: String = s"BinaryType((${op1}, {$op2}) => ${ret})"
   }
 
 
@@ -107,7 +107,7 @@ trait Types extends types.Types {
     def =/=(t: Type): Boolean = !(this =:= t)
     def <:<(t: Type): Boolean = t =:= this
     def >:>(t: Type): Boolean = t =:= this
-    override def toString: String = s"UnaryType(${op}) => ${ret}"
+    override def show: String = s"UnaryType((${op}) => ${ret})"
   }
 
 

@@ -21,6 +21,7 @@ class SimpleId(val id: Int) extends AnyVal with TreeId {
   def forward: TreeId = NoId
   def isComposite: Boolean = false
   def isSimple: Boolean    = true
+  override def toString: String = s"SimpleId($id)"
 }
 
 
@@ -31,10 +32,12 @@ class CompositeId(val path: TreeId, val id: Int) extends TreeId {
   }
   def isComposite: Boolean = true
   def isSimple: Boolean    = false
+  override def toString: String = s"CompositId($path, $id)"
 }
 
 object NoId extends TreeId {
   def forward: TreeId = NoId
   def isComposite: Boolean = false
   def isSimple: Boolean    = false
+  override def toString: String = "NoId"
 }
