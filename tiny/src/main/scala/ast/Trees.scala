@@ -83,6 +83,15 @@ trait Trees {
       * @return Optionally the position of this AST node.
       */
     def pos: Option[Position] 
+
+
+    // /**
+    //   * Returns the string representation of this AST node in a given context.
+    //   *
+    //   * This method may not be used for pretty printing, but for debugging
+    //   * purposes.
+    //   */
+    // def show(ctx: Context): String
   }
 
   /**
@@ -155,7 +164,7 @@ trait Trees {
     val pos: Option[Position]    = None
 
 
-    override def toString: String = ";"
+    // def show(ctx: Context): String = ";"
 
 
     // Traverser functions
@@ -215,6 +224,8 @@ trait Trees {
         }
       }
     }
+
+    // def show(ctx: Context): String = s"TypeUse
     // override def toString: String = name
 
 
