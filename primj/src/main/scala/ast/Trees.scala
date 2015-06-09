@@ -47,6 +47,9 @@ trait Trees extends ast.Trees {
     def members: List[DefTree]
     def tpe: TypeState[Type] = toTypeState(VoidType)
     def pos: Option[Position] = None
+
+    def show(ctx: Context): String = 
+      s"Template{${showList(members, ctx)}}"
   }
 
   // Variable and Method definitions
@@ -63,11 +66,17 @@ trait Trees extends ast.Trees {
       } yield ty
     }
 
-
-    override def toString: String = 
-      s"""|${mods} ${ret} ${name} (${params.mkString(", ")}) {
-          |  ${body}
+    def show(ctx: Context): String = 
+      s"""|MethodDef{
+          |mods=${mods.asString},
+          |ret=${ret.show(ctx)},
+          |name=${name.toString},
+          |params=${showList(params, ctx)},
+          |body=${body.show(ctx)},
+          |owner=${owner},
+          |pos=${pos}
           |}""".stripMargin
+
 
   }
   
@@ -75,7 +84,18 @@ trait Trees extends ast.Trees {
     def tpt: TypeUse
     def rhs: Expr
     def tpe: TypeState[Type] = tpt.tpe
-    override def toString: String = s"${mods} ${tpt} ${name} = ${rhs}"
+
+    def show(ctx: Context): String = 
+      s"""|ValDef{
+          |mods=${mods.asString},
+          |tpt=${tpt.show(ctx)},
+          |name=${name.toString},
+          |rhs=${rhs.show(ctx)},
+          |owner=${owner},
+          |pos=${pos}
+          |}""".stripMargin
+
+
   }
   
 
@@ -85,15 +105,26 @@ trait Trees extends ast.Trees {
     val tpe: TypeState[Type] = expr.map(_.tpe).getOrElse(toTypeState(NoType))
 
     def isVoid: Boolean = expr == None
-    override def toString: String = s"return ${expr.getOrElse("")}"
+
+
+    def show(ctx: Context): String = 
+      s"""|Return{
+          |expr=${expr.map(_.show(ctx))},
+          |owner=${owner},
+          |pos=${pos}
+          |}""".stripMargin
+
 
   }
 
   trait Block extends Expr {
     def stmts: List[Tree]
-    override def toString: String = 
-      s"""|{
-          |  ${stmts.map(_.toString).mkString("\n")}
+
+    def show(ctx: Context): String = 
+      s"""|Block{
+          |stmts=${showList(stmts, ctx)},
+          |owner=${owner},
+          |pos=${pos}
           |}""".stripMargin
   }
 
@@ -103,7 +134,15 @@ trait Trees extends ast.Trees {
     def lhs: Expr
     def rhs: Expr
     def tpe: TypeState[Type] = toTypeState(NoType)
-    override def toString: String = s"${lhs} = ${rhs}"
+
+    def show(ctx: Context): String = 
+      s"""|Assign{
+          |lhs=${lhs.show(ctx)},
+          |rhs=${rhs.show(ctx)},
+          |owner=${owner},
+          |pos=${pos}
+          |}""".stripMargin
+
   }
 
   trait If extends Expr {
@@ -112,26 +151,31 @@ trait Trees extends ast.Trees {
     def elsep: Expr
     def tpe: TypeState[Type] = toTypeState(NoType)
 
-
-    override def toString: String =
-      s"""|if(${cond}) {
-          |  ${thenp}
-          |} else {
-          |  ${elsep}
+    def show(ctx: Context): String = 
+      s"""|If{
+          |cond=${cond.show(ctx)},
+          |thenp=${thenp.show(ctx)},
+          |elsep=${elsep.show(ctx)},
+          |owner=${owner},
+          |pos=${pos}
           |}""".stripMargin
+
   }
 
 
   // TODO: Add Do-While to the toString
-  trait While extends Expr {
-    def mods: Flags
+  trait While extends Expr with Modifiable {
     def cond: Expr
     def body: Expr
     def tpe: TypeState[Type] = toTypeState(NoType)
 
-    override def toString: String =
-      s"""|while(${cond}) {
-          |  ${body}
+    def show(ctx: Context): String = 
+      s"""|While{
+          |mods=${mods.asString}
+          |cond=${cond.show(ctx)},
+          |body=${body.show(ctx)},
+          |owner=${owner},
+          |pos=${pos}
           |}""".stripMargin
 
   }
@@ -143,9 +187,14 @@ trait Trees extends ast.Trees {
     def body: Expr
     def tpe: TypeState[Type] = toTypeState(NoType)
 
-    override def toString =
-      s"""|for(${inits.mkString(", ")}; ${cond}; ${steps.mkString(", ")}) {
-          |  ${body}
+    def show(ctx: Context): String = 
+      s"""|For{
+          |inits=${showList(inits, ctx)},
+          |cond=${cond.show(ctx)},
+          |steps=${showList(steps, ctx)},
+          |body=${body.show(ctx)},
+          |owner=${owner},
+          |pos=${pos}
           |}""".stripMargin
 
   }
@@ -156,15 +205,29 @@ trait Trees extends ast.Trees {
     def thenp: Expr
     def elsep: Expr
 
+    def show(ctx: Context): String = 
+      s"""|Ternary{
+          |cond=${cond.show(ctx)},
+          |thenp=${thenp.show(ctx)},
+          |elsep=${elsep.show(ctx)},
+          |owner=${owner},
+          |pos=${pos}
+          |}""".stripMargin
 
-    override def toString: String =
-      s"(${cond})?${thenp}:${elsep}"
   }
 
   // Apply
   trait Apply extends Expr {
     def fun: Expr
     def args: List[Expr]
+
+    def show(ctx: Context): String = 
+      s"""|Apply{
+          |fun=${fun.show(ctx)},
+          |args=${showList(args, ctx)},
+          |owner=${owner},
+          |pos=${pos}
+          |}""".stripMargin
 
     def tpe: TypeState[Type] = for {
       funty <- fun.tpe
@@ -176,7 +239,6 @@ trait Trees extends ast.Trees {
     }
 
 
-    override def toString: String = s"${fun}(${args.mkString(", ")})"
   }
 
 

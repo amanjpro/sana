@@ -85,13 +85,13 @@ trait Trees {
     def pos: Option[Position] 
 
 
-    // /**
-    //   * Returns the string representation of this AST node in a given context.
-    //   *
-    //   * This method may not be used for pretty printing, but for debugging
-    //   * purposes.
-    //   */
-    // def show(ctx: Context): String
+    /**
+      * Returns the string representation of this AST node in a given context.
+      *
+      * This method may not be used for pretty printing, but for debugging
+      * purposes.
+      */
+    def show(ctx: Context): String
   }
 
   /**
@@ -164,7 +164,7 @@ trait Trees {
     val pos: Option[Position]    = None
 
 
-    // def show(ctx: Context): String = ";"
+    def show(ctx: Context): String = ";"
 
 
     // Traverser functions
@@ -225,8 +225,14 @@ trait Trees {
       }
     }
 
-    // def show(ctx: Context): String = s"TypeUse
-    // override def toString: String = name
+    def show(ctx: Context): String = 
+      s"""|TypeUse{
+          |uses=$uses,
+          |nameAtParser=$nameAtParser,
+          |owner=$owner,
+          |pos=$pos,
+          |name=${ctx.getName(uses)}
+          |}""".stripMargin
 
 
     // Traverser functions
@@ -251,6 +257,16 @@ trait Trees {
         }
       }
     }
+
+    def show(ctx: Context): String = 
+      s"""|Ident{
+          |uses=$uses,
+          |nameAtParser=$nameAtParser,
+          |owner=$owner,
+          |pos=$pos,
+          |name=${ctx.getName(uses)}
+          |}""".stripMargin
+
     // override def toString: String = name
 
 
@@ -390,6 +406,8 @@ trait Trees {
     val owner: TreeId         = NoId
     val pos: Option[Position] = None
     val name: Name            = ERROR_NAME
+
+    def show(ctx: Context): String = "<bad-tree>"
   }
 
   //////////////////////////////////////////////////////////////////
@@ -428,5 +446,9 @@ trait Trees {
     //   })
     // } 
   }
+
+
+  def showList(trees: List[Tree], ctx: Context): String =
+    s"List{\n${trees.map(_.show(ctx)).mkString(",\n")}\n}"
 }
 

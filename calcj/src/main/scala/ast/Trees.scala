@@ -29,6 +29,13 @@ trait Trees extends ast.Trees {
     def expr: Expr
     val owner: TreeId = expr.owner
     override def tpe: TypeState[Type] = tpt.tpe
+
+    def show(ctx: Context): String = 
+      s"""|Cast{
+          |tpt=${tpt.show(ctx)},
+          |expr=${expr.show(ctx)},
+          |pos=$pos
+          |}""".stripMargin
   }
 
   // Binary and Unary trees
@@ -38,8 +45,17 @@ trait Trees extends ast.Trees {
     def rhs: Expr
 
     val owner: TreeId = lhs.owner
-    override def toString: String = 
-      s"(${lhs.toString} ${op.toString} ${rhs.toString})"
+
+
+    def show(ctx: Context): String = 
+      s"""|Binary{
+          |lhs=${lhs.show(ctx)},
+          |op=${op.toString},
+          |rhs=${rhs.show(ctx)},
+          |tpe=${tpe.eval(ctx)},
+          |pos=${pos}
+          |}""".stripMargin
+
   
   }
 
@@ -48,7 +64,16 @@ trait Trees extends ast.Trees {
     def expr: Expr
 
     val owner: TreeId = expr.owner
-    override def toString: String = s"(${op.toString}${expr.toString})"
+
+    def show(ctx: Context): String = 
+      s"""|Postfix{
+          |op=${op.toString},
+          |expr=${expr.show(ctx)},
+          |tpe=${tpe.eval(ctx)},
+          |pos=${pos}
+          |}""".stripMargin
+
+
   }
 
   trait Unary extends Expr {
@@ -56,7 +81,15 @@ trait Trees extends ast.Trees {
     def expr: Expr
 
     val owner: TreeId = expr.owner
-    override def toString: String = s"(${expr.toString}${op.toString})"
+
+    def show(ctx: Context): String = 
+      s"""|Unary{
+          |expr=${expr.show(ctx)},
+          |op=${op.toString},
+          |tpe=${tpe.eval(ctx)},
+          |pos=${pos}
+          |}""".stripMargin
+
   }
 
   // Literals
@@ -64,6 +97,9 @@ trait Trees extends ast.Trees {
     def const: Constant
     val owner: TreeId = NoId
     override def tpe: TypeState[Type] = toTypeState(const.tpe)
+
+    def show(ctx: Context): String = 
+      s"Lit($const)"
   }
 
   /***************************** Extractors **************************/

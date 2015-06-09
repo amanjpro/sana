@@ -43,6 +43,8 @@ trait Flags {
 
   def hasFlag(flag: Flag): Boolean =
     (mask & flag) == flag
+
+  def asString: String = "IMPLEMENT ME"
 }
 
 private class FlagsImpl extends Flags {
