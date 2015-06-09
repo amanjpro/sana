@@ -64,7 +64,7 @@ trait Parsers extends parser.Parsers {
           Unary(op, e, toTypeState(notype), pos(ctx))
         case _                  =>
           // TODO: report an error
-          throw new Exception("Expression is expected")
+          throw new Exception("Expression is expected, but got " + e1 + " " + op)
       }
     }
     def createBinary[T <: ParserRuleContext](es: java.util.List[T], 
@@ -97,7 +97,7 @@ trait Parsers extends parser.Parsers {
           Binary(x, op, y, toTypeState(notype), pos(ctx))
         case _                  =>
           // TODO: report an error
-          throw new Exception("Expression is expected")
+          throw new Exception("Expression is expected but got: " + e1 + " " + e2)
       }
     }
     
@@ -153,20 +153,11 @@ trait Parsers extends parser.Parsers {
       PrimjParser.MethodDeclarationContext): Tree = {
       val tpe    = visitChildren(ctx.`type`)
       val name   = ctx.Identifier.getText
-      val params = ctx.formalParameters match {
+      val params = ctx.formalParameters.formalParameterList match {
         case null         => List()
         case ps           =>
-        ps.formalParameterList match {
-          case null       => List()
-          case ps         =>
-            ps.formalParameter match {
-              case null   => Nil
-              case ps     =>
-                ps.asScala.toList.map {
-                case kid => visitChildren(kid).asInstanceOf[ValDef]
-              }
-            }
-        }
+          visitChildren(ps)
+                .asInstanceOf[java.util.List[ValDef]].asScala.toList
       }
       val body   = visitChildren(ctx.methodBody)
       (tpe, body) match {
@@ -183,8 +174,9 @@ trait Parsers extends parser.Parsers {
       TypeUse(NoId, Some(ctx.getText), NoId, pos(ctx))
     }
 		override def visitBlock(ctx: PrimjParser.BlockContext): Tree = { 
-      val stmts   = ctx.blockStatement.asScala.toList.map {
-        case kid => visitChildren(kid)
+      val stmts   = ctx.blockStatement match {
+        case null    => Nil
+        case stmts   => stmts.asScala.toList.map(visit(_))
       }
       Block(stmts, toTypeState(notype), pos(ctx), NoId)
     }
@@ -208,9 +200,8 @@ trait Parsers extends parser.Parsers {
         case null  => Nil
         case inits => 
           if(inits.expressionList != null)
-            inits.expressionList.expression.asScala.toList.map {
-              case kid => visitChildren(kid).asInstanceOf[Expr]
-            }
+            visitChildren(inits.expressionList)
+                .asInstanceOf[java.util.List[Tree]].asScala.toList
           else 
             createVarDefs(inits.variableDefinition, 
               Flags(FlagSet.LOCAL_VARIABLE))
@@ -222,9 +213,8 @@ trait Parsers extends parser.Parsers {
       val steps = ctx.forControl.forUpdate match {
         case null  => Nil
         case steps =>
-          steps.expressionList.expression.asScala.toList.map {
-            case kid => visitChildren(kid).asInstanceOf[Expr]
-          }
+          visitChildren(steps.expressionList)
+            .asInstanceOf[java.util.List[Expr]].asScala.toList
       }
       val body  = visitChildren(ctx.statement)
       (cond, body) match {
@@ -304,18 +294,12 @@ trait Parsers extends parser.Parsers {
 		override def visitApply(ctx: PrimjParser.ApplyContext): Tree = {
       val name   = ctx.Identifier.getText
       val id     = Ident(NoId, Some(name), NoId, pos(ctx))
-      val args   = ctx.arguments match {
+      val args   = ctx.arguments.expressionList match {
         case null           => Nil
-        case args           => args.expressionList match {
-          case null         => Nil
-          case args         => args.expression match {
-            case null           => Nil
-            case es             => es.asScala.toList.map {
-              case kid => visitChildren(kid).asInstanceOf[Expr]
-            }
-          }
+        case args           => 
+          visitChildren(args)
+            .asInstanceOf[java.util.List[Expr]].asScala.toList
         }
-      }
       Apply(id, args, pos(ctx), NoId)
     }
 
