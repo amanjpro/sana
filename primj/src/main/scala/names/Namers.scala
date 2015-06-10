@@ -6,12 +6,12 @@ import sana.primj
 import tiny.source.Position
 import tiny.contexts.TreeContexts
 import tiny.util.{CompilationUnits,MonadUtils}
-import tiny.contexts.TreeId
-import tiny.report._
+import tiny.contexts.{TreeId, NoId}
 import tiny.passes
 import tiny.names.{Namers => _, _}
 import tiny.names
 import primj.Global
+import primj.report._
 
  
 import scalaz.{Name => _, Failure => _, _}
@@ -43,8 +43,15 @@ trait Namers extends names.Namers {
     def nameTypeUses(tuse: TypeUse): NamerMonad[TypeUse] = for {
       env  <- getSW
       name <- pointSW(tuse.nameAtParser.map(Name(_)).getOrElse(ERROR_NAME))
-      tid  = env.lookup(name, t => t.isInstanceOf[TypeTree], tuse.owner)
-    } yield TypeUse(tid, tuse.owner, tuse.pos)
+      tid  <- pointSW(env.lookup(name, _.isInstanceOf[TypeTree], tuse.owner))
+      _    <- tid match {
+                case NoId    =>
+                  toNamerMonad(error(TYPE_NOT_FOUND,
+                    tuse.toString, "a type", tuse.pos, tuse))
+                case tid     =>
+                  pointSW(())
+              }
+      } yield TypeUse(tid, tuse.owner, tuse.pos)
 
     def nameDefTrees(defTree: DefTree): NamerMonad[DefTree] = defTree match {
       case ttree: TermTree                            => for {
@@ -80,7 +87,14 @@ trait Namers extends names.Namers {
       case id: Ident                                  => for {
        env  <- getSW
        name <- pointSW(id.nameAtParser.map(Name(_)).getOrElse(ERROR_NAME))
-       tid  = env.lookup(name, const(true), id.owner)
+       tid  <- pointSW(env.lookup(name, _.isInstanceOf[Ident], id.owner))
+       _    <- tid match {
+                case NoId    =>
+                  toNamerMonad(error(NAME_NOT_FOUND,
+                    id.toString, "a name", id.pos, id))
+                case _     =>
+                  pointSW(())
+              }
       } yield Ident(tid, id.owner, id.pos)
       case cast:Cast                                  => for {
        tpt  <- nameTypeUses(cast.tpt)

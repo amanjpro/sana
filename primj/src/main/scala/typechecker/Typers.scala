@@ -81,11 +81,12 @@ trait Typers extends typechecker.Typers {
     def typeValDef(vdef: ValDef): TypeChecker[ValDef] = for {
       rhs      <- typeExpr(vdef.rhs)
       rhsty    <- toTypeChecker(rhs.tpe)
+      ctx      <- getSW
       vty      <- toTypeChecker(vdef.tpt.tpe)
       _        <- if(vty =:= VoidType) {
-          error(VOID_TYPE_VARIABLE,
+        error(VOID_VARIABLE_TYPE,
             vty.toString, vty.toString, rhs.pos, vdef)
-          pointSW(())
+        pointSW(())
       } else (rhsty <:< vty) match {
         case false =>
           error(TYPE_MISMATCH,
