@@ -7,7 +7,6 @@ import tiny.ast.TreeGen
 import tiny.util._
 import tiny.passes.Phases
 import tiny.report._
-import tiny.contexts.TreeContexts
 import tiny.source.SourceReader
 import tiny.source.SourceFile
 import calcj.ast.Constants
@@ -17,6 +16,7 @@ import ast.Trees
 import antlr._
 import types.Types
 import parser.Parsers
+import contexts.TreeContexts
 
 import org.antlr.v4.runtime._
 import org.antlr.v4.runtime.tree._

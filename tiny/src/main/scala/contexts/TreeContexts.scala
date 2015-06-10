@@ -299,18 +299,6 @@ trait TreeContexts {
     override def delete(id: TreeId): Context = this
   }
 
-  class MethodContext(val tree: IdentifiedTree, protected val idGen: IDGen, 
-    val decls: Map[TreeId, Context] = Map.empty) extends NamedContext {
-    
-    
-    def updateTree(tree: IdentifiedTree): NamedContext = 
-      new MethodContext(tree, idGen, decls)
-    protected def newContext(idGen: IDGen, 
-      binds: Map[TreeId, Context]): Context = 
-        new MethodContext(tree, idGen, binds)
-  }
-  
-
 
   /**
    * An object to represent missing compilation units. 
@@ -353,8 +341,6 @@ trait TreeContexts {
   }
 
   def emptyContext: Context = Context.apply()
-  def methodContext(tree: IdentifiedTree): MethodContext = 
-    new MethodContext(tree, new IDGen)
   def atomicContext(tree: IdentifiedTree): AtomicContext = 
     new AtomicContext(tree)
   def blockContext: BlockContext = new BlockContext(new IDGen)
