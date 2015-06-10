@@ -7,6 +7,7 @@ import source.SourceFile
 import tiny.parser.Parsers
 import tiny.contexts.TreeContexts
 import tiny.ast.Trees
+import tiny.debug.logger
 import tiny.ast.TreeGen
 import tiny.util._
 import tiny.settings.SanaConfig
@@ -35,7 +36,7 @@ trait CompilerApi {
           (Vector[Report], global.CompilationUnit, global.Context) = {
     standardPhases.foldLeft((Vector.empty[Report], unit, 
             context))((z, y) => {
-      global.logger.info(s"Entered phase ${y.name}")
+      logger.info(s"Entered phase ${y.name}")
       val (report, unit, ctx) = z
       if(global.isErroneous(report)) {
         (report, global.ErroneousCompilationUnit(unit.fileName), ctx)

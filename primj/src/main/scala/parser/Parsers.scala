@@ -11,6 +11,7 @@ import tiny.contexts._
 import tiny.names.Name
 import tiny.util.{CompilationUnits, MonadUtils}
 import tiny.parser
+import tiny.debug.logger
 import calcj.ast.Constants
 import calcj.ast.JavaOps._
 import primj.Global

@@ -5,7 +5,7 @@ import sana.tiny
 import sana.calcj
 import tiny.settings.{SanaConfig,CommandLineArgumentParser}
 import tiny.passes.Phases
-import tiny.debug.Logger
+import tiny.debug.logger
 import parser.Parsers
 import typechecker.Typers
 import java.lang.{System => OS}
@@ -39,19 +39,13 @@ object Main {
 
     val ln = langName
     val lv = langVersion
-    val sp = OS.getProperty("file.separator")
-    val commonPath = OS.getProperty("user.home") + sp + 
-      tiny.frameworkName.toLowerCase
-    val loggingDir = new File(commonPath)
-    loggingDir.mkdirs
-    val loggingPath = commonPath + sp + "logs.log"
+    logger.setLevel(c.logLevel)
 
     val compiler = new Compiler with Parsers with Phases with Typers {
       type G = Global
       type ConfigType = SanaConfig
       val config = c
       val global: G = new Global {
-        val logger: Logger = new Logger(config.logLevel, loggingPath)
         val isTest: Boolean = config.isTest
       }
       val langName: String = ln

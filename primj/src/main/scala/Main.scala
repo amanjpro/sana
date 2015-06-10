@@ -5,12 +5,10 @@ import sana.tiny
 import sana.primj
 import tiny.settings.{SanaConfig,CommandLineArgumentParser}
 import tiny.passes.Phases
-import tiny.debug.Logger
+import tiny.debug.logger
 import parser.Parsers
 import typechecker.Typers
 import names.{Namers, IDAssigners}
-import java.lang.{System => OS}
-import java.io.File
 
 object Main { 
   def processOptions(args: Array[String],
@@ -40,12 +38,7 @@ object Main {
 
     val ln = langName
     val lv = langVersion
-    val sp = OS.getProperty("file.separator")
-    val commonPath = OS.getProperty("user.home") + sp + 
-      tiny.frameworkName.toLowerCase
-    val loggingDir = new File(commonPath)
-    loggingDir.mkdirs
-    val loggingPath = commonPath + sp + "logs.log"
+    logger.setLevel(c.logLevel)
 
     val compiler = new Compiler with Parsers with Phases with Typers with
                        Namers with IDAssigners {
@@ -53,7 +46,6 @@ object Main {
       type ConfigType = SanaConfig
       val config = c
       val global: G = new Global {
-        val logger: Logger = new Logger(config.logLevel, loggingPath)
         val isTest: Boolean = config.isTest
       }
       val langName: String = ln

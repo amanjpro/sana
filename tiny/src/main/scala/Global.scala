@@ -21,5 +21,4 @@ trait Global extends Trees with
         TreeContexts with
         Reporting with
         MonadUtils {
-  val logger: Logger
 }
