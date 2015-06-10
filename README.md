@@ -41,11 +41,12 @@ Please refer to the [wiki](https://github.com/amanjpro/sana/wiki)
 ## Contributing
 
 1. Fork it!
-2. Experiment with the plugin system of Sana
-3. Play with Sana more and implement a language feature on top of an
+2. Join us on `freenode`: #sanacompiler
+3. Experiment with the plugin system of Sana
+4. Play with Sana more and implement a language feature on top of an
    existing language.
-4. Go through [wiki](https://github.com/amanjpro/sana/wiki/Contributing)
-5. Report bugs
+5. Go through [wiki](https://github.com/amanjpro/sana/wiki/Contributing)
+6. Report bugs
 
 ## Q/A Forum
 [here](https://groups.google.com/d/forum/sana-compiler-framework)
