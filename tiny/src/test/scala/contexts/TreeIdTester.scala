@@ -22,20 +22,28 @@ class TreeIdTester extends FlatSpec with Matchers {
   }
 
   "path.head" should s"$hd" in {
-    path.head == hd
+    path.head should be (hd)
   }
 
   "path.forward" should s"$tl" in {
-    path.forward == tl
+    path.forward should be (tl)
   }
 
   "path.up" should s"$up" in {
-    path.up == up
+    path.up should be (up)
   }
 
 
   "tl.merge(hd)" should s"$path" in {
-    tl.merge(hd) == path
+    tl.merge(hd) should be (path)
+  }
+
+
+  val path1 = TreeId(TreeId(NoId, 1), 4)
+  val path2 = TreeId(NoId, 1)
+  val res   = TreeId(TreeId(TreeId(NoId, 1), 1), 4)
+  s"$path1 merge ($path2)" should s"$res" in {
+    path1.merge(path2) should be (res)
   }
 }
 
