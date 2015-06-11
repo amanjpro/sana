@@ -234,7 +234,7 @@ trait Trees {
           |nameAtParser=$nameAtParser,
           |owner=$owner,
           |pos=$pos,
-          |name=${ctx.getName(uses)}
+          |name=${name(ctx)}
           |}""".stripMargin
 
 
@@ -267,7 +267,7 @@ trait Trees {
           |nameAtParser=$nameAtParser,
           |owner=$owner,
           |pos=$pos,
-          |name=${ctx.getName(uses)}
+          |name=${name(ctx)}
           |}""".stripMargin
 
     // override def toString: String = name

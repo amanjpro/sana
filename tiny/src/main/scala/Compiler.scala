@@ -44,7 +44,7 @@ trait CompilerApi {
         y match {
           case p: TransformerPhase                   => 
             val (w, cu, ctx2) = p.startPhase(ctx, unit)
-            (report ++ w, unit, ctx2)
+            (report ++ w, cu, ctx2)
           // Not all compiler phases return compilation units, the type checker
           // phase ones, and they are not allowed to change the compilation
           // units. That is why it is safe to return the previous one and pass

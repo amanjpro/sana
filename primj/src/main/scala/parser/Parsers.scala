@@ -37,7 +37,7 @@ trait Parsers extends parser.Parsers {
  
   def parse(source: SourceFile): CompilationUnit = {
     val tree = new PrimjVisitor(source.name).visit(source.content)
-    logger.info(tree.show(emptyContext))
+    logger.debug(tree.show(emptyContext))
     CompilationUnit(NO_COMPILATION_UNIT_ID, tree, source.name)
   }
 
@@ -230,7 +230,7 @@ trait Parsers extends parser.Parsers {
         case null    => Nil
         case stmts   => stmts.asScala.toList.map(visit(_))
       }
-      Block(stmts, toTypeState(notype), pos(ctx), NoId)
+      Block(NoId, stmts, toTypeState(notype), pos(ctx), NoId)
     }
 
 		override def visitIf(@NotNull ctx: PrimjParser.IfContext): Tree = { 
@@ -273,7 +273,7 @@ trait Parsers extends parser.Parsers {
       val body  = visit(ctx.statement)
       (cond, body) match {
         case (c: Expr, b: Expr) =>
-          For(inits, c, steps, b, pos(ctx), NoId)
+          For(NoId, inits, c, steps, b, pos(ctx), NoId)
         case _                  =>
           // TODO: report an error
           throw new Exception("Bad tree shape")

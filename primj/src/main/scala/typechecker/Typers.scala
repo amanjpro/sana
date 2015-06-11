@@ -114,6 +114,7 @@ trait Typers extends typechecker.Typers {
       case apply: Apply           => for {
         tapp <- typeApply(apply)
       } yield tapp
+      // FIXME: Typechecking for Block is missing
       case _                      => 
         super.typeExpr(e)
     }
@@ -159,7 +160,7 @@ trait Typers extends typechecker.Typers {
           pointSW(())
         case _       => pointSW(())
       }
-      tree  <- pointSW(For(inits, cond, steps, body, forloop.pos))
+      tree  <- pointSW(For(forloop.id, inits, cond, steps, body, forloop.pos))
     } yield tree
 
     def typeIf(iff: If): TypeChecker[If] = for {
@@ -214,5 +215,3 @@ trait Typers extends typechecker.Typers {
     }
   }
 }
-
-

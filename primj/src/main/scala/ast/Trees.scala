@@ -69,6 +69,7 @@ trait Trees extends ast.Trees {
     def show(ctx: Context): String = 
       s"""|MethodDef{
           |mods=${mods.asString},
+          |id=${id},
           |ret=${ret.show(ctx)},
           |name=${name.toString},
           |params=${showList(params, ctx)},
@@ -88,6 +89,7 @@ trait Trees extends ast.Trees {
     def show(ctx: Context): String = 
       s"""|ValDef{
           |mods=${mods.asString},
+          |id=${id},
           |tpt=${tpt.show(ctx)},
           |name=${name.toString},
           |rhs=${rhs.show(ctx)},
@@ -117,11 +119,12 @@ trait Trees extends ast.Trees {
 
   }
 
-  trait Block extends Expr {
+  trait Block extends Expr with IdentifiedTree {
     def stmts: List[Tree]
 
     def show(ctx: Context): String = 
       s"""|Block{
+          |id=$id,
           |stmts=${showList(stmts, ctx)},
           |owner=${owner},
           |pos=${pos}
@@ -180,7 +183,7 @@ trait Trees extends ast.Trees {
 
   }
 
-  trait For extends Expr {
+  trait For extends Expr with IdentifiedTree {
     def inits: List[Tree]
     def cond: Expr
     def steps: List[Expr]
@@ -189,6 +192,7 @@ trait Trees extends ast.Trees {
 
     def show(ctx: Context): String = 
       s"""|For{
+          |id=$id,
           |inits=${showList(inits, ctx)},
           |cond=${cond.show(ctx)},
           |steps=${showList(steps, ctx)},
@@ -377,25 +381,26 @@ trait Trees extends ast.Trees {
   }
 
   trait BlockFactory {
-    private class BlockImpl(val stmts: List[Tree], val tpe: TypeState[Type],
+    private class BlockImpl(val id: TreeId,
+      val stmts: List[Tree], val tpe: TypeState[Type],
       val pos: Option[Position], val owner: TreeId) extends Block
 
 
-    def apply(stmts: List[Tree], tpe: TypeState[Type], 
+    def apply(id: TreeId, stmts: List[Tree], tpe: TypeState[Type], 
       pos: Option[Position] = None, owner: TreeId = NoId): Block = 
-        new BlockImpl(stmts, tpe, pos, owner)
+        new BlockImpl(id, stmts, tpe, pos, owner)
 
   }
 
   trait ForFactory {
-    private class ForImpl(val inits: List[Tree],
+    private class ForImpl(val id: TreeId, val inits: List[Tree],
       val cond: Expr, val steps: List[Expr], val body: Expr,
         val pos: Option[Position], val owner: TreeId) extends For
 
-    def apply(inits: List[Tree], cond: Expr, steps: List[Expr], 
+    def apply(id: TreeId, inits: List[Tree], cond: Expr, steps: List[Expr],
       body: Expr, pos: Option[Position] = None, 
       owner: TreeId = NoId): For = 
-        new ForImpl(inits, cond, steps, body, pos, owner)
+        new ForImpl(id, inits, cond, steps, body, pos, owner)
   }
 
   trait TernaryFactory {
