@@ -7,6 +7,7 @@ import tiny.util.{CompilationUnits, MonadUtils}
 import tiny.contexts.TreeId
 import tiny.ast.Trees
 import tiny.types.Types
+import tiny.debug.logger
 import tiny.report._
 import tiny.passes
 
@@ -36,6 +37,7 @@ trait Namers extends passes.Phases {
          (Vector[Report], CompilationUnit, Context) = {
       val tree  = unit.tree
       val (w, (s, namedTree)) = nameTrees(tree).run(state).run
+      logger.debug(namedTree.show(s))
       (w, CompilationUnit(unit.id, namedTree, unit.fileName), s)
     }
 
