@@ -64,7 +64,7 @@ trait CompilerApi {
     // all compilation units and not giving up?
     val (w, cs, _) = cunits.foldLeft((Vector.empty[Report], 
             Vector.empty[global.CompilationUnit],
-            global.Context()))((z, y) => {
+            global.rootContext: global.Context))((z, y) => {
       val (w, cs, ctx) = z
       val (w2, u2, ctx2) = compileUnit(ctx, y)
       (w ++ w2, cs ++ Vector(u2), ctx2)
