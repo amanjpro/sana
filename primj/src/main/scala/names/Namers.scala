@@ -8,6 +8,7 @@ import tiny.contexts.TreeContexts
 import tiny.util.{CompilationUnits,MonadUtils}
 import tiny.contexts.{TreeId, NoId}
 import tiny.passes
+import tiny.debug.logger
 import tiny.names.{Namers => _, _}
 import tiny.names
 import primj.Global
@@ -43,7 +44,8 @@ trait Namers extends names.Namers {
     def nameTypeUses(tuse: TypeUse): NamerMonad[TypeUse] = for {
       env  <- getSW
       name <- pointSW(tuse.nameAtParser.map(Name(_)).getOrElse(ERROR_NAME))
-      tid  <- pointSW(env.lookup(name, _.isInstanceOf[TypeTree], tuse.owner))
+      tid  <- pointSW(env.lookup(name, _.kind.isInstanceOf[TypeKind], 
+              tuse.owner))
       _    <- tid match {
                 case NoId    =>
                   toNamerMonad(error(TYPE_NOT_FOUND,
@@ -87,14 +89,15 @@ trait Namers extends names.Namers {
       case id: Ident                                  => for {
        env  <- getSW
        name <- pointSW(id.nameAtParser.map(Name(_)).getOrElse(ERROR_NAME))
-       tid  <- pointSW(env.lookup(name, _.isInstanceOf[Ident], id.owner))
+       tid  <- pointSW(env.lookup(name, 
+                  _.kind.isInstanceOf[TermKind], id.owner))
        _    <- tid match {
-                case NoId    =>
-                  toNamerMonad(error(NAME_NOT_FOUND,
-                    id.toString, "a name", id.pos, id))
-                case _     =>
-                  pointSW(())
-              }
+                 case NoId    =>
+                   toNamerMonad(error(NAME_NOT_FOUND,
+                     id.toString, "a name", id.pos, id))
+                 case _     =>
+                   pointSW(())
+               }
       } yield Ident(tid, id.owner, id.pos)
       case cast:Cast                                  => for {
        tpt  <- nameTypeUses(cast.tpt)
@@ -125,14 +128,16 @@ trait Namers extends names.Namers {
       } yield While(wile.mods, cond, body, wile.pos, wile.owner)
       case block:Block                                => for {
         stmts <- block.stmts.map(nameTrees(_)).sequenceU
-        r     <- pointSW(Block(stmts, block.tpe, block.pos, block.owner))
+        r     <- pointSW(Block(block.id, 
+          stmts, block.tpe, block.pos, block.owner))
       } yield r
       case forloop:For                                => for {
         inits <- forloop.inits.map(nameTrees(_)).sequenceU
         cond  <- nameExprs(forloop.cond)
         steps <- forloop.steps.map(nameExprs(_)).sequenceU
         body  <- nameExprs(forloop.body)
-      } yield For(inits, cond, steps, body, forloop.pos, forloop.owner)
+      } yield For(forloop.id, inits, cond, steps, 
+                body, forloop.pos, forloop.owner)
       case ternary:Ternary                            => for {
         cond  <- nameExprs(ternary.cond)
         thenp <- nameExprs(ternary.thenp)

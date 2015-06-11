@@ -7,6 +7,8 @@ import tiny.source.Position
 import tiny.report.Report
 import tiny.contexts.{TreeId, NoId}
 import tiny.passes
+import tiny.debug.logger
+import primj.report._
 import tiny.names
 import primj.Global
 
@@ -49,6 +51,7 @@ trait IDAssigners extends passes.Phases {
       // Extend the tree context with an empty compilation unit context
       val (id, state2) = state.extend(NoId, state)
       val (w, namedTree, s) = assign(tree).run(id, state2)
+      logger.debug(namedTree.show(s))
       (w, CompilationUnit(id, namedTree, unit.fileName), s)
     }
 
@@ -61,7 +64,7 @@ trait IDAssigners extends passes.Phases {
         r       <- assignDef(dtree)
       } yield r
       case tuse: TypeUse                             => for {
-        r       <- point(tuse)
+        r       <- assignTypeUse(tuse)
       } yield r
       case e: Expr                                   => for {
         e       <- assignExpr(e)
@@ -79,20 +82,26 @@ trait IDAssigners extends passes.Phases {
 
     def assignMethodDef(meth: MethodDef): IDAssignerMonad[MethodDef] = for {
       owner   <- ask
-      ctx     <- get
-      id_ctx2 <- point(ctx.extend(owner, methodContext(meth)))
-      id      <- point(id_ctx2._1)
-      ctx2    <- point(id_ctx2._2)
+      ctx1    <- get
+      // _       <- ctx.getContext(owner) match {
+      //           case
+      //            }.directlyDefines(meth.name) match {
+      //              case true =>
+      //                error(TYPE_NOT_FOUND,
+      //                  "", "a type", meth.pos, meth)
+      //              case _    => point(())
+      //            }
+      id_ctx2 =  ctx1.extend(owner, methodContext(meth))
+      id      =  id_ctx2._1
+      ctx2    =  id_ctx2._2
       _       <- put(ctx2)
       params  <- meth.params.map {
-        (v: ValDef) => local(const(id))(assignValDef(v))
-          // assignValDef(v)
+        case v => local(const(id))(assignValDef(v))
       }.sequenceU
-      body    <- assignExpr(meth.body)
-      m       <- point(MethodDef(meth.mods, id, meth.ret, meth.name, 
-                meth.params, body, meth.pos, owner))
-      ctx3    <- point(ctx2.update(id, m))
-      _       <- put(ctx3)
+      ret     <- assignTypeUse(meth.ret)
+      body    <- local(const(id))(assignExpr(meth.body))
+      m       <- point(MethodDef(meth.mods, id, ret, meth.name, 
+                params, body, meth.pos, owner))
       // INFO: This line seems to be useless, but we need it to satisfy the type
       // checker
       _       <- point(m)
@@ -100,25 +109,23 @@ trait IDAssigners extends passes.Phases {
 
     def assignValDef(valdef: ValDef): IDAssignerMonad[ValDef] = for {
       owner   <- ask
-      ctx     <- get
+      ctx1    <- get
       rhs     <- assignExpr(valdef.rhs)
-      id_ctx2 <- point(ctx.extend(owner, atomicContext(valdef)))
-      id      <- point(id_ctx2._1)
-      ctx2    <- point(id_ctx2._2)
+      id_ctx2 =  ctx1.extend(owner, atomicContext(valdef))
+      id      =  id_ctx2._1
+      ctx2    =  id_ctx2._2
       _       <- put(ctx2)
-      v       <- point(ValDef(valdef.mods, id, valdef.tpt, valdef.name,
+      tpt     <- assignTypeUse(valdef.tpt)
+      v       <- point(ValDef(valdef.mods, id, tpt, valdef.name,
                     rhs, valdef.pos, owner))
-      ctx3    <- point(ctx2.update(id, v))
-      _       <- put(ctx3)
       // INFO: This line seems to be useless, but we need it to satisfy the type
       // checker
       _       <- point(v)
     } yield v
 
     def assignTypeUse(tuse: TypeUse): IDAssignerMonad[TypeUse] = for {
-        owner   <- ask
-        r       <- point(TypeUse(tuse.uses, 
-          tuse.nameAtParser, owner, tuse.pos))
+      owner   <- ask
+      r       <- point(TypeUse(tuse.uses, tuse.nameAtParser, owner, tuse.pos))
     } yield r
 
     def assignExpr(expr: Expr): IDAssignerMonad[Expr] = expr match {
@@ -168,17 +175,20 @@ trait IDAssigners extends passes.Phases {
         // Another thing to notice is that, we need to extend
         // CompilationUnitContext to somehow store these kinds
         // of scoping too.
+        // According to this design, method body has its own id
+        // and the owner of the body is the method
+        // the same thing applies for forloop
         owner   <- ask
-        ctx     <- get
-        id_ctx2 <- point(ctx.extend(owner, blockContext))
-        id      <- point(id_ctx2._1)
-        ctx2    <- point(id_ctx2._2)
+        ctx1    <- get
+        id_ctx2 =  ctx1.extend(owner, blockContext)
+        id      =  id_ctx2._1
+        ctx2    =  id_ctx2._2
         _       <- put(ctx2)
-        stmts   <- block.stmts.map((t: Tree) =>
-            local(const(id))(assign(t))).sequenceU
-        r       <- point(Block(stmts, block.tpe, block.pos, owner))
+        stmts   <- block.stmts.map { case t =>
+            local(const(id))(assign(t))
+        }.sequenceU
+        r       <- point(Block(id, stmts, block.tpe, block.pos, owner))
       } yield r
-
       case forloop:For                               => for {
         // INFO: 
         // The issue with for loops is similar to the one mentioned
@@ -186,18 +196,20 @@ trait IDAssigners extends passes.Phases {
         // defined in the inits clause of a for-loop in the newly
         // created scope.
         owner   <- ask
-        ctx     <- get
-        id_ctx2 <- point(ctx.extend(owner, blockContext))
-        id      <- point(id_ctx2._1)
-        ctx2    <- point(id_ctx2._2)
+        ctx1    <- get
+        id_ctx2 =  ctx1.extend(owner, blockContext)
+        id      =  id_ctx2._1
+        ctx2    =  id_ctx2._2
         _       <- put(ctx2)
-        inits   <- forloop.inits.map((t: Tree) =>
-            local(const(id))(assign(t))).sequenceU
+        inits   <- forloop.inits.map { case t =>
+            local(const(id))(assign(t))
+        }.sequenceU
         cond    <- local(const(id))(assignExpr(forloop.cond))
-        steps   <- forloop.steps.map((e: Expr) => 
-            local(const(id))(assignExpr(e))).sequenceU
+        steps   <- forloop.steps.map { case e => 
+            local(const(id))(assignExpr(e))
+        }.sequenceU
         body    <- local(const(id))(assignExpr(forloop.body))
-      } yield For(inits, cond, steps, body, forloop.pos, owner)
+      } yield For(id, inits, cond, steps, body, forloop.pos, owner)
       case ternary:Ternary                           => for {
         owner   <- ask
         cond    <- assignExpr(ternary.cond)
