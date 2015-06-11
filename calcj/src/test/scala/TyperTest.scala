@@ -3,7 +3,6 @@ import sana.calcj
 import sana.tiny
 import tiny.util._
 import tiny.report._
-import tiny.logging.Logger
 import tiny.contexts.TreeContexts
 import calcj.Global
 import calcj.ast.Trees
@@ -28,7 +27,7 @@ class TyperTest extends FlatSpec with Matchers with Typers {
   }
   
   val typer = new Typer {}
-  "1L >> 2" should "be long" in {
+  "1L >> 2" should "be (Long, Int) => Long" in {
     val b = Binary(
               Lit(LongConstant(1), None), 
               SHR,
@@ -36,10 +35,10 @@ class TyperTest extends FlatSpec with Matchers with Typers {
               toTypeState(NoType),
               None)
     val tpe = getTpe(typer.typeTree(b))
-    tpe =:= LongType
+    (tpe =:= LongType) should be (true)
   }
 
-  "(short) 1 >>> 1L" should "be int" in {
+  "(short) 1 >>> 1L" should "be (Int, Long) => Int" in {
     val b = Binary(
               Lit(ShortConstant(1), None), 
               USHR,
@@ -47,7 +46,7 @@ class TyperTest extends FlatSpec with Matchers with Typers {
               toTypeState(NoType),
               None)
     val tpe = getTpe(typer.typeTree(b))
-    tpe =:= IntType
+    (tpe =:= IntType) should be (true)
   }
 
   "1 << 1.0f" should "not type check" in {
@@ -58,7 +57,7 @@ class TyperTest extends FlatSpec with Matchers with Typers {
               toTypeState(NoType),
               None)
     val tpe = getTpe(typer.typeTree(b))
-    tpe =:= ErrorType
+    (tpe == ErrorType) should be (true)
   }
 
   "(short) 1 >>> true" should "not type check" in {
@@ -69,7 +68,7 @@ class TyperTest extends FlatSpec with Matchers with Typers {
               toTypeState(NoType),
               None)
     val tpe = getTpe(typer.typeTree(b))
-    tpe =:= ErrorType
+    (tpe == ErrorType) should be (true)
   }
 
   "(short) 1 + -((byte) 2) * 4" should "be int" in {
@@ -88,7 +87,7 @@ class TyperTest extends FlatSpec with Matchers with Typers {
               toTypeState(NoType),
               None)
     val tpe = getTpe(typer.typeTree(b))
-    tpe =:= IntType
+    (tpe =:= IntType) should be (true)
   }
 
 
@@ -105,7 +104,7 @@ class TyperTest extends FlatSpec with Matchers with Typers {
               None
             )
     val tpe = getTpe(typer.typeTree(b))
-    tpe =:= DoubleType
+    (tpe =:= DoubleType) should be (true)
   }
 
   "(short) 1 + (byte) 2 + \"4\"" should "be String" in {
@@ -121,7 +120,7 @@ class TyperTest extends FlatSpec with Matchers with Typers {
               toTypeState(NoType),
               None)
     val tpe = getTpe(typer.typeTree(b))
-    tpe =:= DoubleType
+    (tpe =:= DoubleType) should be (true)
   }
 
   "+((short) 1)" should "be int" in {
@@ -131,7 +130,7 @@ class TyperTest extends FlatSpec with Matchers with Typers {
               toTypeState(NoType),
               None)
     val tpe = getTpe(typer.typeTree(b))
-    tpe =:= IntType
+    (tpe =:= IntType) should be (true)
   }
 
 }
