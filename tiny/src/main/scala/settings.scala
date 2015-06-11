@@ -96,13 +96,16 @@ object settings {
           "Comma seperated plugin names to be used.")
         opt[String]("Xlog") action { case (log, _) =>
           config.logLevel = log match{
-            case "off"    => Level.OFF
-            case "all"    => Level.ALL
-            case "debug"  => Level.INFO
-            case "severe" => Level.SEVERE
+            case "off"      => Level.OFF
+            case "all"      => Level.ALL
+            case "debug"    => Level.FINE
+            case "info"     => Level.INFO
+            case "warning"  => Level.WARNING
+            case "severe"   => Level.SEVERE
           }
         } validate { x => 
-          if (! List("off", "all", "debug", "severe").contains(x))
+          if (! List("off", "all", "debug", "info", 
+            "warning", "severe").contains(x))
             failure (s"Option $x wasn't understandable")
           else success
         }text("Set the logging level of Sana, possible options: \n" ++ 

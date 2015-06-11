@@ -13,6 +13,10 @@ class Logger(destination: String) {
   logger.addHandler(handler)
 
 
+  def debug(msg: String): Unit = {
+    logger.log(Level.FINE, msg)
+  }
+
   def info(msg: String): Unit = {
     logger.log(Level.INFO, msg)
   }
