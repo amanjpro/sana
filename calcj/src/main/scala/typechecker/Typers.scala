@@ -124,7 +124,7 @@ trait Typers extends passes.Phases {
         // cannot infer the type of ``let-binding'' well.
         // i.e. I cannot say btpe = binaryTyper(...) without
         // ascribing btpe's type, which results in a warning
-        btpe                 <- binaryTyper(rtpe, ltpe, bin)
+        btpe                 <- binaryTyper(ltpe, rtpe, bin)
         // INFO:
         // We cannot pattern match against the tuple here,
         // due to a bug in the Scala Compiler #SI-1336
@@ -168,13 +168,13 @@ trait Typers extends passes.Phases {
           pointSW(UnaryType(BooleanType, BooleanType))
         case (Pos, x: NumericType)                           => 
           val t = unaryNumericPromotion(x)
-          pointSW(UnaryType(x, x))
+          pointSW(UnaryType(x, t))
         case (Neg, x: NumericType)                           => 
           val t = unaryNumericPromotion(x)
-          pointSW(UnaryType(x, x))
+          pointSW(UnaryType(x, t))
         case (BCompl, x: IntegralType)                       => 
           val t = unaryNumericPromotion(x)
-          pointSW(UnaryType(t, t))
+          pointSW(UnaryType(x, t))
         case (Inc, x: NumericType)                           => 
           pointSW(UnaryType(x, x))
         case (Dec, x: NumericType)                           => 

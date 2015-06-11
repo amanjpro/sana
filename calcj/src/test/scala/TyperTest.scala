@@ -27,7 +27,7 @@ class TyperTest extends FlatSpec with Matchers with Typers {
   }
   
   val typer = new Typer {}
-  "1L >> 2" should "be (Long, Int) => Long" in {
+  "1L >> 2" should "Long" in {
     val b = Binary(
               Lit(LongConstant(1), None), 
               SHR,
@@ -38,7 +38,7 @@ class TyperTest extends FlatSpec with Matchers with Typers {
     (tpe =:= LongType) should be (true)
   }
 
-  "(short) 1 >>> 1L" should "be (Int, Long) => Int" in {
+  "(short) 1 >>> 1L" should "Int" in {
     val b = Binary(
               Lit(ShortConstant(1), None), 
               USHR,
@@ -120,7 +120,7 @@ class TyperTest extends FlatSpec with Matchers with Typers {
               toTypeState(NoType),
               None)
     val tpe = getTpe(typer.typeTree(b))
-    (tpe =:= DoubleType) should be (true)
+    (tpe =:= StringType) should be (true)
   }
 
   "+((short) 1)" should "be int" in {
