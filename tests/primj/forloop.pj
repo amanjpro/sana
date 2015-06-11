@@ -1,14 +1,14 @@
 // fails
-// VOID_TYPE_VARIABLE
+// VOID_VARIABLE_TYPE
 
-int x = 10;
-int y = 10;
-void z = x;
+int x = 10;     // Not found type int
+int y = 10;     // Not found type int
+void z = x;     // Not found type void    --- Name not found?
 
-int m(int l) {
-  for(int k=0, z = 10; k < 10; k++,k--) {
+int m(int l) {  // Not found type int, Not found type int
+  for(int k=0, z = 10; k < 10; k++,k--) {  // Not found type int
     y = 10;
-    int k =1;
+    int k =1;   // Not found type int, Error duplicate
     1;
   }
   return 10;
