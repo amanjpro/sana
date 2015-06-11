@@ -84,9 +84,13 @@ trait Typers extends passes.Phases {
         etree      <- typeExpr(unary.expr)              
         etpe       <- toTypeChecker(etree.tpe)
         utpe       <- unaryTyper(etpe, unary)
+        ctx        <- getSW
         expr       <- pointSW {                           
           utpe match {
-            case u: UnaryType => castIfNeeded(etree, u.op, utpe)
+            case u: UnaryType => 
+              val id = ctx.lookup(u.op.name,
+                _.kind == BuiltInTypeKind, NoId)
+              castIfNeeded(etree, u.op, utpe, id)
             case u            => 
               etree
           }
@@ -119,6 +123,7 @@ trait Typers extends passes.Phases {
         ltpe                 <- toTypeChecker(ltree.tpe)
         rtree                <- typeExpr(bin.rhs)
         rtpe                 <- toTypeChecker(rtree.tpe)
+        ctx                  <- getSW
         // INFO:
         // We do pointSW, and cpointSW the following call, because Scala
         // cannot infer the type of ``let-binding'' well.
@@ -135,8 +140,12 @@ trait Typers extends passes.Phases {
         es                   <- pointSW {
           btpe match {
             case b: BinaryType =>
-              val l = castIfNeeded(ltree, b.op1, ltpe)
-              val r = castIfNeeded(rtree, b.op2, rtpe)
+              val id1 = ctx.lookup(b.op1.name, 
+                _.kind == BuiltInTypeKind, NoId)
+              val id2 = ctx.lookup(b.op2.name, 
+                _.kind == BuiltInTypeKind, NoId)
+              val l   = castIfNeeded(ltree, b.op1, ltpe, id1)
+              val r   = castIfNeeded(rtree, b.op2, rtpe, id2)
               (l, r)
             case _             => (ltree, rtree)
           }
@@ -150,13 +159,14 @@ trait Typers extends passes.Phases {
       } yield res
     }
 
-    private def castIfNeeded(e: Expr, t1: Type, t2: Type): Expr = {
+    private def castIfNeeded(e: Expr, t1: Type, t2: Type,
+                            castId: TreeId): Expr = {
       if(t1 =:= t2) e
       else {
         val pos = e.pos
         // TODO: Assign TreeId to primitive types
         // TODO: Type names
-        val id = TypeUse(NoId, e.owner, pos)
+        val id = TypeUse(castId, e.owner, pos)
         Cast(id, e, pos)
       }
     }
