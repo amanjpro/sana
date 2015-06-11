@@ -68,9 +68,8 @@ trait Typers extends typechecker.Typers {
       rty      <- toTypeChecker(mdef.ret.tpe)
       _        <- (rhsty <:< rty) match {
         case false =>
-          error(TYPE_MISMATCH,
-            rhsty.toString, rty.toString, body.pos, mdef)
-          pointSW(())
+          toTypeChecker(error(TYPE_MISMATCH,
+            rhsty.toString, rty.toString, body.pos, mdef))
         case true  =>
           pointSW(())
       }
@@ -84,14 +83,14 @@ trait Typers extends typechecker.Typers {
       ctx      <- getSW
       vty      <- toTypeChecker(vdef.tpt.tpe)
       _        <- if(vty =:= VoidType) {
-        error(VOID_VARIABLE_TYPE,
-            vty.toString, vty.toString, rhs.pos, vdef)
-        pointSW(())
+        toTypeChecker(error(VOID_VARIABLE_TYPE,
+            vty.toString, vty.toString, rhs.pos, vdef))
+        // pointSW(())
       } else (rhsty <:< vty) match {
         case false =>
-          error(TYPE_MISMATCH,
-            rhsty.toString, vty.toString, rhs.pos, vdef)
-          pointSW(())
+          toTypeChecker(error(TYPE_MISMATCH,
+            rhsty.toString, vty.toString, rhs.pos, vdef))
+          // pointSW(())
         case true  =>
           pointSW(())
       }
@@ -125,9 +124,8 @@ trait Typers extends typechecker.Typers {
       tpe  <- toTypeChecker(cond.tpe)
       _    <- (tpe =/= BooleanType) match {
         case true => 
-          error(TYPE_MISMATCH,
-            tpe.toString, "boolean", wile.cond.pos, wile.cond)
-          pointSW(()) 
+          toTypeChecker(error(TYPE_MISMATCH,
+            tpe.toString, "boolean", wile.cond.pos, wile.cond))
         case _    => pointSW(())
       }
       tree <- pointSW(While(wile.mods, cond, body, wile.pos))
@@ -141,23 +139,20 @@ trait Typers extends typechecker.Typers {
       tpe   <- toTypeChecker(cond.tpe)
       _     <- (tpe =/= BooleanType) match {
         case true =>
-          error(TYPE_MISMATCH,
-            tpe.toString, "boolean", forloop.cond.pos, forloop.cond)
-          pointSW(()) 
+          toTypeChecker(error(TYPE_MISMATCH,
+            tpe.toString, "boolean", forloop.cond.pos, forloop.cond))
         case _    => pointSW(())
       }
       _     <- inits.filter(isValDefOrStatementExpression(_)) match {
         case (x::xs) =>
-          error(BAD_STATEMENT, x.toString,
-            "An expression statement, or variable declaration", x.pos, x)
-          pointSW(())
+          toTypeChecker(error(BAD_STATEMENT, x.toString,
+            "An expression statement, or variable declaration", x.pos, x))
         case _       => pointSW(())
       }
       _     <- steps.filter(!isValidStatementExpression(_)) match {
         case (x::xs) =>
-          error(BAD_STATEMENT, x.toString,
-            "An expression statement, or more", x.pos, x)
-          pointSW(())
+          toTypeChecker(error(BAD_STATEMENT, x.toString,
+            "An expression statement, or more", x.pos, x))
         case _       => pointSW(())
       }
       tree  <- pointSW(For(forloop.id, inits, cond, steps, body, forloop.pos))
@@ -170,9 +165,8 @@ trait Typers extends typechecker.Typers {
       tpe   <- toTypeChecker(cond.tpe)
       _     <- (tpe =/= BooleanType) match {
         case true =>
-          error(TYPE_MISMATCH,
-            tpe.toString, "boolean", iff.cond.pos, iff.cond)
-          pointSW(()) 
+          toTypeChecker(error(TYPE_MISMATCH,
+            tpe.toString, "boolean", iff.cond.pos, iff.cond))
         case _    => pointSW(())
       }
       tree  <- pointSW(If(cond, thenp, elsep, iff.pos))
@@ -188,13 +182,11 @@ trait Typers extends typechecker.Typers {
           pointSW(())
         case t: MethodType                                             =>
           // TODO: Fix the error message
-          error(TYPE_MISMATCH,
-            "", "", app.pos, app)
-          pointSW(())
+          toTypeChecker(error(TYPE_MISMATCH,
+            "", "", app.pos, app))
         case t                                                         =>
-          error(BAD_STATEMENT,
-            t.toString, "function/method type", app.pos, app)
-          pointSW(())
+          toTypeChecker(error(BAD_STATEMENT,
+            t.toString, "function/method type", app.pos, app))
       }
       tree     <- pointSW(Apply(fun, args, app.pos, app.owner))
     } yield tree
