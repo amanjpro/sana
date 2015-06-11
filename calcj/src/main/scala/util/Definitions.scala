@@ -21,14 +21,14 @@ trait Definitions {
   // protected def point(tpe: Type): TypeState[Type] = toTypeState(tpe)
 
   def builtInTypes: List[(Name, TypeState[Type])] = List(
-    Name("byte")       -> toTypeState(ByteType),
-    Name("short")      -> toTypeState(ShortType),
-    Name("int")        -> toTypeState(IntType),
-    Name("long")       -> toTypeState(LongType),
-    Name("char")       -> toTypeState(CharType),
-    Name("boolean")    -> toTypeState(BooleanType),
-    Name("float")      -> toTypeState(FloatType),
-    Name("double")     -> toTypeState(DoubleType)
+    ByteType.name       -> toTypeState(ByteType),
+    ShortType.name      -> toTypeState(ShortType),
+    IntType.name        -> toTypeState(IntType),
+    LongType.name       -> toTypeState(LongType),
+    CharType.name       -> toTypeState(CharType),
+    BooleanType.name    -> toTypeState(BooleanType),
+    FloatType.name      -> toTypeState(FloatType),
+    DoubleType.name     -> toTypeState(DoubleType)
   )
 
 

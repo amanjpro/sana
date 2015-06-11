@@ -19,7 +19,7 @@ trait Definitions extends calcj.util.Definitions {
   override def builtInTypes: List[(Name, TypeState[Type])] = {
     val superTypes: List[(Name, TypeState[Type])] = super.builtInTypes 
     val langTypes:  List[(Name, TypeState[Type])] = List(
-      Name("void")     -> toTypeState(VoidType)
+      VoidType.name      -> toTypeState(VoidType)
     )
 
     superTypes ++ langTypes
