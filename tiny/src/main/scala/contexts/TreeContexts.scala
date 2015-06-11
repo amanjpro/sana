@@ -7,8 +7,6 @@ import tiny.debug.logger
 import tiny.names.Name
 import tiny.types.Types
 
-import scalaz.{StateT, State, Monoid, Applicative, ReaderWriterStateT}
-import scalaz.Scalaz._
 
 /**
  * A trait that contains types that represent context of a tree in  the
@@ -19,7 +17,7 @@ import scalaz.Scalaz._
  * @version 0.1
  */
 trait TreeContexts {
-  self: Trees with Types =>
+  self: TreeInfos with Trees with Types =>
 
   //////////////////////////////////////////////////////////////////
   // Contexts
@@ -303,12 +301,48 @@ trait TreeContexts {
     def updateTree(tree: TreeInfo): NamedContext
   }
   
+  /**
+   * The base trait for root contexts.
+   *
+   * A root context is where all built-in names and
+   * types of a language are stored.
+   *
+   * @group Tree Contexts
+   */
+  trait RootContext extends Context {
+    def definitions: Map[TreeId, TreeInfo]
 
-  
+    private def findInDefinitions(name: Name, 
+                p: TreeInfo => Boolean): TreeId =
+      definitions.toList.foldLeft(NoId: TreeId)((z, y) => y._2 match {
+        case info  if info.name == name && p(info)                 =>
+          y._1
+        case _                                                     => z
+      })
 
+    override def findInThisContext(name: Name, 
+      p: TreeInfo => Boolean): TreeId = {
+      super.findInThisContext(name, p) match {
+        case NoId =>
+          findInDefinitions(name, p)
+        case id   => id
+      }
+    }
 
-  
+    override def defines(id: TreeId): Boolean = {
+      if(super.defines(id)) true
+      else definitions.contains(id)
+    }
 
+    // override def lookup(name: Name, p: TreeInfo => Boolean, 
+      // owner: TreeId): TreeId = getContext(owner) match {
+    override def getTree(id: TreeId): Option[TreeInfo] = {
+      super.getTree(id) match {
+        case Some(info)       => Some(info)
+        case None             => definitions.get(id)
+      }
+    }
+  }
 
   /**
    * An object to represent missing compilation units. 
@@ -343,6 +377,15 @@ trait TreeContexts {
         new ContextImpl(idGen, binds)
   }
 
+  protected class RootContextImpl(protected val idGen: IDGen,
+    val decls: Map[TreeId, Context],
+    val definitions: Map[TreeId, TreeInfo]) extends RootContext {
+    protected def newContext(idGen: IDGen, 
+      binds: Map[TreeId, Context]): Context = 
+        new RootContextImpl(idGen, binds, definitions)
+  }
+
+
   object Context {
     def apply(idGen: IDGen, decls: Map[TreeId, Context]): Context = 
       new ContextImpl(idGen, decls)
@@ -352,25 +395,7 @@ trait TreeContexts {
       new ContextImpl(new IDGen, Map.empty)
   }
 
+
   def emptyContext: Context = Context.apply()
-
-
-
-  trait TreeInfo {
-    def tpe: TypeState[Type]
-    def name: Name
-    def kind: TreeKind
-  }
-
-  protected class TreeInfoImpl(val name: Name, val tpe: TypeState[Type],
-    val kind: TreeKind) extends TreeInfo
-
-
-  trait TreeKind
-  trait TypeKind extends TreeKind
-  trait TermKind extends TreeKind
+  def rootContext: RootContext
 }
-
-
-
-

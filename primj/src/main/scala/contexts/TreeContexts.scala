@@ -1,15 +1,16 @@
 package ch.usi.inf.l3.sana.primj.contexts
 
-import ch.usi.inf.l3.sana.tiny
-import tiny.ast.Trees
+import ch.usi.inf.l3.sana
+import sana.calcj
+import sana.primj
+import sana.tiny
 import tiny.report._
+import tiny.contexts.{TreeId, NoId, IDGen}
 import tiny.names.Name
-import tiny.types.Types
-import tiny.contexts.IDGen
-import tiny.contexts.{TreeId, NoId}
+import primj.types.Types
+import primj.ast.Trees
+import primj.util.Definitions
 
-import scalaz.{StateT, State, Monoid, Applicative, ReaderWriterStateT}
-import scalaz.Scalaz._
 
 /**
  * A trait that contains types that represent context of a tree in  the
@@ -20,8 +21,8 @@ import scalaz.Scalaz._
  * @since 0.1
  * @version 0.1
  */
-trait TreeContexts extends tiny.contexts.TreeContexts {
-  self: Trees with Types =>
+trait TreeContexts extends calcj.contexts.TreeContexts {
+  self: TreeInfos with Trees with Types with Definitions =>
 
   class MethodContext(val tree: TreeInfo, 
     protected val idGen: IDGen, 
@@ -80,11 +81,7 @@ trait TreeContexts extends tiny.contexts.TreeContexts {
     new MethodContext(newTreeInfo(tree, MethodKind), 
       new IDGen)
 
-  def newTreeInfo(tree: IdentifiedTree with NamedTree,
-    kind: TreeKind) = new TreeInfoImpl(tree.name, tree.tpe, kind)
 
-  object MethodKind extends TermKind
-  object VariableKind extends TermKind
 }
 
 

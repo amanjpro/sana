@@ -103,6 +103,9 @@ object TreeId {
     case NoId => new SimpleId(id)
     case _    => new CompositeId(owner, id)
   }
+
+
+  def builtinId(id: Long): TreeId = TreeId(TreeId(NoId, -1), id)
 }
 
 

@@ -45,7 +45,7 @@ trait Trees {
   self: Types with TreeContexts with MonadUtils =>
 
   type TypeState[T <: Type] = State[Context, T]
-  def toTypeState[A <: Type](t: A): ContextState[A] = t.point[ContextState]
+  def toTypeState[A <: Type](t: A): TypeState[A] = t.point[ContextState]
 
  
   //////////////////////////////////////////////////////////////////

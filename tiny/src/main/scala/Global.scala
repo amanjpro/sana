@@ -4,7 +4,7 @@ import ch.usi.inf.l3.sana.tiny
 import source.SourceReader
 import source.SourceFile
 import tiny.parser.Parsers
-import tiny.contexts.TreeContexts
+import tiny.contexts.{TreeContexts, TreeInfos}
 import tiny.ast.Trees
 import tiny.ast.TreeGen
 import tiny.util._
@@ -19,6 +19,7 @@ trait Global extends Trees with
         Types with
         CompilationUnits with 
         TreeContexts with
+        TreeInfos with
         Reporting with
         MonadUtils {
 }
