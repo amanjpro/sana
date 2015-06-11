@@ -4,6 +4,7 @@ package ch.usi.inf.l3.sana.primj.types
 import ch.usi.inf.l3.sana
 import sana.calcj
 import calcj.types
+import sana.tiny.names.Name
 
 
 trait Types extends types.Types {
@@ -13,6 +14,7 @@ trait Types extends types.Types {
     def ret: Type
     def params: List[Type]
 
+    def name: Name = Name("<method-type>")
     def =:=(t: Type): Boolean = t match {
       case that: MethodType =>
         val pcheck = checkList[Type](params, that.params, _ =:= _)

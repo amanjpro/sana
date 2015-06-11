@@ -3,6 +3,7 @@ package ch.usi.inf.l3.sana.calcj.types
 
 import ch.usi.inf.l3.sana
 import sana.tiny
+import tiny.names.Name
 import tiny.types
 
 
@@ -38,22 +39,27 @@ trait Types extends types.Types {
 
   object ByteType extends IntegralType {
     override def show: String = "byte type"
+    def name: Name = Name("byte")
   }
 
   object ShortType extends IntegralType {
     override def show: String = "short type"
+    def name: Name = Name("short")
   }
 
   object IntType extends IntegralType {
     override def show: String = "int type"
+    def name: Name = Name("int")
   }
 
   object LongType extends IntegralType {
     override def show: String = "long type"
+    def name: Name = Name("long")
   }
 
   object CharType extends IntegralType {
     override def show: String = "char type"
+    def name: Name = Name("char")
   }
 
 
@@ -61,19 +67,23 @@ trait Types extends types.Types {
   trait FloatingPointType extends NumericType
   object FloatType extends FloatingPointType {
     override def show: String = "float type"
+    def name: Name = Name("float")
   }
 
   object DoubleType extends FloatingPointType {
     override def show: String = "double type"
+    def name: Name = Name("double")
   }
 
 
   object BooleanType extends PrimitiveType {
     override def show: String = "boolean type"
+    def name: Name = Name("boolean")
   }
   
   object StringType extends PrimitiveType {
     override def show: String = "String type"
+    def name: Name = Name("String")
   }
 
 
@@ -82,6 +92,7 @@ trait Types extends types.Types {
     def op1: PrimitiveType
     def op2: PrimitiveType
     def ret: PrimitiveType
+    def name: Name = Name("<binary-type>")
 
     def =:=(t: Type): Boolean = t match {
       case that: BinaryType =>
@@ -104,6 +115,7 @@ trait Types extends types.Types {
         this.op =:= that.op && this.ret =:= that.ret
       case _               => false
     }
+    def name: Name = Name("<unary-type>")
     def =/=(t: Type): Boolean = !(this =:= t)
     def <:<(t: Type): Boolean = t =:= this
     def >:>(t: Type): Boolean = t =:= this
