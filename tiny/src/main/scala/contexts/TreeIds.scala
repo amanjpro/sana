@@ -133,8 +133,6 @@ class CompositeId protected[contexts](val path: TreeId,
   def up: TreeId = path
   def merge(other: TreeId): TreeId = other match {
     case NoId                      => this
-    case _     if path.isSimple    => //TreeId(path.head, id)
-      TreeId(other, id)
     case _                         =>
       TreeId(path.merge(other), id)
   } 
@@ -149,14 +147,14 @@ class CompositeId protected[contexts](val path: TreeId,
     lazy val result = other match {
       case that: CompositeId =>
         (this.path == that.path) && (this.id == that.id)
-      case _ =>
+      case _                 =>
         false
     }
     other != null && result
   }
 }
 
-object NoId extends TreeId {
+case object NoId extends TreeId {
   def forward: TreeId = NoId
   def head: TreeId = NoId
   def up: TreeId = NoId

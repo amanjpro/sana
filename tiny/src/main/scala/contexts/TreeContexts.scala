@@ -2,8 +2,8 @@ package ch.usi.inf.l3.sana.tiny.contexts
 
 import ch.usi.inf.l3.sana.tiny
 import tiny.ast.Trees
-import tiny.util.MonadUtils
 import tiny.report._
+import tiny.debug.logger
 import tiny.names.Name
 import tiny.types.Types
 
@@ -14,17 +14,12 @@ import scalaz.Scalaz._
  * A trait that contains types that represent context of a tree in  the
  * `tiny` language.
  *
- * @groupdesc Tree\ Contexts                         
- * @groupdesc Compilation\ Units\ Contexts     
- *
  * @author Amanj Sherwany
  * @since 0.1
  * @version 0.1
  */
 trait TreeContexts {
-  self: Trees with Types with MonadUtils =>
-
-  
+  self: Trees with Types =>
 
   //////////////////////////////////////////////////////////////////
   // Contexts
@@ -68,13 +63,43 @@ trait TreeContexts {
       case NoId                => this
       case _: SimpleId         => newContext(idGen, decls - id)
       case _: CompositeId      =>
-        val ctx = decls.get(id)
+        val ctx = decls.get(id.head)
         ctx match {
           case None            => this
           case Some(ctx)       =>
             val newCtx = ctx.delete(id.forward)
-            update(id, newCtx)
+            update(id.head, newCtx)
         }
+    }
+
+    /**
+     * Checks if there is a binding for the given Name directly in this
+     * Scope.
+     *
+     * @see [[contexts.TreeId]]
+     * @param name The name that we want to check
+     * @param p The predicate that the resulted tree should satisfy
+     * @return True if the name is defined, and false otherwise
+     */
+    def findInThisContext(name: Name, p: TreeInfo => Boolean): TreeId = {
+      val id = decls.toList.foldLeft(NoId: TreeId)((z, y) => y._2 match {
+        case n: NamedContext if (n.tree.name == name) && p(n.tree) =>
+          y._1
+        case _                                                     => z
+      })
+      id
+    }
+    /**
+     * Checks if there is a binding for the given Name directly in this
+     * Scope.
+     *
+     * @see [[contexts.TreeId]]
+     * @param name The name that we want to check
+     * @return True if the name is defined, and false otherwise
+     */
+    def directlyDefines(name: Name): Boolean = {
+      if(findInThisContext(name, _ => true) == NoId) false
+      else true
     }
 
     /**
@@ -85,16 +110,30 @@ trait TreeContexts {
      * @return True if the id is defined, and false otherwise
      */
     def defines(id: TreeId): Boolean = {
-      lazy val r = decls.get(id) match {
+      require(id != NoId)
+      decls.get(id.head) match {
         case None                                => false
-        case _: NamedContext if id.isSimple      => true
-        case c: Context                          => id match {
-          case _: SimpleId    => true
-          case _              => c.defines(id.forward)
-        }
+        case Some(_)         if id.isSimple      => true
+        case Some(c)                             => 
+          c.defines(id.forward)
       }
+    }
 
-      id != NoId && r
+    /**
+     * Get the context bound to the given `id`
+     *
+     * @param id the id of the tree
+     * @return optionally returns the tree that is bound to this id
+     */
+    def getContext(id: TreeId): Option[Context] = id match {
+      case NoId              => 
+        logger.warning(s"Undefined context ${id}")
+        None
+      case _: SimpleId       => decls.get(id) 
+      case _: CompositeId    => for {
+        ctx   <- decls.get(id.head)
+        r     <- ctx.getContext(id.forward)
+      } yield r
     }
 
     /**
@@ -108,19 +147,27 @@ trait TreeContexts {
      *              then the owner is the id of the compilation unit
      * @return The id of the [[ast.Trees#NamedTree]], or `NoId` if not found
      */
-    def lookup(name: Name, p: IdentifiedTree => Boolean, 
+    def lookup(name: Name, p: TreeInfo => Boolean, 
       owner: TreeId): TreeId = getContext(owner) match {
-      case None                         => NoId
-      case Some(ctx: NamedContext)      =>
-        val tree = ctx.tree
-        tree match {
-          case n: NamedTree if n.name == name && p(tree) => 
-            tree.id
-          case _                                         =>
-            NoId
+      case Some(ctx)                                                     =>
+        val id = ctx.findInThisContext(name, p)
+        if(id == NoId) 
+          lookup(name, p, owner.up)
+        else {
+          //TODO: Make sure this is correct
+          id.merge(owner.head)
         }
-      case _                                             =>
+      case None                                                          =>
+        logger.warning("Name not found " + name.asString)
         NoId
+    }
+
+    protected def extendThisContext(decl: Context): (TreeId, Context) = {
+      val (nid, idg) = idGen.nextId
+      val id = TreeId(NoId, nid)
+      val ctx = newContext(idg, decls + (id -> decl))
+      logger.debug(s"Extend the current context with $id")
+      (id, ctx)
     }
 
     /**
@@ -132,17 +179,22 @@ trait TreeContexts {
      */
     def extend(owner: TreeId, decl: Context): (TreeId, Context) = {
       owner match {
-        case NoId        => 
-          val id = TreeId(owner, idGen.nextId)
-          val ctx = newContext(idGen, decls + (id -> decl))
-          (id, ctx)
-        case _          => decls.get(owner) match {
-          case None          => (NoId, this)
-          case Some(ctx)     =>
-            val (id, ctx2) = ctx.extend(owner.forward, decl)
-            val ctx3       = update(owner, ctx2)
-            (id, ctx3)
-        }
+        case NoId                     =>
+          extendThisContext(decl)
+        case id                       => 
+          decls.get(owner.head) match {
+            case None            =>
+              logger.warning("Undefined owner " + owner.head)
+              (NoId, this)
+            case Some(ctx1)       =>
+              val (id, ctx2) = ctx1.extend(owner.forward, decl)
+              val head       = owner.head
+              val completeId = id.merge(head)
+              logger.debug(s"Merging: ${id} with: ${head}")
+              logger.debug(s"Result: $completeId")
+              val ctx3       = update(head, ctx2)
+              (completeId, ctx3)
+          }
       }
     }
 
@@ -158,16 +210,17 @@ trait TreeContexts {
      *         id updated to the given tree. In case the binding of the id
      *         was missing, `this` will be returned.
      */
-    def update(id: TreeId, tree: IdentifiedTree): Context = {
-      decls.get(id) match {
+    def update(id: TreeId, tree: TreeInfo): Context = {
+      decls.get(id.head) match {
         case None                                     =>
+          logger.warning(s"Undefined owner ${id.head} cannot be updated")
           this
         case Some(ctx: NamedContext) if id.isSimple   =>
           val ctx2 = ctx.updateTree(tree)
           update(id, ctx2)
         case Some(ctx)                                =>
           val ctx2 = ctx.update(id.forward, tree)
-          update(id, ctx2)
+          update(id.head, ctx2)
       }
     }
     /**
@@ -179,28 +232,20 @@ trait TreeContexts {
      *         id updated to the given context. In case the binding of the id
      *         was missing, `this` will be returned.
      */
-    def update(id: TreeId, 
-      bind: Context): Context = {
-      decls.get(id) match {
-        case None =>
+    def update(id: TreeId, bind: Context): Context = {
+      decls.get(id.head) match {
+        case None                             =>
+          logger.warning(s"Undefined owner ${id.head} cannot be found")
           this
-        case _    =>
+        case Some(_)        if id.isSimple    =>
           newContext(idGen, decls + (id -> bind))
+        case Some(_)                          =>
+          val newBind = update(id.forward, bind)
+          newContext(idGen, decls + (id.head -> newBind))
       }
     }
 
-    /**
-     * Get the context bound to the given `id`
-     *
-     * @param id the id of the tree
-     * @return optionally returns the tree that is bound to this id
-     */
-    def getContext(id: TreeId): Option[Context] = id match {
-      case NoId              => None
-      case _: SimpleId       => decls.get(id) 
-      case _: CompositeId    => 
-        decls.get(id).flatMap(_.getContext(id.forward)) 
-    }
+    
 
 
     /**
@@ -209,14 +254,14 @@ trait TreeContexts {
      * @param id the id of the tree
      * @return optionally returns the tree that is bound to this id
      */
-    def getTree(id: TreeId): Option[IdentifiedTree] = id match {
+    def getTree(id: TreeId): Option[TreeInfo] = id match {
       case NoId              => None
       case _: SimpleId       => decls.get(id) match {
         case c: NamedContext        => Some(c.tree)
         case _                      => None
       }
-      case _: CompositeId    => 
-        decls.get(id).flatMap(_.getTree(id.forward)) 
+      case _: CompositeId    =>
+        decls.get(id.head).flatMap(_.getTree(id.forward)) 
     }
 
     /**
@@ -230,10 +275,7 @@ trait TreeContexts {
      */
     def getName(id: TreeId): Option[Name] = for {
       tree <- getTree(id)
-      r    <- tree match {
-        case n: NamedTree => Some(n.name)
-        case _            => None
-      }
+      r    <- Some(tree.name)
     } yield r
 
     /**
@@ -248,9 +290,7 @@ trait TreeContexts {
      */
     def getTpe(id: TreeId): Option[Type] = for {
       tree <- getTree(id)
-    } yield {
-      tree.tpe.run(this)._2
-    }
+    } yield tree.tpe.eval(this)
   }
 
   /**
@@ -259,45 +299,15 @@ trait TreeContexts {
    * @group Tree Contexts
    */
   trait NamedContext extends Context {
-    def tree: IdentifiedTree
-    def updateTree(tree: IdentifiedTree): NamedContext
+    def tree: TreeInfo
+    def updateTree(tree: TreeInfo): NamedContext
   }
   
 
-  /**
-   * A class to represent a block of contexts, this can be
-   * a programming block, or a compilation unit or any other
-   * nameless context
-   *
-   * @group Compilation Unit Contexts
-   */
-  class BlockContext(protected val idGen: IDGen, 
-    protected val decls: Map[TreeId, Context] = Map.empty) extends Context {
-
-    protected def newContext(idGen: IDGen, 
-      binds: Map[TreeId, Context]): Context = 
-        new BlockContext(idGen, binds)
-  }
+  
 
 
-  class AtomicContext(val tree: IdentifiedTree) extends NamedContext {
-    final protected val decls: Map[TreeId, Context] = Map.empty
-    final protected def idGen: IDGen = ???
-    protected def newContext(idGen: IDGen, 
-      binds: Map[TreeId, Context]): Context = this
-    def updateTree(tree: IdentifiedTree): NamedContext = 
-      new AtomicContext(tree)
-    override def defines(id: TreeId): Boolean = false
-    override def lookup(name: Name, 
-      p: IdentifiedTree => Boolean, owner: TreeId): TreeId = NoId
-    override def extend(owner: TreeId, decl: Context): (TreeId, Context) = 
-      (NoId, this)
-    override def update(id: TreeId, bind: Context): Context = this
-    override def getTree(id: TreeId): Option[IdentifiedTree] = None
-    override def getName(id: TreeId): Option[Name] = None
-    override def getTpe(id: TreeId): Option[Type] = None
-    override def delete(id: TreeId): Context = this
-  }
+  
 
 
   /**
@@ -313,11 +323,13 @@ trait TreeContexts {
       binds: Map[TreeId, Context]): Context = InvalidContext
     override def defines(id: TreeId): Boolean = false
     override def lookup(name: Name, 
-      p: IdentifiedTree => Boolean, owner: TreeId): TreeId = NoId
+      p: TreeInfo => Boolean, owner: TreeId): TreeId = NoId
     override def extend(owner: TreeId, decl: Context): (TreeId, Context) = 
       (NoId, InvalidContext)
     override def update(id: TreeId, bind: Context): Context = InvalidContext
-    override def getTree(id: TreeId): Option[IdentifiedTree] = None
+    override def update(id: TreeId, tree: TreeInfo): Context = InvalidContext
+    override def getTree(id: TreeId): Option[TreeInfo] =
+      None
     override def getName(id: TreeId): Option[Name] = None
     override def getTpe(id: TreeId): Option[Type] = None
     override def delete(id: TreeId): Context =
@@ -341,9 +353,22 @@ trait TreeContexts {
   }
 
   def emptyContext: Context = Context.apply()
-  def atomicContext(tree: IdentifiedTree): AtomicContext = 
-    new AtomicContext(tree)
-  def blockContext: BlockContext = new BlockContext(new IDGen)
+
+
+
+  trait TreeInfo {
+    def tpe: TypeState[Type]
+    def name: Name
+    def kind: TreeKind
+  }
+
+  protected class TreeInfoImpl(val name: Name, val tpe: TypeState[Type],
+    val kind: TreeKind) extends TreeInfo
+
+
+  trait TreeKind
+  trait TypeKind extends TreeKind
+  trait TermKind extends TreeKind
 }
 
 
