@@ -11,8 +11,7 @@ import java.util.concurrent.atomic.AtomicInteger
  *
  * @constructor Creates a new instance of IDGen
  */
-class IDGen {
-  private[this] val id: AtomicInteger = new AtomicInteger(0)
+class IDGen(private[this] val id: Long = 0) {
 
   /**
    * A thread-safe method to generate the next `id`. 
@@ -23,6 +22,10 @@ class IDGen {
    *         the values that are produced so far by this
    *         instance.
    */
-  def nextId(): Int = id.getAndIncrement
+  def nextId: (Long, IDGen) = {
+    val id    = this.id + 1
+    val idGen = new IDGen(id)
+    (id, idGen)
+  }
 }
 
