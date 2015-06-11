@@ -91,6 +91,10 @@ trait Typers extends passes.Phases {
               etree
           }
         }
+        rtpe       <- utpe match {
+          case u: UnaryType => pointSW(u.ret)
+          case _            => pointSW(utpe)
+        }
         // TODO:
         // Pos unary operator, should ideally perform the cast and return
         // the containing expression not the whole unary expression (the
@@ -102,7 +106,7 @@ trait Typers extends passes.Phases {
         //   case _      => pointSW(Unary(unary.op, expr, pointSW(utpe), unary.pos))
         // }
         res        <- pointSW(Unary(unary.op, expr,           
-                            toTypeState(utpe), unary.pos))
+                            toTypeState(rtpe), unary.pos))
       } yield res 
     }
 
@@ -137,8 +141,12 @@ trait Typers extends passes.Phases {
             case _             => (ltree, rtree)
           }
         }
+        rtpe       <- btpe match {
+          case b: BinaryType => pointSW(b.ret)
+          case _             => pointSW(btpe)
+        }
         res                  <- 
-          pointSW(Binary(es._1, bin.op, es._2, toTypeState(btpe), bin.pos))
+          pointSW(Binary(es._1, bin.op, es._2, toTypeState(rtpe), bin.pos))
       } yield res
     }
 
