@@ -19,13 +19,6 @@ import primj.modifiers.Flags
 import scalaz.{Name => _, _}
 import Scalaz._
 
-/**
-   TODO:
-   Switch - Case
-   Break
-   Continue
- */
-
 trait Trees extends ast.Trees {
   self: types.Types with Constants with TreeContexts with MonadUtils =>
 
