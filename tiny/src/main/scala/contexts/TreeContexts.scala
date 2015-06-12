@@ -349,7 +349,7 @@ trait TreeContexts {
    *
    * @group Compilation Unit Contexts
    */
-  case object InvalidContext extends Context {
+  protected case object InvalidContext extends Context {
     // this field should never be used
     protected def idGen: IDGen = ???
     protected def decls: Map[TreeId, Context] = Map.empty
@@ -396,6 +396,7 @@ trait TreeContexts {
   }
 
 
+  def invalidContext: Context = InvalidContext
   def emptyContext: Context = Context.apply()
   def rootContext: RootContext
 }
