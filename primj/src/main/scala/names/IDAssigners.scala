@@ -110,12 +110,12 @@ trait IDAssigners extends passes.Phases {
     def assignValDef(valdef: ValDef): IDAssignerMonad[ValDef] = for {
       owner   <- ask
       ctx1    <- get
+      tpt     <- assignTypeUse(valdef.tpt)
       rhs     <- assignExpr(valdef.rhs)
       id_ctx2 =  ctx1.extend(owner, atomicContext(valdef))
       id      =  id_ctx2._1
       ctx2    =  id_ctx2._2
       _       <- put(ctx2)
-      tpt     <- assignTypeUse(valdef.tpt)
       v       <- point(ValDef(valdef.mods, id, tpt, valdef.name,
                     rhs, valdef.pos, owner))
       // INFO: This line seems to be useless, but we need it to satisfy the type
@@ -187,7 +187,7 @@ trait IDAssigners extends passes.Phases {
         stmts   <- block.stmts.map { case t =>
             local(const(id))(assign(t))
         }.sequenceU
-        r       <- point(Block(id, stmts, block.tpe, block.pos, owner))
+        r       <- point(Block(id, stmts, block.pos, owner))
       } yield r
       case forloop:For                               => for {
         // INFO: 
