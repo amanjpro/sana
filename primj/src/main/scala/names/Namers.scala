@@ -74,15 +74,21 @@ trait Namers extends names.Namers {
       params  <- meth.params.map(nameValDefs(_)).sequenceU
       ret     <- nameTypeUses(meth.ret)
       body    <- nameExprs(meth.body)
-    } yield MethodDef(meth.mods, meth.id, ret, meth.name, 
-                params, body, meth.pos, meth.owner)
+      m       <- pointSW(MethodDef(meth.mods, meth.id, ret, meth.name,
+                params, body, meth.pos, meth.owner))
+      info    =  newMethodDefInfo(m.name, m.tpe)
+      _       <- modifySW(_.update(meth.id, info))
+    } yield m
 
 
     def nameValDefs(valdef: ValDef): NamerMonad[ValDef] = for {
       tpt     <- nameTypeUses(valdef.tpt)
-      rhs     <- nameExprs(valdef.rhs )
-    } yield ValDef(valdef.mods, valdef.id, tpt, valdef.name,
-                    rhs, valdef.pos, valdef.owner)
+      rhs     <- nameExprs(valdef.rhs)
+      v       <- pointSW(ValDef(valdef.mods, valdef.id, tpt, valdef.name,
+                    rhs, valdef.pos, valdef.owner))
+      info    =  newValDefInfo(v.name, v.tpe)
+      _       <- modifySW(_.update(v.id, info))
+    } yield v
 
     def nameExprs(expr: Expr): NamerMonad[Expr] = expr match {
       case lit:Lit                                    => pointSW(lit)
@@ -129,7 +135,7 @@ trait Namers extends names.Namers {
       case block:Block                                => for {
         stmts <- block.stmts.map(nameTrees(_)).sequenceU
         r     <- pointSW(Block(block.id, 
-          stmts, block.tpe, block.pos, block.owner))
+          stmts, block.pos, block.owner))
       } yield r
       case forloop:For                                => for {
         inits <- forloop.inits.map(nameTrees(_)).sequenceU
