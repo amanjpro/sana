@@ -24,7 +24,7 @@ import primj.util.Definitions
 trait TreeContexts extends calcj.contexts.TreeContexts {
   self: TreeInfos with Trees with Types with Definitions =>
 
-  class MethodContext(val tree: TreeInfo, 
+  protected class MethodContext(val tree: TreeInfo, 
     protected val idGen: IDGen, 
     val decls: Map[TreeId, Context] = Map.empty) extends NamedContext {
     
@@ -43,7 +43,7 @@ trait TreeContexts extends calcj.contexts.TreeContexts {
    *
    * @group Compilation Unit Contexts
    */
-  class BlockContext(protected val idGen: IDGen, 
+  protected class BlockContext(protected val idGen: IDGen, 
     protected val decls: Map[TreeId, Context] = Map.empty) extends Context {
 
     protected def newContext(idGen: IDGen, 
@@ -52,7 +52,7 @@ trait TreeContexts extends calcj.contexts.TreeContexts {
   } 
 
 
-  class AtomicContext(val tree: TreeInfo) extends NamedContext {
+  protected class AtomicContext(val tree: TreeInfo) extends NamedContext {
     final protected val decls: Map[TreeId, Context] = Map.empty
     final protected def idGen: IDGen = ???
     protected def newContext(idGen: IDGen, 
@@ -74,16 +74,12 @@ trait TreeContexts extends calcj.contexts.TreeContexts {
 
   
 
-  def atomicContext(tree: IdentifiedTree with NamedTree): AtomicContext = 
+  def atomicContext(tree: ValDef): AtomicContext = 
     new AtomicContext(newTreeInfo(tree, VariableKind))
   def blockContext: BlockContext = new BlockContext(new IDGen)
-  def methodContext(tree: IdentifiedTree with NamedTree): MethodContext = 
+  def methodContext(tree: MethodDef): MethodContext = 
     new MethodContext(newTreeInfo(tree, MethodKind), 
       new IDGen)
 
 
 }
-
-
-
-
