@@ -5,7 +5,6 @@ import ch.usi.inf.l3.sana
 import sana.tiny
 import sana.calcj
 import sana.primj
-import tiny.modifiers.Flags
 import tiny.source.Position
 import tiny.contexts._
 import tiny.names.Name
@@ -14,6 +13,7 @@ import calcj.ast.JavaOps._
 import calcj.ast.Constants
 import calcj.ast
 import primj.types
+import primj.modifiers.Flags
 
 
 import scalaz.{Name => _, _}
@@ -54,6 +54,7 @@ trait Trees extends ast.Trees {
 
   // Variable and Method definitions
   trait MethodDef extends TermTree {
+    type F = Flags
     def ret: TypeUse
     def params: List[ValDef]
     def body: Expr
@@ -82,6 +83,7 @@ trait Trees extends ast.Trees {
   }
   
   trait ValDef extends TermTree {
+    type F = Flags
     def tpt: TypeUse
     def rhs: Expr
     def tpe: TypeState[Type] = tpt.tpe
@@ -104,7 +106,7 @@ trait Trees extends ast.Trees {
 
   trait Return extends Expr {
     val expr: Option[Expr]
-    val tpe: TypeState[Type] = expr.map(_.tpe).getOrElse(toTypeState(NoType))
+    val tpe: TypeState[Type] = expr.map(_.tpe).getOrElse(toTypeState(VoidType))
 
     def isVoid: Boolean = expr == None
 
@@ -122,6 +124,13 @@ trait Trees extends ast.Trees {
   trait Block extends Expr with IdentifiedTree {
     def stmts: List[Tree]
 
+    def tpe: TypeState[Type] = stmts match {
+      case Nil =>
+        toTypeState(VoidType)
+      case _   =>
+        stmts.last.tpe
+    }
+
     def show(ctx: Context): String = 
       s"""|Block{
           |id=$id,
@@ -136,7 +145,7 @@ trait Trees extends ast.Trees {
   trait Assign extends Expr {
     def lhs: Expr
     def rhs: Expr
-    def tpe: TypeState[Type] = toTypeState(NoType)
+    def tpe: TypeState[Type] = toTypeState(VoidType)
 
     def show(ctx: Context): String = 
       s"""|Assign{
@@ -152,7 +161,7 @@ trait Trees extends ast.Trees {
     def cond: Expr
     def thenp: Expr
     def elsep: Expr
-    def tpe: TypeState[Type] = toTypeState(NoType)
+    def tpe: TypeState[Type] = toTypeState(VoidType)
 
     def show(ctx: Context): String = 
       s"""|If{
@@ -168,9 +177,10 @@ trait Trees extends ast.Trees {
 
   // TODO: Add Do-While to the toString
   trait While extends Expr with Modifiable {
+    type F = Flags
     def cond: Expr
     def body: Expr
-    def tpe: TypeState[Type] = toTypeState(NoType)
+    def tpe: TypeState[Type] = toTypeState(VoidType)
 
     def show(ctx: Context): String = 
       s"""|While{
@@ -188,7 +198,7 @@ trait Trees extends ast.Trees {
     def cond: Expr
     def steps: List[Expr]
     def body: Expr
-    def tpe: TypeState[Type] = toTypeState(NoType)
+    def tpe: TypeState[Type] = toTypeState(VoidType)
 
     def show(ctx: Context): String = 
       s"""|For{
@@ -382,13 +392,13 @@ trait Trees extends ast.Trees {
 
   trait BlockFactory {
     private class BlockImpl(val id: TreeId,
-      val stmts: List[Tree], val tpe: TypeState[Type],
-      val pos: Option[Position], val owner: TreeId) extends Block
+      val stmts: List[Tree], val pos: Option[Position], 
+      val owner: TreeId) extends Block
 
 
-    def apply(id: TreeId, stmts: List[Tree], tpe: TypeState[Type], 
+    def apply(id: TreeId, stmts: List[Tree], 
       pos: Option[Position] = None, owner: TreeId = NoId): Block = 
-        new BlockImpl(id, stmts, tpe, pos, owner)
+        new BlockImpl(id, stmts, pos, owner)
 
   }
 
