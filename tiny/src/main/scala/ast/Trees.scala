@@ -192,6 +192,14 @@ trait Trees {
 
     def nameAtParser: Option[String]
 
+    def tpe: TypeState[Type] = {
+       State {
+        (ctx: Context) => {
+          ctx.getTpe(uses).run(ctx)
+        }
+      }
+    }
+
     def name: ContextState[Name] = {
       State {
         (ctx: Context) => {
@@ -217,16 +225,16 @@ trait Trees {
     * @group Api
     */
   trait TypeUse extends UseTree {
-    def tpe: TypeState[Type] = {
-      State {
-        (ctx: Context) => {
-          val r = for {
-            r <- ctx.getTpe(uses)
-          } yield r
-          (ctx, r.getOrElse(ErrorType))
-        }
-      }
-    }
+    // def tpe: TypeState[Type] = {
+    //   State {
+    //     (ctx: Context) => {
+    //       val r = for {
+    //         r <- ctx.getTpe(uses)
+    //       } yield r
+    //       (ctx, r.eval(ctx))
+    //     }
+    //   }
+    // }
 
     def show(ctx: Context): String = 
       s"""|TypeUse{
@@ -234,7 +242,7 @@ trait Trees {
           |nameAtParser=$nameAtParser,
           |owner=$owner,
           |pos=$pos,
-          |name=${name(ctx)}
+          |name=${name(ctx)._2}
           |}""".stripMargin
 
 
@@ -250,16 +258,7 @@ trait Trees {
     * @group Api
     */
   trait Ident extends Expr with UseTree {
-    def tpe: TypeState[Type] = {
-       State {
-        (ctx: Context) => {
-          val r = for {
-            r <- ctx.getTpe(uses)
-          } yield r
-          (ctx, r.getOrElse(ErrorType))
-        }
-      }
-    }
+    
 
     def show(ctx: Context): String = 
       s"""|Ident{
@@ -267,7 +266,7 @@ trait Trees {
           |nameAtParser=$nameAtParser,
           |owner=$owner,
           |pos=$pos,
-          |name=${name(ctx)}
+          |name=${name(ctx)._2}
           |}""".stripMargin
 
     // override def toString: String = name
@@ -423,11 +422,12 @@ trait Trees {
     * @group Utilities
     */
   trait Modifiable {
+    type F >: Null <: Flags
     /**
       * @see [[tiny.modifiers.Flags]]
       * @return the modifiers of this node.
       */
-    def mods: Flags
+    def mods: F
   }
 
   //////////////////////////////////////////////////////////////////
