@@ -5,9 +5,9 @@ import ch.usi.inf.l3.sana
 import sana.tiny
 import sana.calcj
 import tiny.ast
-import tiny.modifiers.Flags
 import tiny.source.Position
 import tiny.contexts._
+import tiny.modifiers.Flags
 import tiny.names._
 import tiny.types
 import tiny.util.MonadUtils
