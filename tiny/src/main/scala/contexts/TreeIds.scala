@@ -106,6 +106,7 @@ object TreeId {
 
 
   def builtinId(id: Long): TreeId = TreeId(TreeId(NoId, -1), id)
+  def isBuiltIn(id: TreeId): Boolean = id.head == TreeId(NoId, -1)
 }
 
 

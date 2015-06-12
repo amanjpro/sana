@@ -68,18 +68,26 @@ trait TreeContexts extends calcj.contexts.TreeContexts {
     override def getTree(id: TreeId): Option[TreeInfo] =
       None
     override def getName(id: TreeId): Option[Name] = None
-    override def getTpe(id: TreeId): Option[Type] = None
+    override def getTpe(id: TreeId): TypeState[Type] = toTypeState(ErrorType)
     override def delete(id: TreeId): Context = this
   }
 
   
-
   def atomicContext(tree: ValDef): AtomicContext = 
-    new AtomicContext(newTreeInfo(tree, VariableKind))
+    new AtomicContext(newValDefInfo(tree.name, tree.tpe))
+
+
+  def atomicContext(treeInfo: TreeInfo): AtomicContext = 
+    new AtomicContext(treeInfo)
+
   def blockContext: BlockContext = new BlockContext(new IDGen)
+
+
   def methodContext(tree: MethodDef): MethodContext = 
-    new MethodContext(newTreeInfo(tree, MethodKind), 
-      new IDGen)
+    new MethodContext(newMethodDefInfo(tree.name, tree.tpe), new IDGen)
+
+  def methodContext(treeInfo: TreeInfo): MethodContext = 
+    new MethodContext(treeInfo, new IDGen)
 
 
 }

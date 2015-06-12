@@ -123,15 +123,17 @@ trait TreeContexts {
      * @param id the id of the tree
      * @return optionally returns the tree that is bound to this id
      */
-    def getContext(id: TreeId): Option[Context] = id match {
-      case NoId              => 
+    def getContext(id: TreeId): Option[Context] = decls.get(id.head) match {
+      case None                           => 
         logger.warning(s"Undefined context ${id}")
         None
-      case _: SimpleId       => decls.get(id) 
-      case _: CompositeId    => for {
-        ctx   <- decls.get(id.head)
-        r     <- ctx.getContext(id.forward)
-      } yield r
+      case Some(c) if id.isSimple         => Some(c)
+      case Some(c)                        => c.getContext(id.forward)
+      //   ctx.getContext(id.forward)
+      // for {
+      //   ctx   <- decls.get(id.head)
+      //   r     <- ctx.getContext(id.forward)
+      // } yield r
     }
 
     /**
@@ -221,6 +223,7 @@ trait TreeContexts {
           update(id.head, ctx2)
       }
     }
+
     /**
      * Updates the bindings of the given id with a new [[Context]].
      *
@@ -252,15 +255,29 @@ trait TreeContexts {
      * @param id the id of the tree
      * @return optionally returns the tree that is bound to this id
      */
-    def getTree(id: TreeId): Option[TreeInfo] = id match {
-      case NoId              => None
-      case _: SimpleId       => decls.get(id) match {
-        case c: NamedContext        => Some(c.tree)
-        case _                      => None
+    def getTree(id: TreeId): Option[TreeInfo] = {
+      // require(id != NoId)
+      lazy val r = decls.get(id.head) match {
+        case None                                         => 
+          logger.warning(s"Undefined tree ${id}")
+          None
+        case Some(c: NamedContext) if id.isSimple         => 
+          Some(c.tree)
+        case Some(c)                                      => 
+          c.getTree(id.forward)
       }
-      case _: CompositeId    =>
-        decls.get(id.head).flatMap(_.getTree(id.forward)) 
+      if(TreeId.isBuiltIn(id)) None
+      else r
     }
+    // id match {
+    //   case NoId              => None
+    //   case _: SimpleId       => decls.get(id) match {
+    //     case c: NamedContext        => Some(c.tree)
+    //     case _                      => None
+    //   }
+    //   case _: CompositeId    =>
+    //     decls.get(id.head).flatMap(_.getTree(id.forward)) 
+    // }
 
     /**
      * Returns the name of the tree that has the given id
@@ -286,9 +303,12 @@ trait TreeContexts {
      *         In case the current scope has no bindings for the given
      *         id, None is returned.
      */
-    def getTpe(id: TreeId): Option[Type] = for {
-      tree <- getTree(id)
-    } yield tree.tpe.eval(this)
+    def getTpe(id: TreeId): TypeState[Type] = 
+      getTree(id).map(_.tpe).getOrElse(toTypeState(ErrorType))
+      
+    //   for {
+    //   tree <- getTree(id)
+    // } yield tree.tpe.eval(this)
   }
 
   /**
@@ -339,7 +359,7 @@ trait TreeContexts {
     override def getTree(id: TreeId): Option[TreeInfo] = {
       super.getTree(id) match {
         case Some(info)       => Some(info)
-        case None             => definitions.get(id)
+        case None             => definitions.get(id.forward)
       }
     }
   }
@@ -365,7 +385,7 @@ trait TreeContexts {
     override def getTree(id: TreeId): Option[TreeInfo] =
       None
     override def getName(id: TreeId): Option[Name] = None
-    override def getTpe(id: TreeId): Option[Type] = None
+    override def getTpe(id: TreeId): TypeState[Type] = toTypeState(ErrorType)
     override def delete(id: TreeId): Context =
       InvalidContext
   }

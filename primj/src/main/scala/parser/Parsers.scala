@@ -207,7 +207,7 @@ trait Parsers extends parser.Parsers {
       val body   = visit(ctx.methodBody)
       (tpe, body) match {
         case (tu: TypeUse, b: Block) =>
-          MethodDef(NoFlags, NoId, tu, Name(name), params, b,
+          MethodDef(noflags, NoId, tu, Name(name), params, b,
             pos(ctx), NoId)
         case _                       =>
           // TODO: report an error
@@ -230,7 +230,7 @@ trait Parsers extends parser.Parsers {
         case null    => Nil
         case stmts   => stmts.asScala.toList.map(visit(_))
       }
-      Block(NoId, stmts, toTypeState(notype), pos(ctx), NoId)
+      Block(NoId, stmts, pos(ctx), NoId)
     }
 
 		override def visitIf(@NotNull ctx: PrimjParser.IfContext): Tree = { 
@@ -284,7 +284,7 @@ trait Parsers extends parser.Parsers {
       val body = visit(ctx.statement)
       (cond, body) match {
         case (c: Expr, b: Expr) =>
-          While(NoFlags, c, b, pos(ctx), NoId)
+          While(noflags, c, b, pos(ctx), NoId)
         case _                  =>
           // TODO: report an error
           throw new Exception("Bad tree shape")
