@@ -23,7 +23,9 @@ before_script:
   # - sbt primj/compile
 
 
-script: "./runtests recompile all"
+script: 
+  - sbt test
+  - "./runtests recompile all"
 
 # configure notifications (email, IRC, campfire etc)
 # notifications:
