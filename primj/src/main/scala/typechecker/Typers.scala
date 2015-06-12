@@ -87,11 +87,11 @@ trait Typers extends typechecker.Typers {
             vty.toString, vty.toString, rhs.pos, vdef))
         // pointSW(())
       } else (rhsty <:< vty) match {
-        case false =>
+        case false if !vdef.mods.isParam =>
           toTypeChecker(error(TYPE_MISMATCH,
             rhsty.toString, vty.toString, rhs.pos, vdef))
           // pointSW(())
-        case true  =>
+        case _                           =>
           pointSW(())
       }
       tree <- pointSW(ValDef(vdef.mods, vdef.id, vdef.tpt, vdef.name, 
@@ -113,10 +113,17 @@ trait Typers extends typechecker.Typers {
       case apply: Apply           => for {
         tapp <- typeApply(apply)
       } yield tapp
-      // FIXME: Typechecking for Block is missing
+      case block: Block           => for {
+        tblock <- typeBlock(block)
+      } yield tblock
       case _                      => 
         super.typeExpr(e)
     }
+
+
+    def typeBlock(block: Block): TypeChecker[Block] = for {
+      stmts <- block.stmts.map(typeTree(_)).sequenceU
+    } yield Block(block.id, stmts, block.pos, block.owner)
 
     def typeWhile(wile: While): TypeChecker[While] = for {
       cond <- typeExpr(wile.cond)
@@ -137,23 +144,24 @@ trait Typers extends typechecker.Typers {
       steps <- forloop.steps.map(typeExpr(_)).sequenceU
       body  <- typeExpr(forloop.body)
       tpe   <- toTypeChecker(cond.tpe)
-      _     <- (tpe =/= BooleanType) match {
+      ctx   <- getSW
+      _     <- (tpe =/= BooleanType && cond != Empty) match {
         case true =>
           toTypeChecker(error(TYPE_MISMATCH,
             tpe.toString, "boolean", forloop.cond.pos, forloop.cond))
         case _    => pointSW(())
       }
-      _     <- inits.filter(isValDefOrStatementExpression(_)) match {
-        case (x::xs) =>
+      _     <- inits.filter(!isValDefOrStatementExpression(_)) match {
+        case l@(x::xs) if l.size != inits.size =>
           toTypeChecker(error(BAD_STATEMENT, x.toString,
             "An expression statement, or variable declaration", x.pos, x))
-        case _       => pointSW(())
+        case _                                 => pointSW(())
       }
       _     <- steps.filter(!isValidStatementExpression(_)) match {
-        case (x::xs) =>
+        case l@(x::xs) if l.size != steps.size =>
           toTypeChecker(error(BAD_STATEMENT, x.toString,
             "An expression statement, or more", x.pos, x))
-        case _       => pointSW(())
+        case _                                 => pointSW(())
       }
       tree  <- pointSW(For(forloop.id, inits, cond, steps, body, forloop.pos))
     } yield tree
@@ -197,6 +205,7 @@ trait Typers extends typechecker.Typers {
       case e: Expr   => isValidStatementExpression(e)
       case _         => false
     }
+
     protected def isValidStatementExpression(e: Expr): Boolean = e match {
       case _: Postfix    => true
       case Unary(Inc, _) => true
