@@ -8,7 +8,7 @@ package object debug {
 
   val logger: Logger = {
     val sp = OS.getProperty("file.separator")
-    val commonPath = OS.getProperty("user.home") + sp + 
+    val commonPath = OS.getProperty("user.home") + sp + "." +
       frameworkName.toLowerCase
     val loggingDir = new File(commonPath)
     loggingDir.mkdirs
