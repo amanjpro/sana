@@ -6,12 +6,14 @@ import sana.calcj
 import sana.primj
 import tiny.util.{CompilationUnits, MonadUtils}
 import tiny.passes
+import tiny.modifiers.Flag
 import tiny.report._
-import tiny.contexts.TreeContexts
+// import tiny.contexts.TreeContexts
 import calcj.typechecker
 import calcj.ast.JavaOps._
 import primj.report._
 import primj.Global
+import primj.modifiers._
 
 import scalaz.Scalaz._
 import scalaz._
