@@ -8,6 +8,7 @@ trait Flags extends tiny.modifiers.Flags {
   val isParam:   Boolean       = hasFlag(FlagSet.PARAM)
   val isLocalVariable: Boolean = hasFlag(FlagSet.LOCAL_VARIABLE)
   val isField: Boolean         = hasFlag(FlagSet.FIELD)
+  val isFinal: Boolean         = hasFlag(FlagSet.FINAL)
 }
 
 private class FlagsImpl(val mask: Flag) extends Flags
@@ -17,4 +18,5 @@ trait FlagSet {
   val PARAM: Flag           = Flag(1 << 2)
   val LOCAL_VARIABLE: Flag  = Flag(1 << 3)
   val FIELD: Flag           = Flag(1 << 4)
+  val FINAL: Flag           = Flag(1 << 5)
 }
