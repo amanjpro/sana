@@ -151,18 +151,18 @@ trait Typers extends typechecker.Typers {
             tpe.toString, "boolean", forloop.cond.pos, forloop.cond))
         case _    => pointSW(())
       }
-      _     <- inits.filter(!isValDefOrStatementExpression(_)) match {
-        case l@(x::xs) if l.size != inits.size =>
-          toTypeChecker(error(BAD_STATEMENT, x.toString,
-            "An expression statement, or variable declaration", x.pos, x))
-        case _                                 => pointSW(())
-      }
-      _     <- steps.filter(!isValidStatementExpression(_)) match {
-        case l@(x::xs) if l.size != steps.size =>
-          toTypeChecker(error(BAD_STATEMENT, x.toString,
-            "An expression statement, or more", x.pos, x))
-        case _                                 => pointSW(())
-      }
+      // _     <- inits.filter(!isValDefOrStatementExpression(_)) match {
+      //   case l@(x::xs) if l.size != inits.size =>
+      //     toTypeChecker(error(BAD_STATEMENT, x.toString,
+      //       "An expression statement, or variable declaration", x.pos, x))
+      //   case _                                 => pointSW(())
+      // }
+      // _     <- steps.filter(!isValidStatementExpression(_)) match {
+      //   case l@(x::xs) if l.size != steps.size =>
+      //     toTypeChecker(error(BAD_STATEMENT, x.toString,
+      //       "An expression statement, or more", x.pos, x))
+      //   case _                                 => pointSW(())
+      // }
       tree  <- pointSW(For(forloop.id, inits, cond, steps, body, forloop.pos))
     } yield tree
 
@@ -200,19 +200,19 @@ trait Typers extends typechecker.Typers {
     } yield tree
 
 
-    protected def isValDefOrStatementExpression(v: Tree): Boolean = v match {
-      case s: ValDef => true
-      case e: Expr   => isValidStatementExpression(e)
-      case _         => false
-    }
-
-    protected def isValidStatementExpression(e: Expr): Boolean = e match {
-      case _: Postfix    => true
-      case Unary(Inc, _) => true
-      case Unary(Dec, _) => true
-      case _: Apply      => true
-      // case _: New        => true
-      case _: Assign     => true
-    }
+    // protected def isValDefOrStatementExpression(v: Tree): Boolean = v match {
+    //   case s: ValDef => true
+    //   case e: Expr   => isValidStatementExpression(e)
+    //   case _         => false
+    // }
+    //
+    // protected def isValidStatementExpression(e: Expr): Boolean = e match {
+    //   case _: Postfix    => true
+    //   case Unary(Inc, _) => true
+    //   case Unary(Dec, _) => true
+    //   case _: Apply      => true
+    //   // case _: New        => true
+    //   case _: Assign     => true
+    // }
   }
 }
