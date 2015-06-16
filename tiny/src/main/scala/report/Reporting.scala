@@ -45,6 +45,18 @@ trait Reporting {
                     else 
                       createMessage(code, found, required, pos, t)
 
+  def genError[T](code: ErrorCode, found: String, required: String,
+    pos: Option[Position],
+    t: T): Report = Report(Error, 
+                  createMessageOrGetCode(code, found, required, pos, t),
+                  isTest)
+
+def genWarning[T](code: ErrorCode, found: String, required: String,
+    pos: Option[Position], t: T): Report = Report(Warning, 
+                  createMessageOrGetCode(code, found, required, pos, t),
+                  isTest)
+
+
 
   def error[T](code: ErrorCode, found: String, required: String,
     pos: Option[Position],
