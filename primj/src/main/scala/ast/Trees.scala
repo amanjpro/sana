@@ -138,7 +138,7 @@ trait Trees extends ast.Trees {
   trait Assign extends Expr {
     def lhs: Expr
     def rhs: Expr
-    def tpe: TypeState[Type] = toTypeState(VoidType)
+    def tpe: TypeState[Type] = lhs.tpe
 
     def show(ctx: Context): String = 
       s"""|Assign{
