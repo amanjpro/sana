@@ -91,27 +91,5 @@ trait TreeContexts extends calcj.contexts.TreeContexts {
     new MethodContext(treeInfo, new IDGen)
 
 
-  // TODO: Implement this class
-  implicit class ImplicitContextApi(val ctx: Context) extends ContextApi {
-    type Ctx = Context
-    def isBlock(id: TreeId): Boolean = true
-    def isFor(id: TreeId): Boolean = true
-    def isMethodDef(id: TreeId): Boolean = true
-  }
-  trait ContextApi {
-    type Ctx >: Null <: Context
-    def ctx: Ctx
-    def findVariable(name: Name, owner: TreeId): TreeId = {
-      ctx.lookup(name, _ => true, owner)
-    }
-
-    def isBlock(id: TreeId): Boolean
-    def isFor(id: TreeId): Boolean
-    def isMethodDef(id: TreeId): Boolean
-
-    // def enclosingMethod(id: TreeId): Option[TreeId] = for {
-      // tree <- getTree(id)
-      // _    
-    // }
-  }
+  
 }
