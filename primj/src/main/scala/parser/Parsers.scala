@@ -9,6 +9,7 @@ import tiny.source.SourceFile
 import tiny.source.Position
 import tiny.contexts._
 import tiny.names.Name
+import tiny.modifiers.Flag
 import tiny.util.{CompilationUnits, MonadUtils}
 import tiny.parser
 import tiny.debug.logger
@@ -135,7 +136,7 @@ trait Parsers extends parser.Parsers {
 
     def createVarDecls(@NotNull ctx: 
       PrimjParser.VariableDeclarationContext,
-      mods: Flags): List[ValDef] = {
+      mods: Flag): List[ValDef] = {
       val tpe    = visit(ctx.`type`)
       val names  = ctx.Identifier.asScala.toList.map(_.getText)
       val exprs  = ctx.varRHS.asScala.toList.map {
@@ -156,7 +157,7 @@ trait Parsers extends parser.Parsers {
 
     def createVarDefs(@NotNull ctx: 
       PrimjParser.VariableDefinitionContext,
-      mods: Flags): List[ValDef] = {
+      mods: Flag): List[ValDef] = {
       val tpe    = visit(ctx.`type`)
       val names  = ctx.Identifier.asScala.toList.map(_.getText)
       val exprs  = ctx.expression.asScala.toList.map {
@@ -179,7 +180,7 @@ trait Parsers extends parser.Parsers {
         if(kid.methodDeclaration != null)
           List(visit(kid).asInstanceOf[DefTree])
         else //if (kid.variableDeclaration != null)
-          createVarDecls(kid.variableDeclaration, Flags(FlagSet.FIELD))
+          createVarDecls(kid.variableDeclaration, FlagSet.FIELD)
       }
       Template(defs, NoId)
     }
@@ -188,7 +189,7 @@ trait Parsers extends parser.Parsers {
       PrimjParser.FormalParameterContext): Tree = {
       val tpe = TypeUse(NoId, Some(ctx.`type`.getText), NoId, pos(ctx))
       val name = Name(ctx.Identifier.getText)
-      val mods = Flags(FlagSet.PARAM)
+      val mods = FlagSet.PARAM
       ValDef(mods, NoId, tpe, name, Empty, pos(ctx), NoId)
     }
 
@@ -257,7 +258,7 @@ trait Parsers extends parser.Parsers {
                 .asInstanceOf[java.util.List[Tree]].asScala.toList
           else 
             createVarDefs(inits.variableDefinition, 
-              Flags(FlagSet.LOCAL_VARIABLE))
+              FlagSet.LOCAL_VARIABLE)
       }
       val cond  = ctx.forControl.expression match {
         case null => Empty
@@ -295,7 +296,7 @@ trait Parsers extends parser.Parsers {
       val body = visit(ctx.statement)
       (cond, body) match {
         case (c: Expr, b: Expr) =>
-          While(Flags(FlagSet.DO_WHILE), c, b, pos(ctx), NoId)
+          While(FlagSet.DO_WHILE, c, b, pos(ctx), NoId)
         case _                  =>
           // TODO: report an error
           throw new Exception("Bad tree shape")

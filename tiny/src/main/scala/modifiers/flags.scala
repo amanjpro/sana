@@ -36,20 +36,8 @@ object Flag {
   def apply(mask: Int): Flag = new Flag(mask)
 }
 
-trait Flags {
-  val mask: Flag
 
-  def hasAnyFlags: Boolean = mask != FlagSet.NO_FLAGS
 
-  def hasFlag(flag: Flag): Boolean =
-    (mask & flag) == flag
-
-  def asString: String = "IMPLEMENT ME"
-}
-
-private class FlagsImpl extends Flags {
-  val mask: Flag = FlagSet.NO_FLAGS
-}
 
 trait FlagSet {
   val NO_FLAGS: Flag = Flag(0)

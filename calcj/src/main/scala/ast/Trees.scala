@@ -7,7 +7,6 @@ import sana.calcj
 import tiny.ast
 import tiny.source.Position
 import tiny.contexts._
-import tiny.modifiers.Flags
 import tiny.names._
 import tiny.types
 import tiny.util.MonadUtils

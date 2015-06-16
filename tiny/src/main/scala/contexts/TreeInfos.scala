@@ -1,24 +1,29 @@
 package ch.usi.inf.l3.sana.tiny.contexts
 
-import ch.usi.inf.l3.sana.tiny.types.Types
-import ch.usi.inf.l3.sana.tiny.ast.Trees
-import ch.usi.inf.l3.sana.tiny.names.Name
-import ch.usi.inf.l3.sana.tiny.modifiers._
+import ch.usi.inf.l3.sana.tiny
+import tiny.Global
+import tiny.names.Name
+import tiny.modifiers._
+import tiny.types.Types
+import tiny.ast.Trees
 
 trait TreeInfos {
   self: Trees with Types =>
 
+  
   trait TreeInfo {
+
     def tpe: TypeState[Type]
     def name: Name
     def kind: TreeKind
-    def mods: Flags
+    def mods: Flag
   }
 
 
-  protected class TreeInfoImpl(val mods: Flags,
+  protected class TreeInfoImpl(val mods: Flag,
     val name: Name, val tpe: TypeState[Type],
-    val kind: TreeKind) extends TreeInfo
+    val kind: TreeKind) extends TreeInfo {
+  }
 
 
   def newTreeInfo(tree: IdentifiedTree with NamedTree,
@@ -29,7 +34,7 @@ trait TreeInfos {
         new TreeInfoImpl(noflags, tree.name, tree.tpe, kind)
   }
 
-  def newTreeInfo(mods: Flags, info: Name, 
+  def newTreeInfo(mods: Flag, info: Name, 
         tpe: TypeState[Type], kind: TreeKind): TreeInfo =
     new TreeInfoImpl(mods, info, tpe, kind)
 
