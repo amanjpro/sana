@@ -26,9 +26,9 @@
  THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-grammar Arrayj;
+grammar Primj;
 
-// starting point for parsing a arrayj file
+// starting point for parsing a primj file
 program
     :   defDecleration* EOF
     ;
@@ -44,7 +44,7 @@ methodDeclaration
 
 
 variableDeclaration
-    : type Identifier varRHS (',' Identifier varRHS)*
+    : FINAL? type Identifier varRHS (',' Identifier varRHS)*
     ;
 
 varRHS
@@ -82,7 +82,7 @@ formalParameterList
     ;
 
 formalParameter
-    :   type Identifier
+    :   FINAL? type Identifier
     ;
 
 
@@ -140,7 +140,7 @@ forControl
     ;
 
 variableDefinition
-    : type Identifier '=' expression (',' Identifier '=' expression)*
+    : FINAL? type Identifier '=' expression (',' Identifier '=' expression)*
     ;
 
 
@@ -214,6 +214,7 @@ RETURN        : 'return';
 SHORT         : 'short';
 WHILE         : 'while';
 VOID          : 'void';
+FINAL         : 'final';
 
 // §3.10.1 Integer Literals
 
