@@ -74,7 +74,7 @@ trait TreeContexts extends calcj.contexts.TreeContexts {
 
   
   def atomicContext(tree: ValDef): AtomicContext = 
-    new AtomicContext(newValDefInfo(tree.name, tree.tpe))
+    new AtomicContext(newValDefInfo(tree.mods, tree.name, tree.tpe))
 
 
   def atomicContext(treeInfo: TreeInfo): AtomicContext = 
@@ -84,7 +84,8 @@ trait TreeContexts extends calcj.contexts.TreeContexts {
 
 
   def methodContext(tree: MethodDef): MethodContext = 
-    new MethodContext(newMethodDefInfo(tree.name, tree.tpe), new IDGen)
+    new MethodContext(newMethodDefInfo(tree.mods, tree.name, tree.tpe), 
+      new IDGen)
 
   def methodContext(treeInfo: TreeInfo): MethodContext = 
     new MethodContext(treeInfo, new IDGen)

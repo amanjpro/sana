@@ -76,7 +76,7 @@ trait Namers extends names.Namers {
       body    <- nameExprs(meth.body)
       m       <- pointSW(MethodDef(meth.mods, meth.id, ret, meth.name,
                 params, body, meth.pos, meth.owner))
-      info    =  newMethodDefInfo(m.name, m.tpe)
+      info    =  newMethodDefInfo(m.mods, m.name, m.tpe)
       _       <- modifySW(_.update(meth.id, info))
     } yield m
 
@@ -86,7 +86,7 @@ trait Namers extends names.Namers {
       rhs     <- nameExprs(valdef.rhs)
       v       <- pointSW(ValDef(valdef.mods, valdef.id, tpt, valdef.name,
                     rhs, valdef.pos, valdef.owner))
-      info    =  newValDefInfo(v.name, v.tpe)
+      info    =  newValDefInfo(v.mods, v.name, v.tpe)
       _       <- modifySW(_.update(v.id, info))
     } yield v
 

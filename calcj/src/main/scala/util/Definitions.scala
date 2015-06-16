@@ -8,6 +8,7 @@ import tiny.contexts.TreeId
 import calcj.types.Types
 import calcj.ast.Trees
 import calcj.contexts.TreeInfos
+import ch.usi.inf.l3.sana.tiny.modifiers._
 import tiny.names._
 
 
@@ -46,7 +47,7 @@ trait Definitions {
     range.zip(builtins).foldLeft(Map.empty: Map[TreeId, TreeInfo])((z, y) => {
       val (id, (name, tpe)) = y
       val tid = TreeId.builtinId(id)
-      z + (tid -> newTreeInfo(name, tpe, BuiltInTypeKind))
+      z + (tid -> newTreeInfo(noflags, name, tpe, BuiltInTypeKind))
     })
   }
 }
