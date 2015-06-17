@@ -111,7 +111,7 @@ trait ShapeCheckers extends passes.Phases {
 
     def isExpression(e: Tree): Boolean = e match {
       case _: Lit | _: Ident | _: Binary | _: Unary |
-           _: Postfix | _: Assign | _: Ternary | _: Apply => true
+           _: Assign | _: Ternary | _: Apply              => true
       case _                                              => false
     }
 
@@ -120,6 +120,8 @@ trait ShapeCheckers extends passes.Phases {
     
 
 
+    // postfix flag can only be set if the operator is postfix
+    def checkUnary(e: Unary): ShapeChecker
     def checkExpression(e: Tree): ShapeChecker
     def checkStatement(e: Tree): ShapeChecker = {
       if(isValidStatementExpression(e) || isValidStatement(e))
@@ -176,14 +178,12 @@ trait ShapeCheckers extends passes.Phases {
     }
 
     def isValidStatementExpression(e: Tree): Boolean = e match {
-      case Postfix(_, Inc)    => true
-      case Postfix(_, Dec)    => true
-      case Unary(Inc, _)      => true
-      case Unary(Dec, _)      => true
-      case _: Apply           => true
-      // case _: New             => true
-      case _: Assign          => true
-      case _                  => false
+      case Unary(_, Inc, _)      => true
+      case Unary(_, Dec, _)      => true
+      case _: Apply              => true
+      // case _: New                => true
+      case _: Assign             => true
+      case _                     => false
     }
     //   override def typeTree(tree: Tree): TypeChecker[Tree] = tree match {
   //     case tmpl: Template  => for {
