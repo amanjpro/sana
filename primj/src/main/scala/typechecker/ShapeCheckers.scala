@@ -121,7 +121,13 @@ trait ShapeCheckers extends passes.Phases {
 
 
     // postfix flag can only be set if the operator is postfix
-    def checkUnary(e: Unary): ShapeChecker
+    def checkUnary(e: Unary): ShapeChecker = {
+      if(e.mods.isPostfix && (e.op != Inc || e.op != Dec))
+        toShapeChecker(error(BAD_STATEMENT,
+          e.toString, "a postfix operation", e.pos, e))
+      else pointSW(())
+    }
+
     def checkExpression(e: Tree): ShapeChecker
     def checkStatement(e: Tree): ShapeChecker = {
       if(isValidStatementExpression(e) || isValidStatement(e))
