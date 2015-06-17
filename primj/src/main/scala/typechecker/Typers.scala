@@ -87,18 +87,35 @@ trait Typers extends typechecker.Typers {
       _        <- if(vty =:= VoidType) {
         toTypeChecker(error(VOID_VARIABLE_TYPE,
             vty.toString, vty.toString, rhs.pos, vdef))
-        // pointSW(())
+      } else if(vdef.mods.isFinal && !vdef.mods.isParam &&
+                vdef.rhs == Empty) {
+        toTypeChecker(error(UNINITIALIZED_FINAL_VARIABLE,
+            vdef.toString, "", vdef.pos, vdef))
+
       } else (rhsty <:< vty) match {
-        case false if !vdef.mods.isParam =>
-          toTypeChecker(error(TYPE_MISMATCH,
-            rhsty.toString, vty.toString, rhs.pos, vdef))
-          // pointSW(())
-        case _                           =>
-          pointSW(())
-      }
+          case false if !vdef.mods.isParam =>
+            toTypeChecker(error(TYPE_MISMATCH,
+              rhsty.toString, vty.toString, rhs.pos, vdef))
+          case _                           =>
+            pointSW(())
+        }
       tree <- pointSW(ValDef(vdef.mods, vdef.id, vdef.tpt, vdef.name, 
-                            rhs, vdef.pos, vdef.owner))
+                    rhs, vdef.pos, vdef.owner))
     } yield tree
+
+
+    def typeAssign(assign: Assign): TypeChecker[Assign] = for {
+      lhs <- typeExpr(assign.lhs)
+      ctx <- getSW
+      _   <- if(! pointsToUse(lhs, x => ctx.isVariable(x.uses)))
+               toTypeChecker(error(ASSIGNING_NOT_TO_VARIABLE,
+                 lhs.toString, lhs.toString, lhs.pos, lhs))
+             else if(! pointsToUse(lhs, x => ctx.isFinal(x.uses)))
+               toTypeChecker(error(REASSIGNING_FINAL_VARIABLE,
+                 lhs.toString, lhs.toString, lhs.pos, lhs))
+             else pointSW(())
+      rhs <- typeExpr(assign.rhs)
+    } yield Assign(lhs, rhs, assign.pos, assign.owner)
 
 
     override def typeExpr(e: Expr): TypeChecker[Expr] = e match {
@@ -118,11 +135,30 @@ trait Typers extends typechecker.Typers {
       case block: Block           => for {
         tblock <- typeBlock(block)
       } yield tblock
+      case assign: Assign         => for {
+        tassign <- typeAssign(assign)
+      } yield tassign
       case _                      => 
         super.typeExpr(e)
     }
 
-
+    override def typeUnary(unary: Unary): TypeChecker[Unary] = for {
+      ctx    <- getSW
+      expr   = unary.expr
+      _      <- if(unary.op == Inc || unary.op == Dec) {
+                  if(! pointsToUse(expr, x => ctx.isVariable(x.uses)))
+                     toTypeChecker(error(ASSIGNING_NOT_TO_VARIABLE,
+                       expr.toString, expr.toString, expr.pos, expr))
+                  else if(! pointsToUse(expr, x => ctx.isFinal(x.uses)))
+                    toTypeChecker(error(REASSIGNING_FINAL_VARIABLE,
+                      expr.toString, expr.toString, expr.pos, expr))
+                  else pointSW(())
+                } else pointSW(())
+      res    <- super.typeUnary(unary)
+    } yield res
+      
+      
+      
     def typeBlock(block: Block): TypeChecker[Block] = for {
       stmts <- block.stmts.map(typeTree(_)).sequenceU
     } yield Block(block.id, stmts, block.pos, block.owner)
@@ -201,6 +237,14 @@ trait Typers extends typechecker.Typers {
       tree     <- pointSW(Apply(fun, args, app.pos, app.owner))
     } yield tree
 
+
+    def pointsToUse(expr: Expr, 
+            p: UseTree => Boolean): Boolean = expr match {
+      case id: Ident         => p(id)
+      case tuse: TypeUse     => p(tuse)
+      case _                 =>
+        false
+    }
 
     // protected def isValDefOrStatementExpression(v: Tree): Boolean = v match {
     //   case s: ValDef => true
