@@ -105,16 +105,23 @@ trait Typers extends typechecker.Typers {
 
 
     def typeAssign(assign: Assign): TypeChecker[Assign] = for {
-      lhs <- typeExpr(assign.lhs)
-      ctx <- getSW
-      _   <- if(! pointsToUse(lhs, x => ctx.isVariable(x.uses)))
-               toTypeChecker(error(ASSIGNING_NOT_TO_VARIABLE,
-                 lhs.toString, lhs.toString, lhs.pos, lhs))
-             else if(! pointsToUse(lhs, x => ctx.isFinal(x.uses)))
-               toTypeChecker(error(REASSIGNING_FINAL_VARIABLE,
-                 lhs.toString, lhs.toString, lhs.pos, lhs))
-             else pointSW(())
-      rhs <- typeExpr(assign.rhs)
+      lhs  <- typeExpr(assign.lhs)
+      ctx  <- getSW
+      _    <- if(! pointsToUse(lhs, x => ctx.isVariable(x.uses)))
+                toTypeChecker(error(ASSIGNING_NOT_TO_VARIABLE,
+                  lhs.toString, lhs.toString, lhs.pos, lhs))
+              else if(! pointsToUse(lhs, x => ctx.isFinal(x.uses)))
+                toTypeChecker(error(REASSIGNING_FINAL_VARIABLE,
+                  lhs.toString, lhs.toString, lhs.pos, lhs))
+              else pointSW(())
+      rhs  <- typeExpr(assign.rhs)
+      ltpe <- toTypeChecker(lhs.tpe)
+      rtpe <- toTypeChecker(rhs.tpe)
+      _    <- if (ltpe <:< rtpe)
+                pointSW(())
+              else 
+                toTypeChecker(error(TYPE_MISMATCH,
+                  ltpe.toString, rtpe.toString, rhs.pos, assign))
     } yield Assign(lhs, rhs, assign.pos, assign.owner)
 
 
