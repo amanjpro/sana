@@ -13,28 +13,32 @@ import primj.modifiers._
 
 
 trait TreeContextApis {
-  self: TreeContexts =>
+  self: TreeContexts with TreeInfos =>
 
   
   // TODO: Implement this class
   implicit class ImplicitContextApi(val ctx: Context) extends ContextApi {
     def isBlock(id: TreeId): Boolean = true
     def isFor(id: TreeId): Boolean = true
-    def isMethodDef(id: TreeId): Boolean = true
+    def isMethodDef(id: TreeId): Boolean = 
+      ctx.getTree(id).map(_.kind == MethodKind).getOrElse(false)
+    def isVariable(id: TreeId): Boolean = 
+      ctx.getTree(id).map(_.kind == VariableKind).getOrElse(false)
     def isFinal(id: TreeId): Boolean = 
-      true
-      // ctx.getTree(id).map(_.mods.isFinal).getOrElse(false)
+      ctx.getTree(id).map(_.mods.isFinal).getOrElse(false)
   }
 
   trait ContextApi {
     def ctx: Context
+
     def findVariable(name: Name, owner: TreeId): TreeId = {
-      ctx.lookup(name, _ => true, owner)
+      ctx.lookup(name, (x) => x.kind == VariableKind, owner)
     }
 
     def isBlock(id: TreeId): Boolean
     def isFor(id: TreeId): Boolean
     def isMethodDef(id: TreeId): Boolean
+    def isVariable(id: TreeId): Boolean
 
     // def enclosingMethod(id: TreeId): Option[TreeId] = for {
       // tree <- getTree(id)
