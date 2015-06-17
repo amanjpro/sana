@@ -14,6 +14,7 @@ import calcj.ast.Constants
 import calcj.ast.JavaOps._
 import calcj.types.Types
 import calcj.antlr._
+import calcj.modifiers._
 
 import org.antlr.v4.runtime.misc.NotNull
 import org.antlr.v4.runtime.ParserRuleContext
@@ -54,9 +55,9 @@ trait Parsers extends parser.Parsers {
       }
       (e1, op) match {
         case (e: Expr, op: POp) if isPostfix => 
-          Postfix(e, op, toTypeState(notype), pos(ctx))
+          Unary(FlagSet.POSTFIX, op, e, toTypeState(notype), pos(ctx))
         case (e: Expr, op: UOp) => 
-          Unary(op, e, toTypeState(notype), pos(ctx))
+          Unary(noflags, op, e, toTypeState(notype), pos(ctx))
         case _                  =>
           // TODO: report an error
           throw new Exception("Expression is expected")

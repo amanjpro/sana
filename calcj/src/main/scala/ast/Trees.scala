@@ -9,6 +9,7 @@ import tiny.source.Position
 import tiny.contexts._
 import tiny.names._
 import tiny.types
+import tiny.modifiers.Flag
 import tiny.util.MonadUtils
 import calcj.ast.JavaOps._
 
@@ -58,24 +59,24 @@ trait Trees extends ast.Trees {
   
   }
 
-  trait Postfix extends Expr {
-    def op: POp
-    def expr: Expr
+  // trait Postfix extends Expr {
+  //   def op: POp
+  //   def expr: Expr
+  //
+  //   val owner: TreeId = expr.owner
+  //
+  //   def show(ctx: Context): String = 
+  //     s"""|Postfix{
+  //         |op=${op.toString},
+  //         |expr=${expr.show(ctx)},
+  //         |tpe=${tpe.eval(ctx)},
+  //         |pos=${pos}
+  //         |}""".stripMargin
+  //
+  //
+  // }
 
-    val owner: TreeId = expr.owner
-
-    def show(ctx: Context): String = 
-      s"""|Postfix{
-          |op=${op.toString},
-          |expr=${expr.show(ctx)},
-          |tpe=${tpe.eval(ctx)},
-          |pos=${pos}
-          |}""".stripMargin
-
-
-  }
-
-  trait Unary extends Expr {
+  trait Unary extends Expr with Modifiable {
     def op: UOp
     def expr: Expr
 
@@ -125,18 +126,18 @@ trait Trees extends ast.Trees {
   }
 
   trait UnaryExtractor {
-    def unapply(u: Unary): Option[(UOp, Expr)] = u match {
+    def unapply(u: Unary): Option[(Flag, UOp, Expr)] = u match {
       case null => None
-      case _    => Some((u.op, u.expr))
+      case _    => Some((u.mods, u.op, u.expr))
     }
   }
 
-  trait PostfixExtractor {
-    def unapply(u: Postfix): Option[(Expr, POp)] = u match {
-      case null => None
-      case _    => Some((u.expr, u.op))
-    }
-  }
+  // trait PostfixExtractor {
+  //   def unapply(u: Postfix): Option[(Expr, POp)] = u match {
+  //     case null => None
+  //     case _    => Some((u.expr, u.op))
+  //   }
+  // }
 
   /***************************** Factories **************************/
 
@@ -167,26 +168,16 @@ trait Trees extends ast.Trees {
   }
 
   trait UnaryFactory {
-    private class UnaryImpl(val op: UOp,
+    private class UnaryImpl(val mods: Flag, val op: UOp,
       val expr: Expr, val tpe: TypeState[Type],
       val pos: Option[Position]) extends Unary
 
-    def apply(op: UOp, expr: Expr, tpe: TypeState[Type], 
+    def apply(mods: Flag, op: UOp, expr: Expr, tpe: TypeState[Type], 
       pos: Option[Position]): Unary =
-      new UnaryImpl(op, expr, tpe, pos)
+      new UnaryImpl(mods, op, expr, tpe, pos)
   }
 
-  trait PostfixFactory {
-    private class PostfixImpl(val expr: Expr, val op: POp,
-      val tpe: TypeState[Type], 
-      val pos: Option[Position]) extends Postfix
-
-    def apply(expr: Expr, op: POp, tpe: TypeState[Type], 
-      pos: Option[Position]): Postfix =
-      new PostfixImpl(expr, op, tpe, pos)
-
-  }
-
+  
   /******************* Factory and Extractor instances ***************/
 
 
@@ -196,5 +187,4 @@ trait Trees extends ast.Trees {
   val Lit       = new LitExtractor with LitFactory {}
   val Binary    = new BinaryExtractor with BinaryFactory {}
   val Unary     = new UnaryExtractor with UnaryFactory {}
-  val Postfix   = new PostfixExtractor with PostfixFactory {}
 }

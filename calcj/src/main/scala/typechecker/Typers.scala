@@ -70,6 +70,9 @@ trait Typers extends passes.Phases {
       case unary: Unary           => for {
         te <- typeUnary(unary)
       } yield te
+      // case postfix: Postfix       => for {
+      //   te <- typePostfix(postfix)
+      // } yield postfix
       case (_: Lit) | (_: Cast)   => pointSW(e)
       case Empty                  => pointSW(Empty)
       case _                      => 
@@ -78,41 +81,61 @@ trait Typers extends passes.Phases {
         pointSW(e)
     }
 
-    
-    def typeUnary(unary: Unary): TypeChecker[Unary] = {
-      for {
-        etree      <- typeExpr(unary.expr)              
-        etpe       <- toTypeChecker(etree.tpe)
-        utpe       <- unaryTyper(etpe, unary)
-        ctx        <- getSW
-        expr       <- pointSW {                           
-          utpe match {
-            case u: UnaryType => 
-              val id = ctx.lookup(u.op.name,
-                _.kind == BuiltInTypeKind, NoId)
-              castIfNeeded(etree, u.op, utpe, id)
-            case u            => 
-              etree
-          }
+    // def typePostfix(postfix: Postfix): TypeChecker[Postfix] = for {
+    //   etree      <- typeExpr(postfix.expr)              
+    //   etpe       <- toTypeChecker(etree.tpe)
+    //   utpe       <- unaryTyper(etpe, postfix)
+    //   ctx        <- getSW
+    //   expr       <- pointSW {                           
+    //     utpe match {
+    //       case u: UnaryType => 
+    //         val id = ctx.lookup(u.op.name,
+    //           _.kind == BuiltInTypeKind, NoId)
+    //         castIfNeeded(etree, u.op, utpe, id)
+    //       case u            => 
+    //         etree
+    //     }
+    //   }
+    //   rtpe       <- utpe match {
+    //     case u: UnaryType => pointSW(u.ret)
+    //     case _            => pointSW(utpe)
+    //   }
+    //   res        <- pointSW(Unary(unary.op, expr,           
+    //                       toTypeState(rtpe), unary.pos))
+    // } yield res 
+
+    def typeUnary(unary: Unary): TypeChecker[Unary] = for {
+      etree      <- typeExpr(unary.expr)              
+      etpe       <- toTypeChecker(etree.tpe)
+      utpe       <- unaryTyper(etpe, unary)
+      ctx        <- getSW
+      expr       <- pointSW {                           
+        utpe match {
+          case u: UnaryType => 
+            val id = ctx.lookup(u.op.name,
+              _.kind == BuiltInTypeKind, NoId)
+            castIfNeeded(etree, u.op, utpe, id)
+          case u            => 
+            etree
         }
-        rtpe       <- utpe match {
-          case u: UnaryType => pointSW(u.ret)
-          case _            => pointSW(utpe)
-        }
-        // TODO:
-        // Pos unary operator, should ideally perform the cast and return
-        // the containing expression not the whole unary expression (the
-        // operation is redundant). But this will reproduce the same problem
-        // that Scala has, when type checker can return a different tree 
-        // type. What should we do here?
-        // res        <- unary.op match {
-        //   case Pos    => pointSW(expr)
-        //   case _      => pointSW(Unary(unary.op, expr, pointSW(utpe), unary.pos))
-        // }
-        res        <- pointSW(Unary(unary.op, expr,           
-                            toTypeState(rtpe), unary.pos))
-      } yield res 
-    }
+      }
+      rtpe       <- utpe match {
+        case u: UnaryType => pointSW(u.ret)
+        case _            => pointSW(utpe)
+      }
+      // TODO:
+      // Pos unary operator, should ideally perform the cast and return
+      // the containing expression not the whole unary expression (the
+      // operation is redundant). But this will reproduce the same problem
+      // that Scala has, when type checker can return a different tree 
+      // type. What should we do here?
+      // res        <- unary.op match {
+      //   case Pos    => pointSW(expr)
+      //   case _      => pointSW(Unary(unary.op, expr, pointSW(utpe), unary.pos))
+      // }
+      res        <- pointSW(Unary(unary.mods, unary.op, expr,           
+                          toTypeState(rtpe), unary.pos))
+    } yield res 
 
 
     
@@ -164,8 +187,6 @@ trait Typers extends passes.Phases {
       if(t1 =:= t2) e
       else {
         val pos = e.pos
-        // TODO: Assign TreeId to primitive types
-        // TODO: Type names
         val id = TypeUse(castId, e.owner, pos)
         Cast(id, e, pos)
       }

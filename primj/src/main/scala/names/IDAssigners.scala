@@ -146,10 +146,7 @@ trait IDAssigners extends passes.Phases {
       } yield Binary(lhs, bin.op, rhs, bin.tpe, bin.pos)
       case unary: Unary                              => for {
         expr    <- assignExpr(unary.expr)
-      } yield Unary(unary.op, expr, unary.tpe, unary.pos)
-      case postfix: Postfix                          => for {
-        expr    <- assignExpr(postfix.expr)
-      } yield Postfix(expr, postfix.op, postfix.tpe, postfix.pos)
+      } yield Unary(unary.mods, unary.op, expr, unary.tpe, unary.pos)
       case assign:Assign                             => for {
         owner   <- ask
         lhs     <- assignExpr(assign.lhs)

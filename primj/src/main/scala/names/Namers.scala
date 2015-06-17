@@ -115,10 +115,7 @@ trait Namers extends names.Namers {
       } yield Binary(lhs, bin.op, rhs, bin.tpe, bin.pos)
       case unary:Unary                                => for {
         expr <- nameExprs(unary.expr)
-      } yield Unary(unary.op, expr, unary.tpe, unary.pos)
-      case postfix:Postfix                            => for {
-        expr <- nameExprs(postfix.expr)
-      } yield Postfix(expr, postfix.op, postfix.tpe, postfix.pos)
+      } yield Unary(unary.mods, unary.op, expr, unary.tpe, unary.pos)
       case assign:Assign                              => for {
         lhs <- nameExprs(assign.lhs)
         rhs <- nameExprs(assign.rhs)

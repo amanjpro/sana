@@ -62,9 +62,9 @@ trait Parsers extends parser.Parsers {
       }
       (e1, op) match {
         case (e: Expr, op: POp) if isPostfix => 
-          Postfix(e, op, toTypeState(notype), pos(ctx))
+          Unary(FlagSet.POSTFIX, op, e, toTypeState(notype), pos(ctx))
         case (e: Expr, op: UOp) => 
-          Unary(op, e, toTypeState(notype), pos(ctx))
+          Unary(noflags, op, e, toTypeState(notype), pos(ctx))
         case _                  =>
           // TODO: report an error
           throw new Exception("Expression is expected, but got " + e1 + " " + op)
