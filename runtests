@@ -56,11 +56,12 @@ def test(file: String, prg: String): Unit = {
   lines match {
     case (x::y::Nil)  =>
       skip(file)
-    case (x::y::rest) =>
+    case (x::y1::rest) =>
       val rr = s"scala $prg --Ytest --Xlog off $file".!!
       // Only take the first error
       val r = rr.split("\n").head
-      if(y.startsWith(s"// ${r}")) {
+      val y = y1.trim
+      if(y.startsWith(s"// ${r}".trim)) {
         pass(file)
       } else if(x.startsWith("// fails")) {
         fail(file, y, r, "should fail") 
