@@ -59,6 +59,22 @@ trait TreeId extends Any {
   def head: TreeId
 
   /**
+   * Concatenates two ids together:
+   *
+   * {{{
+   * val tid1 = 1 -> 2 -> 3
+   * val tid2 = 4 -> 5 -> 6
+   * 
+   * tid1.concat(tid2) // 1 -> 2 -> 3 -> 4 -> 5 -> 6
+   * }}}
+   */
+  def concat(other: TreeId): TreeId = other match {
+    case sid: SimpleId         => TreeId(this, sid.id)
+    case cid: CompositeId      => TreeId(this.concat(cid.path), cid.id)
+    case NoId                  => this
+  }
+
+  /**
    * Returns the path to the parent context
    *
    * For the following path:

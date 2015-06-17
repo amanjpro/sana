@@ -155,7 +155,9 @@ trait TreeContexts {
           lookup(name, p, owner.up)
         else {
           //TODO: Make sure this is correct
-          id.merge(owner.head)
+          owner.concat(id)
+          // TreeId(owner, id)
+          // id.merge(owner.head)
         }
       case None                                                          =>
         logger.warning("Name not found " + name.asString)

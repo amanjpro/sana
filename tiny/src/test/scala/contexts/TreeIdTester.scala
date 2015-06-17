@@ -45,6 +45,17 @@ class TreeIdTester extends FlatSpec with Matchers {
   s"$path1 merge ($path2)" should s"$res" in {
     path1.merge(path2) should be (res)
   }
+
+
+
+  val p1 = TreeId(TreeId(TreeId(NoId, 1), 2), 3)
+  val p2 = TreeId(TreeId(TreeId(NoId, 4), 5), 6)
+  val r2   = TreeId(TreeId(TreeId(
+                      TreeId(TreeId(TreeId(NoId, 1), 2), 3), 4), 5), 6)
+
+  s"$p1 concat ($p2)" should s"$r2" in {
+    p1.concat(p2) should be (r2)
+  }
 }
 
 
