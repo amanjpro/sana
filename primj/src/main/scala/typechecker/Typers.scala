@@ -69,10 +69,10 @@ trait Typers extends typechecker.Typers {
       rhsty    <- toTypeChecker(body.tpe)
       rty      <- toTypeChecker(mdef.ret.tpe)
       _        <- (rhsty <:< rty) match {
-        case false =>
+        case false if rty =/= VoidType =>
           toTypeChecker(error(TYPE_MISMATCH,
             rhsty.toString, rty.toString, body.pos, mdef))
-        case true  =>
+        case _                         =>
           pointSW(())
       }
       tree    <- pointSW(MethodDef(mdef.mods, mdef.id, mdef.ret, mdef.name, 
