@@ -8,6 +8,7 @@ import tiny.report._
 
 import scalaz._
 import scalaz.Scalaz._
+import scalaz.Kleisli._
 
 import scala.language.{higherKinds,implicitConversions}
 
@@ -29,6 +30,36 @@ trait MonadUtils {
   type ContextState[A]            = ContextStateT[Id, A]
   type StateWriter[A]             = ContextStateT[ErrorReportingMonad, A]
 
+
+  type ReaderWriter[R, A]  = ReaderT[ErrorReportingMonad, R, A]
+
+
+  def tellRW[R](x: Vector[Report]): ReaderWriter[R, Unit] = 
+    toReaderWriter(x.tell)
+
+  def askRW[R]: ReaderWriter[R, R] = 
+    MonadReader[Reader, R].ask.lift[ErrorReportingMonad]
+
+  def localRW[R, A](f: R => R)(fa: ReaderWriter[R, A]):
+      ReaderWriter[R, A] = {
+    // type RD[f[_], a] = ReaderT[f, R, a]
+    // val r = MonadReader[Reader, R].local(f)(fa.liftReader[R])
+    // r.lift[ErrorReportingMonad]
+    // toReaderWriter(r)
+    // r
+
+    Kleisli[ErrorReportingMonad, R, A] {
+      r => fa.run(f(r))
+    }
+  }
+
+  def pointRW[R, A](t: A): ReaderWriter[R, A] = {
+    type RW[a] = ReaderWriter[R, a]
+    Monad[RW].point(t)
+  }
+
+
+  
 
   /*
     INFO:
@@ -76,6 +107,17 @@ trait MonadUtils {
 
   def toStateReader[R, A](x: Reader[R, A]): StateReader[R, A] =
     x.liftM[ContextStateT]
+
+  def toReaderWriter[R, A](x: Reader[R, A]): ReaderWriter[R, A] = {
+    x.lift[ErrorReportingMonad]
+  }
+
+  def toReaderWriter[R, A](x: 
+    ErrorReportingMonad[A]): ReaderWriter[R, A] = {
+    type RW[f[_], a] = ReaderT[f, R, a]
+    x.liftM[RW]
+  }
+
 
 
   def toStateWriter[A](x: ContextStateT[Id, A]): StateWriter[A] =
