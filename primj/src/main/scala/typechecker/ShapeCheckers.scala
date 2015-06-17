@@ -36,7 +36,7 @@ trait ShapeCheckers extends passes.Phases {
   def toShapeChecker(x: ErrorReportingMonad[Unit]): StateWriter[Unit] =
     toStateWriter(x)
 
-  trait ShapeCheckers extends CheckerPhase {
+  trait Checker extends CheckerPhase {
     
     val name: String = "shape-checkers"
     override val description: Option[String] = 
