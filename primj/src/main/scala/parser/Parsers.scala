@@ -137,6 +137,9 @@ trait Parsers extends parser.Parsers {
     def createVarDecls(@NotNull ctx: 
       PrimjParser.VariableDeclarationContext,
       mods: Flag): List[ValDef] = {
+      val mods1   = if(ctx.mods != null)
+                      mods | FlagSet.FINAL
+                    else mods
       val tpe    = visit(ctx.`type`)
       val names  = ctx.Identifier.asScala.toList.map(_.getText)
       val exprs  = ctx.varRHS.asScala.toList.map {
@@ -147,7 +150,7 @@ trait Parsers extends parser.Parsers {
         case tu: TypeUse =>
           names.zip(exprs).map {
             case (name, expr) =>
-              ValDef(mods, NoId, tu, Name(name), expr, pos(ctx), NoId)
+              ValDef(mods1, NoId, tu, Name(name), expr, pos(ctx), NoId)
           }
         case _           =>
           // TODO: report an error
@@ -158,6 +161,11 @@ trait Parsers extends parser.Parsers {
     def createVarDefs(@NotNull ctx: 
       PrimjParser.VariableDefinitionContext,
       mods: Flag): List[ValDef] = {
+
+      val mods1   = if(ctx.mods != null)
+                      mods | FlagSet.FINAL
+                    else
+                      mods
       val tpe    = visit(ctx.`type`)
       val names  = ctx.Identifier.asScala.toList.map(_.getText)
       val exprs  = ctx.expression.asScala.toList.map {
@@ -167,7 +175,7 @@ trait Parsers extends parser.Parsers {
         case tu: TypeUse =>
           names.zip(exprs).map {
             case (name, expr) =>
-              ValDef(mods, NoId, tu, Name(name), expr, pos(ctx), NoId)
+              ValDef(mods1, NoId, tu, Name(name), expr, pos(ctx), NoId)
           }
         case _           =>
           // TODO: report an error
@@ -187,9 +195,12 @@ trait Parsers extends parser.Parsers {
 
     override def visitFormalParameter(@NotNull ctx: 
       PrimjParser.FormalParameterContext): Tree = {
+      val mods    = if(ctx.mods != null)
+                      FlagSet.PARAM | FlagSet.FINAL
+                    else
+                      FlagSet.PARAM
       val tpe = TypeUse(NoId, Some(ctx.`type`.getText), NoId, pos(ctx))
       val name = Name(ctx.Identifier.getText)
-      val mods = FlagSet.PARAM
       ValDef(mods, NoId, tpe, name, Empty, pos(ctx), NoId)
     }
 

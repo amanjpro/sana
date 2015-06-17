@@ -44,7 +44,7 @@ methodDeclaration
 
 
 variableDeclaration
-    : FINAL? type Identifier varRHS (',' Identifier varRHS)*
+    : mods='final'? type Identifier varRHS (',' Identifier varRHS)*
     ;
 
 varRHS
@@ -82,7 +82,7 @@ formalParameterList
     ;
 
 formalParameter
-    :   FINAL? type Identifier
+    :   mods='final'? type Identifier
     ;
 
 
@@ -140,7 +140,8 @@ forControl
     ;
 
 variableDefinition
-    : FINAL? type Identifier '=' expression (',' Identifier '=' expression)*
+    : mods='final'? type Identifier '=' 
+              expression (',' Identifier '=' expression)*
     ;
 
 
