@@ -11,6 +11,7 @@ import tiny.debug.logger
 import primj.report._
 import tiny.names
 import primj.Global
+import primj.contexts._
 
  
 import scalaz._
@@ -31,7 +32,6 @@ import scala.language.{higherKinds,implicitConversions}
 trait IDAssigners extends passes.Phases {
   type G = Global
   import global._
-
 
   trait IDAssigner extends TransformerPhase {
 
@@ -112,6 +112,13 @@ trait IDAssigners extends passes.Phases {
       ctx1    <- get
       tpt     <- assignTypeUse(valdef.tpt)
       rhs     <- assignExpr(valdef.rhs)
+      enclM   =  ctx1.enclosingMethod(owner)
+      nme     = valdef.name
+      _       <- ctx1.boundedLookup(nme, const(true), owner, enclM) match {
+        case Nil     => point(())
+        case m       =>
+          tell(Vector(genError(DOUBLE_DEF, "", "", valdef.pos, valdef)))
+      }
       id_ctx2 =  ctx1.extend(owner, atomicContext(valdef))
       id      =  id_ctx2._1
       ctx2    =  id_ctx2._2

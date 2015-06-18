@@ -264,6 +264,7 @@ trait Typers extends typechecker.Typers {
       tree  <- pointSW(If(cond, thenp, elsep, iff.pos))
     } yield tree
 
+    // FIXME: Apply doesn't work with method overloading
     def typeApply(app: Apply): TypeChecker[Apply] = for {
       fun       <- typeExpr(app.fun)
       funty     <- toTypeChecker(fun.tpe)

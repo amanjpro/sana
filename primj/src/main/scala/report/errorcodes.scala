@@ -3,6 +3,9 @@ package ch.usi.inf.l3.sana.primj.report
 import ch.usi.inf.l3.sana.tiny
 import tiny.report.ErrorCode
 
+case object DOUBLE_DEF extends ErrorCode {
+  val message: String = "Name is already defined"
+}
 case object NAME_NOT_FOUND extends ErrorCode {
   val message: String = "Name not found"
 }
