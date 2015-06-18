@@ -150,9 +150,43 @@ trait Typers extends typechecker.Typers {
       case assign: Assign         => for {
         tassign <- typeAssign(assign)
       } yield tassign
+      case ret: Return         => for {
+        tret    <- typeReturn(ret)
+      } yield tret
       case _                      => 
         super.typeExpr(e)
     }
+
+
+    def typeReturn(ret: Return): TypeChecker[Return] = for {
+      ctx    <- getSW
+      expr   <- ret.expr.map(typeExpr(_)).getOrElse(pointSW(Empty))
+      mtpe   <- ctx.getTree(ctx.enclosingMethod(ret.owner)) match {
+        case None                => pointSW(ErrorType)
+        case Some(info)          => toTypeChecker(info.tpe)
+      }
+      ret2   <- ret.expr match {
+        case None       => pointSW(Return(ret.pos, ret.owner))
+        case Some(e)    => pointSW(Return(e, ret.pos, ret.owner))
+      }
+      rtpe   <- toTypeChecker(ret2.tpe)
+      _      <- ret2.expr match {
+        // add constructor later
+        case None     if mtpe =/= VoidType    =>
+          toTypeChecker(error(VOID_RETURN,
+            ret.toString, ret.toString, ret.pos, ret))
+        case Some(e)  if mtpe =:= VoidType    =>
+          toTypeChecker(error(NON_VOID_RETURN,
+            ret.toString, ret.toString, ret.pos, ret))
+        case Some(e)                          =>
+          if(rtpe <:< mtpe)
+            pointSW(())
+          else
+            toTypeChecker(error(TYPE_MISMATCH,
+              rtpe.toString, mtpe.toString, ret.pos, ret))
+
+      }
+    } yield ret2
 
     override def typeUnary(unary: Unary): TypeChecker[Unary] = for {
       ctx    <- getSW

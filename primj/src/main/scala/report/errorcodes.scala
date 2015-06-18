@@ -33,3 +33,10 @@ case object MISSING_RETURN_STATEMENT extends ErrorCode {
   val message: String = "Missing return statement"
 }
 
+case object VOID_RETURN extends ErrorCode {
+  val message: String = "Missing expression"
+}
+
+case object NON_VOID_RETURN extends ErrorCode {
+  val message: String = "Return cannot have an expression here"
+}
