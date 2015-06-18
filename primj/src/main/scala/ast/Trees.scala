@@ -325,9 +325,9 @@ trait Trees extends ast.Trees {
       }
   }
   trait ReturnExtractor {
-    def unapply(r: Return): Option[Expr] = r match {
+    def unapply(r: Return): Option[Option[Expr]] = r match {
       case null => None
-      case _    => for(e <- r.expr) yield e
+      case _    => Some(r.expr)
     }
   }
   
