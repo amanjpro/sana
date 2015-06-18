@@ -71,13 +71,50 @@ trait TreeContexts {
     }
 
     /**
-     * Checks if there is a binding for the given Name directly in this
-     * Scope.
+     * Finds all bindings for the given Name directly in this Scope.
      *
      * @see [[contexts.TreeId]]
      * @param name The name that we want to check
      * @param p The predicate that the resulted tree should satisfy
-     * @return True if the name is defined, and false otherwise
+     * @return list of ids of the trees, and Nil if none found
+     */
+    def findAllInThisContext(name: Name, 
+      p: TreeInfo => Boolean): List[TreeId] = {
+      decls.toList.foldLeft(Nil: List[TreeId])((z, y) => y._2 match {
+        case n: NamedContext if (n.tree.name == name) && p(n.tree) =>
+          y._1 :: z
+        case _                                                     => z
+      })
+    }
+
+    /**
+     * Finds all bindings for the given Name in a given Scope up to
+     * some other scope.
+     *
+     * @see [[contexts.TreeId]]
+     * @param name The name that we want to check
+     * @param p The predicate that the resulted tree should satisfy
+     * @param from The context to start with
+     * @param to The context to end at
+     * @return list of ids of the trees, and Nil if none found
+     */
+    def boundedLookup(name: Name, p: TreeInfo => Boolean, 
+            from: TreeId, to: TreeId): List[TreeId] = {
+      if(from == to || to == NoId) Nil
+      else {
+        val ctx   = getContext(from)
+        val infos = ctx.map(_.findAllInThisContext(name, p)).getOrElse(Nil)
+        infos ++ boundedLookup(name, p, from.up, to) 
+      }
+    }
+
+    /**
+     * Finds a binding for the given Name directly in this Scope.
+     *
+     * @see [[contexts.TreeId]]
+     * @param name The name that we want to check
+     * @param p The predicate that the resulted tree should satisfy
+     * @return id of the tree, if the it is defined, and NoId otherwise
      */
     def findInThisContext(name: Name, p: TreeInfo => Boolean): TreeId = {
       val id = decls.toList.foldLeft(NoId: TreeId)((z, y) => y._2 match {
