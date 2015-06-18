@@ -245,27 +245,7 @@ trait Typers extends typechecker.Typers {
     } yield tree
 
 
-    def pointsToUse(expr: Expr, 
-            p: UseTree => Boolean): Boolean = expr match {
-      case id: Ident         => p(id)
-      case tuse: TypeUse     => p(tuse)
-      case _                 =>
-        false
-    }
+    
 
-    // protected def isValDefOrStatementExpression(v: Tree): Boolean = v match {
-    //   case s: ValDef => true
-    //   case e: Expr   => isValidStatementExpression(e)
-    //   case _         => false
-    // }
-    //
-    // protected def isValidStatementExpression(e: Expr): Boolean = e match {
-    //   case _: Postfix    => true
-    //   case Unary(Inc, _) => true
-    //   case Unary(Dec, _) => true
-    //   case _: Apply      => true
-    //   // case _: New        => true
-    //   case _: Assign     => true
-    // }
   }
 }
