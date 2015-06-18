@@ -23,6 +23,8 @@ trait TreeUtils extends ast.TreeUtils {
   }
 
 
+  // TODO: Implement me
+  def isSimpleExpression(tree: Tree): Boolean = ???
   
   def allPathsReturn(tree: Tree): Boolean = tree match {
     // tiny
@@ -54,6 +56,9 @@ trait TreeUtils extends ast.TreeUtils {
       }
   }
 
+  // TODO: Implement me
+  // make sure that the guards are constant expressions Section 15.27
+  def isConstantExpression(e: Expr): Boolean = ???
 
   // INFO: Update this to Java as we go
   def isExpression(e: Tree): Boolean = e match {

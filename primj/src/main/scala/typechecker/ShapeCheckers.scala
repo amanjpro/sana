@@ -107,6 +107,12 @@ trait ShapeCheckers extends passes.Phases {
                 toShapeChecker(error(UNEXPETED_TREE,
                   valdef.toString, "an expression", valdef.pos, valdef))
               } else pointSW(())
+      _     <- if(isSimpleExpression(valdef.rhs))
+                 pointSW(())
+               else
+                 // TODO: Better error message
+                 toShapeChecker(error(UNEXPETED_TREE,
+                   valdef.toString, "an expression", valdef.pos, valdef))
     } yield ()
 
     
