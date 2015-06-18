@@ -3,8 +3,10 @@ package ch.usi.inf.l3.sana.primj.ast
 import ch.usi.inf.l3.sana
 import sana.tiny
 import sana.calcj
+import sana.primj
 import tiny.ast
 import calcj.ast.JavaOps.{Inc, Dec}
+import primj.modifiers._
 
 
 trait TreeUtils extends ast.TreeUtils {
@@ -22,6 +24,36 @@ trait TreeUtils extends ast.TreeUtils {
 
 
   
+  def allPathsReturn(tree: Tree): Boolean = tree match {
+    // tiny
+    case BadTree | _: Empty | _: Ident | _: TypeUse    => false
+    // calcj
+    case _: Cast    | _: Lit   | _: Unary | _: Binary  => false
+    // primj
+    case _: Template | _: MethodDef                    =>
+      // shouldn't happen
+      false
+    case _: Assign | _: Ternary | _: Apply | _: ValDef =>
+      false
+    case r: Return                                     =>
+      true
+    case ifelse: If                                    =>
+      allPathsReturn(ifelse.thenp) && allPathsReturn(ifelse.elsep)
+    case wile: While                                   =>
+      if(wile.mods.isDoWhile ||
+          isConstantExpression(wile.cond))
+        allPathsReturn(wile.body)
+      else false
+    case forloop: For                                  =>
+      isConstantExpression(forloop.cond) &&
+        allPathsReturn(forloop.body)
+    case block: Block                                  =>
+      block.stmts match {
+        case Nil         => false
+        case stmts       => allPathsReturn(stmts.last)
+      }
+  }
+
 
   // INFO: Update this to Java as we go
   def isExpression(e: Tree): Boolean = e match {

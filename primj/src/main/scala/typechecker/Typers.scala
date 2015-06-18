@@ -75,7 +75,12 @@ trait Typers extends typechecker.Typers {
         case _                         =>
           pointSW(())
       }
-      tree    <- pointSW(MethodDef(mdef.mods, mdef.id, mdef.ret, mdef.name, 
+      _        <- if(rty =/= VoidType && !allPathsReturn(body))
+                    toTypeChecker(error(MISSING_RETURN_STATEMENT,
+                      body.toString, body.toString, body.pos, mdef))
+                  else
+                    pointSW(())
+      tree     <- pointSW(MethodDef(mdef.mods, mdef.id, mdef.ret, mdef.name, 
                                   params, body, mdef.pos, mdef.owner))
     } yield tree
 

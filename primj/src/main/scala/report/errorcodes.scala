@@ -27,3 +27,9 @@ case object REASSIGNING_FINAL_VARIABLE extends ErrorCode {
 case object ASSIGNING_NOT_TO_VARIABLE extends ErrorCode {
   val message: String = "Assigning to a tree that is not a variable"
 }
+
+
+case object MISSING_RETURN_STATEMENT extends ErrorCode {
+  val message: String = "Missing return statement"
+}
+
