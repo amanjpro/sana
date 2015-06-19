@@ -73,8 +73,8 @@ trait TreeUtils extends ast.TreeUtils {
 
 
   // INFO: Needs to be extended once Select is introduced
-  def pointsToUse(expr: Expr, 
-            p: UseTree => Boolean): Boolean = expr match {
+  def pointsToUse(tree: Tree, 
+            p: UseTree => Boolean): Boolean = tree match {
     case id: Ident         => p(id)
     case tuse: TypeUse     => p(tuse)
     case _                 =>
