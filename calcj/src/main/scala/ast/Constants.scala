@@ -122,16 +122,7 @@ trait Constants {
     }
   }
 
-  trait StringFactory {
-    private class StringConstImpl(val value: String,
-      val tpe: Type) extends Constant {
-        type VType = String
-      }
-
-    def apply(value: String): Constant = {
-      new StringConstImpl(value, StringType)
-    }
-  }
+  
 
   /******************* Factory and Extractor instances ***************/
   val ByteConstant    = new ByteFactory with ConstantExtractor {}
@@ -142,7 +133,6 @@ trait Constants {
   val FloatConstant   = new FloatFactory with ConstantExtractor {}
   val DoubleConstant  = new DoubleFactory with ConstantExtractor {}
   val BooleanConstant = new BooleanFactory with ConstantExtractor {}
-  val StringConstant  = new StringFactory with ConstantExtractor {}
 
   val DEFAULT_BYTE    = ByteConstant(0.toByte)
   val DEFAULT_CHAR    = CharConstant('\u0000')

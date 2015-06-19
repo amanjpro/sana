@@ -108,20 +108,20 @@ class TyperTest extends FlatSpec with Matchers with Typers {
     (tpe =:= DoubleType) should be (true)
   }
 
-  "(short) 1 + (byte) 2 + \"4\"" should "be String" in {
+  "(short) 1 + (byte) 2 + 2.5" should "be Double" in {
     val b = Binary(
               Lit(ShortConstant(1), None), 
               Add,
               Binary(
                 Lit(ByteConstant(2), None), 
                 Add, 
-                Lit(StringConstant("4"), None), 
+                Lit(DoubleConstant(2.5), None), 
                 toTypeState(NoType),
                 None),
               toTypeState(NoType),
               None)
     val tpe = getTpe(typer.typeTree(b))
-    (tpe =:= StringType) should be (true)
+    (tpe =:= DoubleType) should be (true)
   }
 
   "+((short) 1)" should "be int" in {

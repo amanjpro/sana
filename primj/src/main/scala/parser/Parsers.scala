@@ -478,9 +478,9 @@ trait Parsers extends parser.Parsers {
       Lit(CharConstant(ctx.getText.head), pos(ctx)) 
     }
 
-    override def visitStrLit(@NotNull ctx: PrimjParser.StrLitContext): Tree = { 
-      Lit(StringConstant(ctx.getText), pos(ctx)) 
-    }
+    // override def visitStrLit(@NotNull ctx: PrimjParser.StrLitContext): Tree = { 
+    //   Lit(StringConstant(ctx.getText), pos(ctx)) 
+    // }
 
   
     override def visitBoolLit(@NotNull ctx: PrimjParser.BoolLitContext): Tree = { 

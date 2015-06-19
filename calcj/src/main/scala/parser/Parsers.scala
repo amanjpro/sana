@@ -194,9 +194,9 @@ trait Parsers extends parser.Parsers {
       Lit(CharConstant(ctx.getText.head), pos(ctx)) 
     }
 
-    override def visitStrLit(@NotNull ctx: CalcjParser.StrLitContext): Tree = { 
-      Lit(StringConstant(ctx.getText), pos(ctx)) 
-    }
+    // override def visitStrLit(@NotNull ctx: CalcjParser.StrLitContext): Tree = { 
+    //   Lit(StringConstant(ctx.getText), pos(ctx)) 
+    // }
 
   
     override def visitBoolLit(@NotNull ctx: CalcjParser.BoolLitContext): Tree = { 

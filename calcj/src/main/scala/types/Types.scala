@@ -9,6 +9,7 @@ import tiny.types
 
 trait Types extends types.Types {
 
+  
   /*
     A primitive type is one of the following:
 
@@ -81,17 +82,14 @@ trait Types extends types.Types {
     def name: Name = Name("boolean")
   }
   
-  object StringType extends PrimitiveType {
-    override def show: String = "String type"
-    def name: Name = Name("String")
-  }
+  
 
 
   // Binary and Unary types
   trait BinaryType extends Type {
-    def op1: PrimitiveType
-    def op2: PrimitiveType
-    def ret: PrimitiveType
+    def op1: Type
+    def op2: Type
+    def ret: Type
     def name: Name = Name("<binary-type>")
 
     def =:=(t: Type): Boolean = t match {
@@ -126,18 +124,17 @@ trait Types extends types.Types {
 
   trait BinaryTypeFactory {
 
-    private class BinaryTypeImpl(val op1: PrimitiveType,
-      val op2: PrimitiveType, val ret: PrimitiveType) extends BinaryType
+    private class BinaryTypeImpl(val op1: Type,
+      val op2: Type, val ret: Type) extends BinaryType
 
-    def apply(op1: PrimitiveType, op2: PrimitiveType, 
-      ret: PrimitiveType): BinaryType =
+    def apply(op1: Type, op2: Type, 
+      ret: Type): BinaryType =
       new BinaryTypeImpl(op1, op2, ret)
 
   }
 
   trait BinaryTypeExtractor {
-    def unapply(bt: BinaryType): Option[(PrimitiveType, 
-      PrimitiveType, PrimitiveType)] = bt match {
+    def unapply(bt: BinaryType): Option[(Type, Type, Type)] = bt match {
       case null => None
       case bt   => Some((bt.op1, bt.op2, bt.ret))
     }
