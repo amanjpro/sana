@@ -99,7 +99,7 @@ object build extends Build {
     settings = buildSettings, 
       // ++
       // site.settings ++ ghpages.settings: _*) ++ settings ),
-    aggregate = Seq(tiny, calcj, primj, brokenj)
+    aggregate = Seq(tiny, calcj, primj, brokenj, ooj)
       // arrayj)
   ) settings (unidocSettings: _*)
 
@@ -107,6 +107,7 @@ object build extends Build {
   lazy val calcj = project("calcj", Seq(tiny), Seq(antlrSetting("calcj")))
   lazy val primj = project("primj", Seq(calcj), Seq(antlrSetting("primj")))
   lazy val brokenj = project("brokenj", Seq(primj), Seq(antlrSetting("brokenj")))
+  lazy val ooj = project("ooj", Seq(brokenj), Seq(antlrSetting("ooj")))
   // lazy val arrayj = project("arrayj", Seq(primj), Seq(antlrSetting("arrayj")))
 
 }
