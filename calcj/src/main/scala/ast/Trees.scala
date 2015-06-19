@@ -96,7 +96,7 @@ trait Trees extends ast.Trees {
   trait Lit extends Expr {
     def const: Constant
     val owner: TreeId = NoId
-    override def tpe: TypeState[Type] = toTypeState(const.tpe)
+    override def tpe: TypeState[Type] = const.tpe
 
     def show(ctx: Context): String = 
       s"Lit($const)"

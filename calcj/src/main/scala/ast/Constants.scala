@@ -16,17 +16,19 @@ package ch.usi.inf.l3.sana.calcj.ast
 
 import ch.usi.inf.l3.sana
 import sana.calcj.types._
+import sana.calcj.contexts._
 
 trait Constants {
-  self: Types =>
+  self: Types with Trees with TreeContexts =>
 
   trait Constant {
     type VType
     def value: VType
-    def tpe: Type
+    def tpe: TypeState[Type]
 
-    final def show: String = s"Constant(Type=${tpe.show}, value=${value}"
-    override final def toString: String = show
+    final def show(ctx: Context): String = 
+      s"Constant(Type=${tpe.eval(ctx).show}, value=${value}"
+    override final def toString: String = show(emptyContext)
   }
 
   /**************************** Extractors **************************/
@@ -37,88 +39,88 @@ trait Constants {
   /***************************** Factories **************************/
   trait ByteFactory {
     private class ByteConstImpl(val value: Byte, 
-      val tpe: Type) extends Constant {
+      val tpe: TypeState[Type]) extends Constant {
         type VType = Byte
       }
 
     def apply(value: Byte): Constant = {
-      new ByteConstImpl(value, ByteType)
+      new ByteConstImpl(value, toTypeState(ByteType))
     }
   }
 
   trait ShortFactory {
     private class ShortConstImpl(val value: Short,
-      val tpe: Type) extends Constant {
+      val tpe: TypeState[Type]) extends Constant {
         type VType = Short
       }
 
     def apply(value: Short): Constant = {
-      new ShortConstImpl(value, ShortType)
+      new ShortConstImpl(value, toTypeState(ShortType))
     }
   }
 
   trait CharFactory {
     private class CharConstImpl(val value: Char,
-      val tpe: Type) extends Constant {
+      val tpe: TypeState[Type]) extends Constant {
         type VType = Char
       }
 
     def apply(value: Char): Constant = {
-      new CharConstImpl(value, CharType)
+      new CharConstImpl(value, toTypeState(CharType))
     }
   }
   trait IntFactory {
     private class IntConstImpl(val value: Int,
-      val tpe: Type) extends Constant {
+      val tpe: TypeState[Type]) extends Constant {
         type VType = Int
       }
 
     def apply(value: Int): Constant = {
-      new IntConstImpl(value, IntType)
+      new IntConstImpl(value, toTypeState(IntType))
     }
   }
 
   trait LongFactory {
     private class LongConstImpl(val value: Long,
-      val tpe: Type) extends Constant {
+      val tpe: TypeState[Type]) extends Constant {
         type VType = Long
       }
 
     def apply(value: Long): Constant = {
-      new LongConstImpl(value, LongType)
+      new LongConstImpl(value, toTypeState(LongType))
     }
   }
 
   trait FloatFactory {
     private class FloatConstImpl(val value: Float,
-      val tpe: Type) extends Constant {
+      val tpe: TypeState[Type]) extends Constant {
         type VType = Float
       }
 
     def apply(value: Float): Constant = {
-      new FloatConstImpl(value, FloatType)
+      new FloatConstImpl(value, toTypeState(FloatType))
     }
   }
 
   trait DoubleFactory {
     private class DoubleConstImpl(val value: Double,
-      val tpe: Type) extends Constant {
+      val tpe: TypeState[Type]) extends Constant {
         type VType = Double
       }
 
     def apply(value: Double): Constant = {
-      new DoubleConstImpl(value, DoubleType)
+      new DoubleConstImpl(value, toTypeState(DoubleType))
     }
   }
 
   trait BooleanFactory {
     private class BooleanConstImpl(val value: Boolean,
-      val tpe: Type) extends Constant {
+      val tpe: TypeState[Type]) extends Constant {
         type VType = Boolean
       }
 
     def apply(value: Boolean): Constant = {
-      new BooleanConstImpl(value, BooleanType)
+      new BooleanConstImpl(value, toTypeState(BooleanType))
     }
   }
 
