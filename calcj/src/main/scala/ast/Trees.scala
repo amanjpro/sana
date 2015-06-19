@@ -25,7 +25,7 @@ trait Trees extends ast.Trees {
 
   // Conversions and Casts
   trait Cast extends Expr {
-    def tpt: TypeUse
+    def tpt: UseTree
     def expr: Expr
     val owner: TreeId = expr.owner
     override def tpe: TypeState[Type] = tpt.tpe
@@ -105,7 +105,7 @@ trait Trees extends ast.Trees {
   /***************************** Extractors **************************/
 
   trait CastExtractor {
-    def unapply(c: Cast): Option[(TypeUse, Expr)] = c match {
+    def unapply(c: Cast): Option[(UseTree, Expr)] = c match {
       case null => None
       case _    => Some((c.tpt, c.expr))
     }
@@ -142,10 +142,10 @@ trait Trees extends ast.Trees {
   /***************************** Factories **************************/
 
   trait CastFactory {
-    private class CastImpl(val tpt: TypeUse, val expr: Expr,
+    private class CastImpl(val tpt: UseTree, val expr: Expr,
       val pos: Option[Position]) extends Cast
 
-    def apply(tpt: TypeUse, expr: Expr, pos: Option[Position]): Cast = 
+    def apply(tpt: UseTree, expr: Expr, pos: Option[Position]): Cast = 
       new CastImpl(tpt, expr, pos)
   }
 

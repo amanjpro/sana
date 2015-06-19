@@ -130,10 +130,16 @@ trait IDAssigners extends passes.Phases {
       _       <- point(v)
     } yield v
 
-    def assignTypeUse(tuse: TypeUse): IDAssignerMonad[TypeUse] = for {
+    def assignTypeUse(tuse: UseTree): IDAssignerMonad[UseTree] = for {
       owner   <- ask
-      r       <- point(TypeUse(tuse.uses, tuse.nameAtParser, owner, tuse.pos))
+      r       <- tuse match {
+        case tuse: TypeUse =>
+          point(TypeUse(tuse.uses, tuse.nameAtParser, owner, tuse.pos))
+        case _             =>
+          point(tuse)
+      }
     } yield r
+
 
     def assignExpr(expr: Expr): IDAssignerMonad[Expr] = expr match {
       case lit: Lit                                  => for {

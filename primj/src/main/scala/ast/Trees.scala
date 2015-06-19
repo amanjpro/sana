@@ -48,7 +48,7 @@ trait Trees extends ast.Trees {
 
   // Variable and Method definitions
   trait MethodDef extends TermTree {
-    def ret: TypeUse
+    def ret: UseTree
     def params: List[ValDef]
     def body: Expr
     def tpe: TypeState[Type] = {
@@ -76,7 +76,7 @@ trait Trees extends ast.Trees {
   }
   
   trait ValDef extends TermTree {
-    def tpt: TypeUse
+    def tpt: UseTree
     def rhs: Expr
     def tpe: TypeState[Type] = tpt.tpe
 
@@ -311,14 +311,14 @@ trait Trees extends ast.Trees {
 
   trait MethodDefExtractor {
     def unapply(md: MethodDef): 
-      Option[(Flag, TypeUse, Name, List[ValDef], Expr)] = md match {
+      Option[(Flag, UseTree, Name, List[ValDef], Expr)] = md match {
         case null => None
         case _    => Some((md.mods, md.ret, md.name, md.params, md.body))
       }
   }
 
   trait ValDefExtractor {
-    def unapply(vd: ValDef): Option[(Flag, TypeUse, Name, Tree)] = 
+    def unapply(vd: ValDef): Option[(Flag, UseTree, Name, Tree)] = 
       vd match {
         case null => None
         case _    => Some((vd.mods, vd.tpt, vd.name, vd.rhs))
@@ -441,11 +441,11 @@ trait Trees extends ast.Trees {
 
   trait MethodDefFactory {
     private class MethodDefImpl(val mods: Flag, val id: TreeId,
-      val ret: TypeUse, val name: Name, val params: List[ValDef], 
+      val ret: UseTree, val name: Name, val params: List[ValDef], 
       val body: Expr, val pos: Option[Position], 
       val owner: TreeId) extends MethodDef
 
-    def apply(mods: Flag, id: TreeId, ret: TypeUse, name: Name, 
+    def apply(mods: Flag, id: TreeId, ret: UseTree, name: Name, 
       params: List[ValDef], body: Expr, pos: Option[Position] = None, 
       owner: TreeId): MethodDef = 
         new MethodDefImpl(mods, id, ret, name, params, body, pos, owner)
@@ -453,10 +453,10 @@ trait Trees extends ast.Trees {
 
   trait ValDefFactory {
     private class ValDefImpl(val mods: Flag, val id: TreeId, 
-      val tpt: TypeUse, val name: Name, val rhs: Expr, 
+      val tpt: UseTree, val name: Name, val rhs: Expr, 
       val pos: Option[Position], val owner: TreeId) extends ValDef
 
-    def apply(mods: Flag, id: TreeId, tpt: TypeUse, name: Name, 
+    def apply(mods: Flag, id: TreeId, tpt: UseTree, name: Name, 
       rhs: Expr, pos: Option[Position] = None, 
       owner: TreeId = NoId): ValDef = 
         new ValDefImpl(mods, id, tpt, name, rhs, pos, owner)

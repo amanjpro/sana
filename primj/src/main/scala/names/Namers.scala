@@ -41,7 +41,7 @@ trait Namers extends names.Namers {
       } yield e
     }
 
-    def nameTypeUses(tuse: TypeUse): NamerMonad[TypeUse] = for {
+    def nameTypeUses(tuse: UseTree): NamerMonad[UseTree] = for {
       env  <- getSW
       name <- pointSW(tuse.nameAtParser.map(Name(_)).getOrElse(ERROR_NAME))
       tid  <- pointSW(env.lookup(name, _.kind.isInstanceOf[TypeKind], 
@@ -53,7 +53,10 @@ trait Namers extends names.Namers {
                 case tid     =>
                   pointSW(())
               }
-      } yield TypeUse(tid, tuse.owner, tuse.pos)
+      } yield tuse match {
+        case tuse: TypeUse => TypeUse(tid, tuse.owner, tuse.pos)
+        case _             => tuse
+      }
 
     def nameDefTrees(defTree: DefTree): NamerMonad[DefTree] = defTree match {
       case ttree: TermTree                            => for {
