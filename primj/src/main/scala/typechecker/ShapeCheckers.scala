@@ -100,6 +100,8 @@ trait ShapeCheckers extends passes.Phases {
               toShapeChecker(error(TYPE_NAME_EXPECTED,
                 meth.ret.toString, "a type", meth.ret.pos, meth.ret))
             } else pointSW(())
+      _    <- meth.params.map(checkValDef(_)).sequenceU
+      _    <- checkTree(meth.body)
     } yield ()
 
     // Return with expr can only appear in non-void methods
