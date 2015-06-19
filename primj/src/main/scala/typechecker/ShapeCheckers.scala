@@ -85,6 +85,22 @@ trait ShapeCheckers extends passes.Phases {
       _ <- checkStatement(forloop.body)
     } yield ()
 
+    def checkCast(cast: Cast): ShapeChecker = for {
+      _    <- if(pointsToUse(cast.tpt, _.isInstanceOf[TypeUse])) {
+                // TODO: Better error message
+                toShapeChecker(error(TYPE_NAME_EXPECTED,
+                  cast.tpt.toString, "a type", cast.tpt.pos, cast.tpt))
+              } else pointSW(())
+      _    <- checkTree(cast.expr)
+    } yield ()
+
+    def checkMethodDef(meth: MethodDef): ShapeChecker = for {
+      _    <- if(pointsToUse(meth.ret, _.isInstanceOf[TypeUse])) {
+              // TODO: Better error message
+              toShapeChecker(error(TYPE_NAME_EXPECTED,
+                meth.ret.toString, "a type", meth.ret.pos, meth.ret))
+            } else pointSW(())
+    } yield ()
 
     // Return with expr can only appear in non-void methods
     // Return w/o expr can only appear in void methods or constructors
@@ -92,6 +108,11 @@ trait ShapeCheckers extends passes.Phases {
 
     def checkValDef(valdef: ValDef): ShapeChecker = for {
       ctx  <- getSW
+      _    <- if(pointsToUse(valdef.tpt, _.isInstanceOf[TypeUse])) {
+                // TODO: Better error message
+                toShapeChecker(error(TYPE_NAME_EXPECTED,
+                  valdef.tpt.toString, "a type", valdef.tpt.pos, valdef.tpt))
+              } else pointSW(())
       _    <- if((ctx.isBlock(valdef.owner) || ctx.isFor(valdef.owner)) &&
                   !(valdef.mods.isLocalVariable)) {
                 // TODO: Better error message

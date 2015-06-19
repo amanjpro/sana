@@ -43,3 +43,7 @@ case object VOID_RETURN extends ErrorCode {
 case object NON_VOID_RETURN extends ErrorCode {
   val message: String = "Return cannot have an expression here"
 }
+
+case object TYPE_NAME_EXPECTED extends ErrorCode {
+  val message: String = "A type name is expected"
+}
