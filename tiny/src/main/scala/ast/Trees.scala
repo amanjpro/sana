@@ -93,8 +93,16 @@ trait Trees {
       */
     def show(ctx: Context): String
 
+    /**
+      * Returns the string representation of this AST node in a given context.
+      *
+      * This method shows a more concise representation than `show`, but shows
+      * less information.
+      */
 
-    override def toString: String = show(emptyContext)
+    def asString(ctx: Context): String
+
+    override final def toString: String = asString(emptyContext)
   }
 
   /**
@@ -168,6 +176,7 @@ trait Trees {
 
 
     def show(ctx: Context): String = "<empty-tree>"
+    def asString(ctx: Context): String = ";"
 
 
     // Traverser functions
@@ -236,6 +245,8 @@ trait Trees {
     //   }
     // }
 
+    def asString(ctx: Context): String = name(ctx)._2.asString
+
     def show(ctx: Context): String = 
       s"""|TypeUse{
           |uses=$uses,
@@ -260,6 +271,7 @@ trait Trees {
   trait Ident extends Expr with UseTree {
     
 
+    def asString(ctx: Context): String = name(ctx)._2.asString
     def show(ctx: Context): String = 
       s"""|Ident{
           |uses=$uses,
@@ -409,6 +421,7 @@ trait Trees {
     val pos: Option[Position] = None
     val name: Name            = ERROR_NAME
 
+    def asString(ctx: Context): String = "<bad-tree>"
     def show(ctx: Context): String = "<bad-tree>"
   }
 
@@ -452,5 +465,8 @@ trait Trees {
 
   def showList(trees: List[Tree], ctx: Context): String =
     s"List{\n${trees.map(_.show(ctx)).mkString(",\n")}\n}"
+
+  def asStringList(trees: List[Tree], ctx: Context, sep: String = ", "): String =
+    s"${trees.map(_.asString(ctx)).mkString(sep)}"
 }
 

@@ -42,6 +42,9 @@ trait Trees extends ast.Trees {
     def tpe: TypeState[Type] = toTypeState(VoidType)
     def pos: Option[Position] = None
 
+    def asString(ctx: Context): String = 
+      s"{\n${asStringList(members, ctx, "\n")}\n}"
+
     def show(ctx: Context): String = 
       s"Template{${showList(members, ctx)}}"
   }
@@ -59,6 +62,12 @@ trait Trees extends ast.Trees {
         ty  <- toTypeState(MethodType(r, tps))
       } yield ty
     }
+
+    def asString(ctx: Context): String = 
+      s"""|${mods.asString} 
+          |${ret.asString(ctx)} ${name.asString}(${asStringList(params, ctx)}) {
+          |${body.asString(ctx)}
+          |}""".stripMargin
 
     def show(ctx: Context): String = 
       s"""|MethodDef{
@@ -79,6 +88,9 @@ trait Trees extends ast.Trees {
     def tpt: UseTree
     def rhs: Expr
     def tpe: TypeState[Type] = tpt.tpe
+
+    def asString(ctx: Context): String = 
+      s"${mods.asString} ${tpt.asString(ctx)} = ${rhs.asString(ctx)}"
 
     def show(ctx: Context): String = 
       s"""|ValDef{
@@ -103,6 +115,10 @@ trait Trees extends ast.Trees {
     def isVoid: Boolean = expr == None
 
 
+    def asString(ctx: Context): String = expr match {
+      case None           => "return"
+      case Some(e)        => s"return ${e.asString(ctx)}"
+    }
     def show(ctx: Context): String = 
       s"""|Return{
           |expr=${expr.map(_.show(ctx))},
@@ -123,6 +139,11 @@ trait Trees extends ast.Trees {
         stmts.last.tpe
     }
 
+    def asString(ctx: Context): String = 
+      s"""|{
+          |${asStringList(stmts, ctx, ";\n")}
+          |}""".stripMargin
+
     def show(ctx: Context): String = 
       s"""|Block{
           |id=$id,
@@ -138,6 +159,9 @@ trait Trees extends ast.Trees {
     def lhs: Expr
     def rhs: Expr
     def tpe: TypeState[Type] = lhs.tpe
+
+    def asString(ctx: Context): String =
+      s"${lhs.asString(ctx)} = ${rhs.asString(ctx)}"
 
     def show(ctx: Context): String = 
       s"""|Assign{
@@ -155,6 +179,12 @@ trait Trees extends ast.Trees {
     def elsep: Expr
     def tpe: TypeState[Type] = toTypeState(VoidType)
 
+    def asString(ctx: Context): String = 
+      s"""|if(${cond.asString(ctx)})
+          |${thenp.asString(ctx)}
+          |else
+          |${elsep.asString(ctx)}""".stripMargin
+          
     def show(ctx: Context): String = 
       s"""|If{
           |cond=${cond.show(ctx)},
@@ -172,6 +202,16 @@ trait Trees extends ast.Trees {
     def cond: Expr
     def body: Expr
     def tpe: TypeState[Type] = toTypeState(VoidType)
+
+    def asString(ctx: Context): String = mods.isDoWhile match {
+      case false                       =>
+        s"""|while(${cond.asString(ctx)})
+            |${body.asString(ctx)}""".stripMargin
+      case true                        =>
+        s"""|do
+            |${body.asString(ctx)}
+            |(${cond.asString(ctx)})""".stripMargin
+    }
 
     def show(ctx: Context): String = 
       s"""|While{
@@ -191,6 +231,9 @@ trait Trees extends ast.Trees {
     def body: Expr
     def tpe: TypeState[Type] = toTypeState(VoidType)
 
+    def asString(ctx: Context): String = 
+      s"""|for(${asStringList(inits, ctx)}; ${cond.asString(ctx)}; ${asStringList(steps, ctx)})
+          |(${body.asString(ctx)})""".stripMargin
     def show(ctx: Context): String = 
       s"""|For{
           |id=$id,
@@ -210,6 +253,9 @@ trait Trees extends ast.Trees {
     def thenp: Expr
     def elsep: Expr
 
+    def asString(ctx: Context): String = 
+      s"${cond.asString(ctx)}?${thenp.asString(ctx)}:${elsep.asString(ctx)}"
+     
     def show(ctx: Context): String = 
       s"""|Ternary{
           |cond=${cond.show(ctx)},
@@ -225,6 +271,9 @@ trait Trees extends ast.Trees {
   trait Apply extends Expr {
     def fun: Expr
     def args: List[Expr]
+
+    def asString(ctx: Context): String =
+      s"${fun.asString(ctx)}(${asStringList(args, ctx)})"
 
     def show(ctx: Context): String = 
       s"""|Apply{

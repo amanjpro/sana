@@ -6,6 +6,7 @@ import sana.tiny
 import sana.calcj
 import sana.primj
 import sana.brokenj
+import sana.ooj
 import tiny.source.Position
 import tiny.contexts._
 import tiny.names.Name
@@ -14,6 +15,7 @@ import tiny.util.MonadUtils
 import calcj.ast.JavaOps._
 import primj.types
 import brokenj.ast
+import ooj.modifiers._
 
 
 import scalaz.{Name => _, _}
@@ -32,7 +34,7 @@ trait Trees extends ast.Trees {
 
     def show(ctx: Context): String = 
       s"""|ClassDef{
-          |mods=${mods.asString}
+          |mods=${mods.asString},
           |name=${name.asString},
           |parents=${showList(parents, ctx)},
           |body=${body.show(ctx)},
@@ -40,12 +42,19 @@ trait Trees extends ast.Trees {
           |pos=${pos}
           |}""".stripMargin
 
+    def asString(ctx: Context): String =
+      s"""|${mods.asString}
+          |class ${name.asString} extends ${asStringList(parents, ctx)}
+          |${body.asString(ctx)}
+          |}""".stripMargin
   } 
 
   trait New extends Expr {
     def tpt: UseTree
     def tpe: TypeState[Type] = tpt.tpe
 
+    def asString(ctx: Context): String =
+      s"new ${tpt.asString(ctx)}"
     def show(ctx: Context): String = 
       s"""|New{
           |tpt=${tpt.show(ctx)}
@@ -56,6 +65,9 @@ trait Trees extends ast.Trees {
 
   trait Select extends UseTree {
     def qual: UseTree
+
+    def asString(ctx: Context): String =
+      s"${qual.asString(ctx)}.${name(ctx)._2}"
 
     def show(ctx: Context): String = 
       s"""|Select{
@@ -70,6 +82,8 @@ trait Trees extends ast.Trees {
 
   trait This extends Expr {
     def enclosingClass: TreeId
+
+    def asString(ctx: Context): String = "this"
 
     def show(ctx: Context): String = 
       s"""|This{
@@ -89,6 +103,7 @@ trait Trees extends ast.Trees {
     def enclosingClass: TreeId
 
 
+    def asString(ctx: Context): String = "super"
     // TODO:
     // Get parent's type, not this
     // XXX: BUT WHICH ONE?

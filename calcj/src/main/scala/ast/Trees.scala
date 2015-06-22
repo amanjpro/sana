@@ -10,6 +10,7 @@ import tiny.contexts._
 import tiny.names._
 import tiny.types
 import tiny.modifiers.Flag
+import calcj.modifiers._
 import tiny.util.MonadUtils
 import calcj.ast.JavaOps._
 
@@ -30,6 +31,8 @@ trait Trees extends ast.Trees {
     val owner: TreeId = expr.owner
     override def tpe: TypeState[Type] = tpt.tpe
 
+    def asString(ctx: Context): String = 
+      s"(${tpt.asString(ctx)}) ${expr.asString(ctx)}"
     def show(ctx: Context): String = 
       s"""|Cast{
           |tpt=${tpt.show(ctx)},
@@ -46,6 +49,9 @@ trait Trees extends ast.Trees {
 
     val owner: TreeId = lhs.owner
 
+
+    def asString(ctx: Context): String = 
+      s"(${lhs.asString(ctx)}) $op (${rhs.asString(ctx)})"
 
     def show(ctx: Context): String = 
       s"""|Binary{
@@ -82,8 +88,13 @@ trait Trees extends ast.Trees {
 
     val owner: TreeId = expr.owner
 
+    def asString(ctx: Context): String = mods.isPostfix match {
+      case true    => s"${expr.asString(ctx)}$op"
+      case false   => s"${op}${expr.asString(ctx)}"
+    }
     def show(ctx: Context): String = 
       s"""|Unary{
+          |mods=${mods.asString},
           |expr=${expr.show(ctx)},
           |op=${op.toString},
           |tpe=${tpe.eval(ctx)},
@@ -98,6 +109,7 @@ trait Trees extends ast.Trees {
     val owner: TreeId = NoId
     override def tpe: TypeState[Type] = const.tpe
 
+    def asString(ctx: Context): String = const.toString
     def show(ctx: Context): String = 
       s"Lit($const)"
   }

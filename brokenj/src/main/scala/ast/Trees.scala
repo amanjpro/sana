@@ -37,6 +37,9 @@ trait Trees extends ast.Trees {
           |pos=${pos}
           |}""".stripMargin
 
+    def asString(ctx: Context): String =
+      s"${name.asString}: ${stmt.asString(ctx)}"
+
   } 
 
   trait Break extends Expr {
@@ -50,12 +53,21 @@ trait Trees extends ast.Trees {
           |pos=${pos}
           |}""".stripMargin
 
+    def asString(ctx: Context): String = label match {
+      case None            => "break"
+      case Some(n)         => s"break ${n.asString}"
+    }
   }
 
   trait Continue extends Expr {
     def label: Option[Name]
     def tpe: TypeState[Type] = toTypeState(VoidType)
 
+
+    def asString(ctx: Context): String = label match {
+      case None            => "continue"
+      case Some(n)         => s"continue ${n.asString}"
+    }
     def show(ctx: Context): String = 
       s"""|Continue{
           |label=${label.map(_.asString).getOrElse("<empty>")},
@@ -69,6 +81,10 @@ trait Trees extends ast.Trees {
     def guards: List[Expr]
     def body: Tree
 
+    def asString(ctx: Context): String = {
+      val cases = asStringList(guards, ctx, ":\n").map("case " + _)
+      s"${cases}\n${body.asString(ctx)}"
+    }
 
     def tpe: TypeState[Type] = toTypeState(VoidType)
     def show(ctx: Context): String = 
@@ -87,6 +103,12 @@ trait Trees extends ast.Trees {
     def default: Tree
 
     def tpe: TypeState[Type] = toTypeState(VoidType)
+    def asString(ctx: Context): String =
+      s"""|switch(${expr.asString(ctx)}){
+          |${asStringList(cases, ctx, "\n")}
+          |default:
+          |${default.asString(ctx)}""".stripMargin
+
     def show(ctx: Context): String = 
       s"""|Switch{
           |expr=${expr.show(ctx)},
