@@ -4,13 +4,16 @@ package ch.usi.inf.l3.sana.ooj.types
 import ch.usi.inf.l3.sana
 import sana.primj
 import sana.tiny
+import sana.ooj
 import tiny.names.Name
 import primj.types
+import ooj.util.Definitions
 
 import scala.collection.immutable.Set
 
 
 trait Types extends types.Types {
+  self: Definitions =>
 
   trait RefType extends Type
 
@@ -42,6 +45,22 @@ trait Types extends types.Types {
   }
 
 
+  trait ArrayType extends RefType {
+    def elemType: Type
+
+    def =:=(t: Type): Boolean = this == t
+    def =/=(t: Type): Boolean = this != t
+    def <:<(t: Type): Boolean = t match {
+      case ObjectType         => true
+      case _                  => false
+    }
+
+    def >:>(t: Type): Boolean = this =:= t
+
+    def name: Name   = ARRAY_TYPE_NAME
+    def show: String = name.asString
+  }
+
   // object StringType extends ClassType {
   //   override def show: String = "String type"
   //   def name: Name = Name("java.lang.String")
@@ -59,6 +78,8 @@ trait Types extends types.Types {
     override def >:>(t: Type): Boolean = t match {
       case ct: ClassType      =>
         true
+      case ct: ArrayType      =>
+        true
       case _                  => false
     }
     def name: Name = Name("java.lang.Object")
@@ -74,7 +95,7 @@ trait Types extends types.Types {
     def >:>(t: Type): Boolean = t =:= this
 
 
-    override def show: String = "bottom type"
+    def show: String = "bottom type"
     def name: Name = Name("NULL")
 
   }
@@ -96,6 +117,19 @@ trait Types extends types.Types {
       new ClassTypeImpl(name, parents)
   }
 
+  trait ArrayTypeExtractor {
+      def unapply(at: ArrayType): Option[Type] = at match {
+      case null         => None
+      case _            => Some(at.elemType)
+    }
+  }
+
+
+  trait ArrayTypeFactory {
+    private class ArrayTypeImpl(val elemType: Type) extends ArrayType
+
+    def apply(elemType: Type): ArrayType = new ArrayTypeImpl(elemType)
+  }
 
   val ClassType = new ClassTypeExtractor with ClassTypeFactory {}
 }
