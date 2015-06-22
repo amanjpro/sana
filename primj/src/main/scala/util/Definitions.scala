@@ -24,5 +24,9 @@ trait Definitions extends calcj.util.Definitions {
 
     superTypes ++ langTypes
   }
+
+
+
+  val VOID_TYPE_NAME: Name       = VoidType.name
 }
 
