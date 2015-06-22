@@ -29,7 +29,7 @@ trait Trees extends ast.Trees {
   trait ClassDef extends DefTree with Modifiable {
     def mods: Flag
     def name: Name
-    def parents: List[TypeUse]
+    def parents: List[UseTree]
     def body: Template
 
     def show(ctx: Context): String = 
@@ -126,7 +126,7 @@ trait Trees extends ast.Trees {
 
   trait ClassDefExtractor {
     def unapply(cd: ClassDef): Option[(Flag, Name, 
-                  List[TypeUse], Template)] = cd match {
+                  List[UseTree], Template)] = cd match {
       case null     => None
       case _        => Some((cd.mods, cd.name, cd.parents, cd.body))
     }
@@ -145,14 +145,15 @@ trait Trees extends ast.Trees {
 
   trait ClassDefFactory {
     private class ClassDefImpl(val mods: Flag, val id: TreeId, 
-      val name: Name, val parents: List[TypeUse], val body: Template,
+      val name: Name, val parents: List[UseTree], val body: Template,
       val tpe: TypeState[Type], val pos: Option[Position], 
       val owner: TreeId) extends ClassDef
 
-    def apply(mods: Flag, id: TreeId, name: Name, parents: List[TypeUse],
+    def apply(mods: Flag, id: TreeId, name: Name, parents: List[UseTree],
       body: Template, tpe: TypeState[Type], 
-      pos: Option[Position], owner: TreeId): ClassDef =
+      pos: Option[Position], owner: TreeId): ClassDef = {
       new ClassDefImpl(mods, id, name, parents, body, tpe, pos, owner)
+    }
   }
 
 
