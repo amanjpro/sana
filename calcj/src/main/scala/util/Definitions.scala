@@ -50,5 +50,17 @@ trait Definitions {
       z + (tid -> newTreeInfo(noflags, name, tpe, BuiltInTypeKind))
     })
   }
+
+
+  val BYTE_TYPE_NAME: Name          = ByteType.name
+  val SHORT_TYPE_NAME: Name         = ShortType.name
+  val CHAR_TYPE_NAME: Name          = CharType.name
+  val INT_TYPE_NAME: Name           = IntType.name
+  val LONG_TYPE_NAME: Name          = LongType.name
+  val FLOAT_TYPE_NAME: Name         = FloatType.name
+  val DOUBLE_TYPE_NAME: Name        = DoubleType.name
+  val BOOLEAN_TYPE_NAME: Name       = BooleanType.name
+
+
 }
 
