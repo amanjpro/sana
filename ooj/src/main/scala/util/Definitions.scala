@@ -28,6 +28,9 @@ trait Definitions extends primj.util.Definitions {
 
   val STRING_TYPE_NAME: Name = Name("java.lang.String")
   val OBJECT_TYPE_NAME: Name = Name("java.lang.Object")
+  val ARRAY_TYPE_NAME: Name  = Name("<array>")
+
+  val CONSTRUCTOR_NAME: Name = Name("<init>")
 
   // to TypeUtils
   // def objectClassType(ctx: Context): ClassType = 
