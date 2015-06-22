@@ -9,19 +9,19 @@ package ch.usi.inf.l3.sana.tiny.modifiers
   * @constructor creates a new Flag with the given mask value
   * @param mask the value of the flag
   */
-class Flag(val mask: Int) extends AnyVal {
+class Flag(val mask: Long) extends AnyVal {
   /** @see [[scala.Int.&(x:Int):*]] */
   def &(flag: Flag): Flag = Flag(flag.mask & mask)
   /** @see [[scala.Int.|(x:Int):*]] */
   def |(flag: Flag): Flag = Flag(flag.mask | mask)
-  /** @see [[scala.Int.>>>(x:Int):*]] */
-  def >>>(flag: Flag): Flag = Flag(flag.mask >>> mask)
-  /** @see [[scala.Int.>>(x:Int):*]] */
-  def >>(flag: Flag): Flag = Flag(flag.mask >> mask)
-  /** @see [[scala.Int.<<(x:Int):*]] */
-  def <<(flag: Flag): Flag = Flag(flag.mask << mask)
-  /** @see [[scala.Int.^(x:Int):*]] */
-  def ^(flag: Flag): Flag = Flag(flag.mask ^ mask)
+  // /** @see [[scala.Int.>>>(x:Int):*]] */
+  // def >>>(flag: Flag): Flag = Flag(flag.mask >>> mask)
+  // /** @see [[scala.Int.>>(x:Int):*]] */
+  // def >>(flag: Flag): Flag = Flag(flag.mask >> mask)
+  // /** @see [[scala.Int.<<(x:Int):*]] */
+  // def <<(flag: Flag): Flag = Flag(flag.mask << mask)
+  // /** @see [[scala.Int.^(x:Int):*]] */
+  // def ^(flag: Flag): Flag = Flag(flag.mask ^ mask)
 }
 /**
   * Companion object of class Flag
@@ -33,7 +33,7 @@ object Flag {
     * @param mask the value of the flag
     * @return a new instance of Flag with the given mask value
     */
-  def apply(mask: Int): Flag = new Flag(mask)
+  def apply(mask: Long): Flag = new Flag(mask)
 }
 
 
