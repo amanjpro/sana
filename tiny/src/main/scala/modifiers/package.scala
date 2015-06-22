@@ -12,6 +12,7 @@ package object modifiers {
 
     def hasAnyFlags: Boolean = mask != FlagSet.NO_FLAGS
     def hasNoFlags: Boolean  = !hasAnyFlags
+    val isCompiled: Boolean  = hasFlag(FlagSet.COMPILED)
 
     def hasFlag(flag: Flag): Boolean =
       (mask & flag) == flag

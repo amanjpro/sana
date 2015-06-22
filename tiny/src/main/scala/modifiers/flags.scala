@@ -41,4 +41,5 @@ object Flag {
 
 trait FlagSet {
   val NO_FLAGS: Flag = Flag(0)
+  val COMPILED: Flag = Flag(1 << 1)
 }
