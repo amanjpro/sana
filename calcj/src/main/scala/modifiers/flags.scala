@@ -8,5 +8,5 @@ import tiny.modifiers.Flag
 
 
 trait FlagSet {
-  val POSTFIX: Flag        = Flag(1 << 1)
+  val POSTFIX: Flag        = Flag(1 << 2)
 }
