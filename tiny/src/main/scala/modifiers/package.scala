@@ -17,6 +17,9 @@ package object modifiers {
     def hasFlag(flag: Flag): Boolean =
       (mask & flag) == flag
 
-    def asString: String = "IMPLEMENT ME"
+
+    def ops: List[(Boolean, String)] = List((hasNoFlags, "NO_FLAGS"),
+                                            (isCompiled, "COMPILED"))
+    def asString: String = ops.filter(_._1).map(_._2).mkString(" | ")
   }
 }

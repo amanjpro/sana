@@ -20,5 +20,13 @@ package object modifiers {
     val isLocalVariable: Boolean = hasFlag(FlagSet.LOCAL_VARIABLE)
     val isField: Boolean         = hasFlag(FlagSet.FIELD)
     val isFinal: Boolean         = hasFlag(FlagSet.FINAL)
+
+
+    override def ops: List[(Boolean, String)] = 
+      List((isDoWhile,       "DO_WHILE"),
+           (isParam,         "PARAM"),
+           (isLocalVariable, "LOCAL_VARIABLE"),
+           (isField,         "FIELD"),
+           (isFinal,         "FINAL")) ++ super.ops
   }
 }

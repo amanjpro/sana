@@ -14,5 +14,8 @@ package object modifiers {
 
   implicit class FlagOps(mods: Flag) extends tiny.modifiers.FlagOps(mods) {
     val isPostfix: Boolean       = hasFlag(FlagSet.POSTFIX)
+
+    override def ops: List[(Boolean, String)] = 
+      (isPostfix, "POSTFIX")::super.ops
   }
 }
