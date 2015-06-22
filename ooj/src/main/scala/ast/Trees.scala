@@ -26,8 +26,7 @@ trait Trees extends ast.Trees {
 
   /********************* AST Nodes *********************************/
 
-  trait ClassDef extends DefTree with Modifiable {
-    def mods: Flag
+  trait ClassDef extends TypeTree {
     def name: Name
     def parents: List[UseTree]
     def body: Template
