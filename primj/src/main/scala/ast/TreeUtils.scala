@@ -6,7 +6,7 @@ import sana.calcj
 import sana.primj
 import tiny.ast
 import calcj.ast.JavaOps.{Inc, Dec}
-import primj.modifiers._
+import primj.modifiers.Ops._
 
 
 trait TreeUtils extends ast.TreeUtils {

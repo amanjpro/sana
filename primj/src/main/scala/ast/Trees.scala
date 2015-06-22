@@ -7,8 +7,9 @@ import sana.calcj
 import sana.primj
 import tiny.source.Position
 import tiny.contexts._
-import tiny.modifiers.Flag
+import tiny.modifiers.Flags
 import primj.modifiers._
+import primj.modifiers.Ops._
 import tiny.names.Name
 import tiny.util.MonadUtils
 import calcj.ast.JavaOps._
@@ -323,7 +324,7 @@ trait Trees extends ast.Trees {
 
 
   trait WhileExtractor {
-    def unapply(w: While): Option[(Flag, Expr, Expr)] = w match {
+    def unapply(w: While): Option[(Flags, Expr, Expr)] = w match {
       case null => None
       case _    => Some((w.mods, w.cond, w.body))
     }
@@ -360,14 +361,14 @@ trait Trees extends ast.Trees {
 
   trait MethodDefExtractor {
     def unapply(md: MethodDef): 
-      Option[(Flag, UseTree, Name, List[ValDef], Expr)] = md match {
+      Option[(Flags, UseTree, Name, List[ValDef], Expr)] = md match {
         case null => None
         case _    => Some((md.mods, md.ret, md.name, md.params, md.body))
       }
   }
 
   trait ValDefExtractor {
-    def unapply(vd: ValDef): Option[(Flag, UseTree, Name, Tree)] = 
+    def unapply(vd: ValDef): Option[(Flags, UseTree, Name, Tree)] = 
       vd match {
         case null => None
         case _    => Some((vd.mods, vd.tpt, vd.name, vd.rhs))
@@ -419,12 +420,12 @@ trait Trees extends ast.Trees {
 
 
   trait WhileFactory {
-    private class WhileImpl(val mods: Flag, val cond: Expr, 
+    private class WhileImpl(val mods: Flags, val cond: Expr, 
       val body: Expr, val pos: Option[Position],
       val owner: TreeId) extends While
 
 
-    def apply(mods: Flag, cond: Expr, body: Expr,
+    def apply(mods: Flags, cond: Expr, body: Expr,
       pos: Option[Position] = None, owner: TreeId = NoId): While = 
       new WhileImpl(mods, cond, body, pos, owner)
 
@@ -489,23 +490,23 @@ trait Trees extends ast.Trees {
 
 
   trait MethodDefFactory {
-    private class MethodDefImpl(val mods: Flag, val id: TreeId,
+    private class MethodDefImpl(val mods: Flags, val id: TreeId,
       val ret: UseTree, val name: Name, val params: List[ValDef], 
       val body: Expr, val pos: Option[Position], 
       val owner: TreeId) extends MethodDef
 
-    def apply(mods: Flag, id: TreeId, ret: UseTree, name: Name, 
+    def apply(mods: Flags, id: TreeId, ret: UseTree, name: Name, 
       params: List[ValDef], body: Expr, pos: Option[Position] = None, 
       owner: TreeId): MethodDef = 
         new MethodDefImpl(mods, id, ret, name, params, body, pos, owner)
   }
 
   trait ValDefFactory {
-    private class ValDefImpl(val mods: Flag, val id: TreeId, 
+    private class ValDefImpl(val mods: Flags, val id: TreeId, 
       val tpt: UseTree, val name: Name, val rhs: Expr, 
       val pos: Option[Position], val owner: TreeId) extends ValDef
 
-    def apply(mods: Flag, id: TreeId, tpt: UseTree, name: Name, 
+    def apply(mods: Flags, id: TreeId, tpt: UseTree, name: Name, 
       rhs: Expr, pos: Option[Position] = None, 
       owner: TreeId = NoId): ValDef = 
         new ValDefImpl(mods, id, tpt, name, rhs, pos, owner)

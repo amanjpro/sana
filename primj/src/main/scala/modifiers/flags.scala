@@ -9,11 +9,9 @@ import tiny.modifiers.Flag
 
 
 
-trait FlagSet extends calcj.modifiers.FlagSet {
-  val DO_WHILE: Flag        = Flag(1 << 3)
-  val PARAM: Flag           = Flag(1 << 4)
-  val LOCAL_VARIABLE: Flag  = Flag(1 << 5)
-  val FIELD: Flag           = Flag(1 << 6)
-  val FINAL: Flag           = Flag(1 << 7)
-}
+case object DO_WHILE extends Flag
+case object PARAM extends Flag
+case object LOCAL_VARIABLE extends Flag
+case object FIELD extends Flag
+case object FINAL extends Flag
 

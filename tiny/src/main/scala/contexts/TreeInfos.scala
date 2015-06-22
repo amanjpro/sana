@@ -4,6 +4,7 @@ import ch.usi.inf.l3.sana.tiny
 import tiny.Global
 import tiny.names.Name
 import tiny.modifiers._
+import tiny.modifiers.Ops._
 import tiny.types.Types
 import tiny.ast.Trees
 
@@ -16,11 +17,11 @@ trait TreeInfos {
     def tpe: TypeState[Type]
     def name: Name
     def kind: TreeKind
-    def mods: Flag
+    def mods: Flags
   }
 
 
-  protected class TreeInfoImpl(val mods: Flag,
+  protected class TreeInfoImpl(val mods: Flags,
     val name: Name, val tpe: TypeState[Type],
     val kind: TreeKind) extends TreeInfo {
   }
@@ -34,7 +35,7 @@ trait TreeInfos {
         new TreeInfoImpl(noflags, tree.name, tree.tpe, kind)
   }
 
-  def newTreeInfo(mods: Flag, info: Name, 
+  def newTreeInfo(mods: Flags, info: Name, 
         tpe: TypeState[Type], kind: TreeKind): TreeInfo =
     new TreeInfoImpl(mods, info, tpe, kind)
 

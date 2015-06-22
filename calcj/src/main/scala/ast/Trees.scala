@@ -9,8 +9,9 @@ import tiny.source.Position
 import tiny.contexts._
 import tiny.names._
 import tiny.types
-import tiny.modifiers.Flag
+import tiny.modifiers.Flags
 import calcj.modifiers._
+import calcj.modifiers.Ops._
 import tiny.util.MonadUtils
 import calcj.ast.JavaOps._
 
@@ -138,7 +139,7 @@ trait Trees extends ast.Trees {
   }
 
   trait UnaryExtractor {
-    def unapply(u: Unary): Option[(Flag, UOp, Expr)] = u match {
+    def unapply(u: Unary): Option[(Flags, UOp, Expr)] = u match {
       case null => None
       case _    => Some((u.mods, u.op, u.expr))
     }
@@ -180,11 +181,11 @@ trait Trees extends ast.Trees {
   }
 
   trait UnaryFactory {
-    private class UnaryImpl(val mods: Flag, val op: UOp,
+    private class UnaryImpl(val mods: Flags, val op: UOp,
       val expr: Expr, val tpe: TypeState[Type],
       val pos: Option[Position]) extends Unary
 
-    def apply(mods: Flag, op: UOp, expr: Expr, tpe: TypeState[Type], 
+    def apply(mods: Flags, op: UOp, expr: Expr, tpe: TypeState[Type], 
       pos: Option[Position]): Unary =
       new UnaryImpl(mods, op, expr, tpe, pos)
   }

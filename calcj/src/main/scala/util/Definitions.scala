@@ -8,7 +8,7 @@ import tiny.contexts.TreeId
 import calcj.types.Types
 import calcj.ast.Trees
 import calcj.contexts.TreeInfos
-import ch.usi.inf.l3.sana.tiny.modifiers._
+import ch.usi.inf.l3.sana.tiny.modifiers.Ops._
 import tiny.names._
 
 

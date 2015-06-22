@@ -6,7 +6,7 @@ import sana.tiny
 import tiny.contexts.{TreeId, NoId}
 import tiny.names.Name
 import primj.Global
-import primj.modifiers._
+import primj.modifiers.Ops._
 
 
 

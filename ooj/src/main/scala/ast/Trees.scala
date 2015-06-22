@@ -10,7 +10,7 @@ import sana.ooj
 import tiny.source.Position
 import tiny.contexts._
 import tiny.names.Name
-import tiny.modifiers.Flag
+import tiny.modifiers.Flags
 import tiny.util.MonadUtils
 import calcj.ast.JavaOps._
 import primj.types
@@ -124,7 +124,7 @@ trait Trees extends ast.Trees {
   
 
   trait ClassDefExtractor {
-    def unapply(cd: ClassDef): Option[(Flag, Name, 
+    def unapply(cd: ClassDef): Option[(Flags, Name, 
                   List[UseTree], Template)] = cd match {
       case null     => None
       case _        => Some((cd.mods, cd.name, cd.parents, cd.body))
@@ -143,12 +143,12 @@ trait Trees extends ast.Trees {
 
 
   trait ClassDefFactory {
-    private class ClassDefImpl(val mods: Flag, val id: TreeId, 
+    private class ClassDefImpl(val mods: Flags, val id: TreeId, 
       val name: Name, val parents: List[UseTree], val body: Template,
       val tpe: TypeState[Type], val pos: Option[Position], 
       val owner: TreeId) extends ClassDef
 
-    def apply(mods: Flag, id: TreeId, name: Name, parents: List[UseTree],
+    def apply(mods: Flags, id: TreeId, name: Name, parents: List[UseTree],
       body: Template, tpe: TypeState[Type], 
       pos: Option[Position], owner: TreeId): ClassDef = {
       new ClassDefImpl(mods, id, name, parents, body, tpe, pos, owner)

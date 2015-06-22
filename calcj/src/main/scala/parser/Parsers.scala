@@ -8,6 +8,7 @@ import tiny.source.Position
 import tiny.util.{CompilationUnits, MonadUtils}
 import tiny.contexts._
 import tiny.parser
+import tiny.modifiers.Flags
 import calcj.Global
 import calcj.ast.Trees
 import calcj.ast.Constants
@@ -15,6 +16,7 @@ import calcj.ast.JavaOps._
 import calcj.types.Types
 import calcj.antlr._
 import calcj.modifiers._
+import calcj.modifiers.Ops._
 
 import org.antlr.v4.runtime.misc.NotNull
 import org.antlr.v4.runtime.ParserRuleContext
@@ -55,7 +57,7 @@ trait Parsers extends parser.Parsers {
       }
       (e1, op) match {
         case (e: Expr, op: POp) if isPostfix => 
-          Unary(FlagSet.POSTFIX, op, e, toTypeState(notype), pos(ctx))
+          Unary(Flags(POSTFIX), op, e, toTypeState(notype), pos(ctx))
         case (e: Expr, op: UOp) => 
           Unary(noflags, op, e, toTypeState(notype), pos(ctx))
         case _                  =>

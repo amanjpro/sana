@@ -8,15 +8,15 @@ import tiny.types.Types
 import tiny.ast.Trees
 import tiny.names.Name
 import primj.modifiers._
-import tiny.modifiers.Flag
+import tiny.modifiers.Flags
 
 trait TreeInfos extends calcj.contexts.TreeInfos {
   self: Trees with Types =>
 
-  def newValDefInfo(mods: Flag, info: Name, tpe: TypeState[Type]): TreeInfo =
+  def newValDefInfo(mods: Flags, info: Name, tpe: TypeState[Type]): TreeInfo =
     new TreeInfoImpl(mods, info, tpe, VariableKind)
 
-  def newMethodDefInfo(mods: Flag, info: Name, 
+  def newMethodDefInfo(mods: Flags, info: Name, 
       tpe: TypeState[Type]): TreeInfo =
     new TreeInfoImpl(mods, info, tpe, MethodKind)
 

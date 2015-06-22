@@ -439,7 +439,7 @@ trait Trees {
       * @see [[tiny.modifiers.Flags]]
       * @return the modifiers of this node.
       */
-    def mods: Flag
+    def mods: Flags
   }
 
   //////////////////////////////////////////////////////////////////
