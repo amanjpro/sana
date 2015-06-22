@@ -11,6 +11,7 @@ package object modifiers {
   implicit class FlagOps(mask: Flag) {
 
     def hasAnyFlags: Boolean = mask != FlagSet.NO_FLAGS
+    def hasNoFlags: Boolean  = !hasAnyFlags
 
     def hasFlag(flag: Flag): Boolean =
       (mask & flag) == flag
