@@ -5,6 +5,7 @@ import ch.usi.inf.l3.sana
 import sana.tiny
 import sana.calcj
 import sana.primj
+import sana.brokenj
 import tiny.source.Position
 import tiny.contexts._
 import tiny.names.Name
@@ -20,7 +21,8 @@ import scalaz.{Name => _, _}
 import Scalaz._
 
 trait Trees extends ast.Trees {
-  self: types.Types with Constants with TreeContexts with MonadUtils =>
+  self: types.Types with Constants with TreeContexts with MonadUtils 
+        with primj.util.Definitions =>
 
   /********************* AST Nodes *********************************/
 

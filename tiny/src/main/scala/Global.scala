@@ -21,6 +21,7 @@ trait Global extends Trees with
         TreeContexts with
         TreeInfos with
         Reporting with
+        Definitions with
         MonadUtils {
 
 

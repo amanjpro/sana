@@ -13,7 +13,7 @@ import tiny.names._
 
 
 
-trait Definitions {
+trait Definitions extends tiny.util.Definitions {
   self: TreeInfos with Types with Trees =>
   // byte, short, int, long, char
   // boolean

@@ -22,7 +22,8 @@ import scalaz.{Name => _, _}
 import Scalaz._
 
 trait Trees extends ast.Trees {
-  self: types.Types with Constants with TreeContexts with MonadUtils =>
+  self: types.Types with Constants with TreeContexts with MonadUtils 
+        with ooj.util.Definitions =>
 
   /********************* AST Nodes *********************************/
 

@@ -42,7 +42,7 @@ import scalaz.{Name => _, _}
   * @version 0.1
   */
 trait Trees {
-  self: Types with TreeContexts with MonadUtils =>
+  self: Types with TreeContexts with MonadUtils with Definitions =>
 
   type TypeState[T <: Type] = State[Context, T]
   def toTypeState[A <: Type](t: A): TypeState[A] = t.point[ContextState]
