@@ -371,7 +371,7 @@ trait TreeContexts {
   trait RootContext extends Context {
     def definitions: Map[TreeId, TreeInfo]
 
-    private def findInDefinitions(name: Name, 
+    protected def findInDefinitions(name: Name, 
                 p: TreeInfo => Boolean): TreeId =
       definitions.toList.foldLeft(NoId: TreeId)((z, y) => y._2 match {
         case info  if info.name == name && p(info)                 =>
