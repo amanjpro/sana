@@ -30,7 +30,7 @@ import scala.language.{higherKinds,implicitConversions}
  * @version 0.1
  */
 trait IDAssigners extends passes.Phases {
-  type G = Global
+  type G <: Global
   import global._
 
   trait IDAssigner extends TransformerPhase {

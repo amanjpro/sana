@@ -20,7 +20,7 @@ import scala.language.higherKinds
 import Scalaz._
 
 trait Namers extends names.Namers {
-  type G = Global
+  type G <: Global
   import global._
 
   trait Namer extends super.Namer {
