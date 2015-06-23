@@ -137,6 +137,20 @@ trait Trees {
   }
 
   /**
+    * The base trait for all trees that can have modifier, like `private`,
+    * `public` and others.
+    *
+    * @group Utilities
+    */
+  trait Modifiable extends Tree {
+    /**
+      * @see [[tiny.modifiers.Flags]]
+      * @return the modifiers of this node.
+      */
+    def mods: Flags
+  }
+
+  /**
    * The base trait for all trees that introduce a new name.
    *
    * @group Api
@@ -425,22 +439,7 @@ trait Trees {
     def show(ctx: Context): String = "<bad-tree>"
   }
 
-  //////////////////////////////////////////////////////////////////
-  // Utilities
-  //////////////////////////////////////////////////////////////////
-  /**
-    * The base trait for all trees that can have modifier, like `private`,
-    * `public` and others.
-    *
-    * @group Utilities
-    */
-  trait Modifiable {
-    /**
-      * @see [[tiny.modifiers.Flags]]
-      * @return the modifiers of this node.
-      */
-    def mods: Flags
-  }
+  
 
   //////////////////////////////////////////////////////////////////
   // Tree Traverses
