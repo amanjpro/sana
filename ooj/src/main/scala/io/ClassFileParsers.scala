@@ -205,7 +205,7 @@ trait ClassFileParsers {
         throw new Exception("This should not happen")
       case xs                     =>
         val rest = stringToUseTree(xs.take(xs.size - 1))
-        Select(rest, NoId, Some(xs.last), None, NoId)
+        Select(NoId, rest, Some(xs.last), None, NoId)
     }
 
 

@@ -166,18 +166,18 @@ trait Trees extends ast.Trees {
   }
 
   trait SelectFactory {
-    private class SelectImpl(val qual: UseTree, val uses: TreeId,
+    private class SelectImpl(val uses: TreeId, val qual: UseTree,
       val nameAtParser: Option[String],
       val pos: Option[Position], val owner: TreeId) extends Select
 
-    def apply(qual: UseTree, uses: TreeId,
+    def apply(uses: TreeId, qual: UseTree,
       nameAtParser: Option[String],
       pos: Option[Position], owner: TreeId): Select =
-        new SelectImpl(qual, uses, nameAtParser, pos, owner)
+        new SelectImpl(uses, qual, nameAtParser, pos, owner)
 
-    def apply(qual: UseTree, uses: TreeId,
+    def apply(uses: TreeId, qual: UseTree,
       pos: Option[Position], owner: TreeId): Select =
-        new SelectImpl(qual, uses, None, pos, owner)
+        new SelectImpl(uses, qual, None, pos, owner)
   }
 
   trait ThisFactory {
