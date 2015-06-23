@@ -30,17 +30,20 @@ class ClassPathCatalog(classpath: List[JFile]) {
     })
 
 
-  private def toPath(path: List[String]): Path = path match {
+  private def toPath(path: List[String],
+                     isClass: Boolean): Path = path match {
     case Nil                                            => ???
-    case List(x)                                        =>
+    case List(x)     if isClass                         =>
       new File(x + ".class")
+    case List(x)                                        =>
+      new Directory(x, SortedSet.empty[Path])
     case (x::xs)                                        =>
-      val rest = toPath(xs)
+      val rest = toPath(xs, isClass)
       new Directory(x, SortedSet(rest))
   }
 
-  def defines(fullName: String): Boolean = {
-    val path = toPath(fullName.split("[.]").toList)
+  def defines(fullName: String, isClass: Boolean): Boolean = {
+    val path = toPath(fullName.split("[.]").toList, isClass)
     val r = catalog.foldLeft(false)((z, y) => {
       z || y.path.foldLeft(false)((z, y) => z || y.defines(path))
     })
@@ -93,7 +96,10 @@ class ClassPathCatalog(classpath: List[JFile]) {
     def defines(that: Path): Boolean = that match {
       case that: Directory if this == that             =>
         children.foldLeft(false){
-          (z, y) => z || y.defines(that.children.toList.head)
+          (z, y) => {
+            val kids = that.children.toList
+            z || (if (kids == Nil) true else y.defines(kids.head))
+          }
         }
       case _                                           =>
         false
