@@ -93,21 +93,25 @@ trait Namers extends names.Namers {
       _       <- modifySW(_.update(v.id, info))
     } yield v
 
+    def nameIdents(id: Ident): NamerMonad[Ident] = for {
+      env  <- getSW
+      name <- pointSW(id.nameAtParser.map(Name(_)).getOrElse(ERROR_NAME))
+      tid  <- pointSW(env.lookup(name, 
+                 _.kind.isInstanceOf[TermKind], id.owner))
+      _    <- tid match {
+                case NoId    =>
+                  toNamerMonad(error(NAME_NOT_FOUND,
+                    id.toString, "a name", id.pos, id))
+                case _     =>
+                  pointSW(())
+              }
+     } yield Ident(tid, id.owner, id.pos)
+
     def nameExprs(expr: Expr): NamerMonad[Expr] = expr match {
       case lit:Lit                                    => pointSW(lit)
       case id: Ident                                  => for {
-       env  <- getSW
-       name <- pointSW(id.nameAtParser.map(Name(_)).getOrElse(ERROR_NAME))
-       tid  <- pointSW(env.lookup(name, 
-                  _.kind.isInstanceOf[TermKind], id.owner))
-       _    <- tid match {
-                 case NoId    =>
-                   toNamerMonad(error(NAME_NOT_FOUND,
-                     id.toString, "a name", id.pos, id))
-                 case _     =>
-                   pointSW(())
-               }
-      } yield Ident(tid, id.owner, id.pos)
+        r   <- nameIdents(id)
+      } yield r
       case cast:Cast                                  => for {
        tpt  <- nameTypeUses(cast.tpt)
        expr <- nameExprs(cast.expr) 
