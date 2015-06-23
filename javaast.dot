@@ -2,90 +2,78 @@ strict digraph JavaAST {
   size="10.0,3.5";
   orientation="landscape";
   ratio=fill;
-  /*
-
-    -- DefTree
-    TermTree, TypeTree
-    -- TypeTree
-    class, interface
-
-    -- TermTree 
-    filed, variable, param, 
-    method, constructor 
-
-
-    -- Statement
-    switch, if, while, for, do-while, case, break
-    block
-    try-catch
-    assignment
-
-
-
-    -- Expr
-    postfix, ternary, unary, binary
-    literals
-    cast
-    new, ident
-    method call, select
-    new array, array access 
-
-
-    
-    -- Alone
-    return
-  */
-  Tree -> DefTree;
-  Tree -> Statement;
+  
+  Tree -> IdentifiedTree;
+  Tree -> NamedTree;
+  Tree -> Modifiable;
+  Tree -> Expr;
+  Tree -> UseTree;
+  Tree -> Template;
   Tree -> Case;
 
 
   subgraph {
-    DefTree -> TermTree;
+    Modifiable -> DefTree;
+    Modifiable -> While;
+    Modifiable -> Unary;
+  }
+
+  subgraph {
+    IdentifiedTree -> DefTree;
+    IdentifiedTree -> BadTree;
+    IdentifiedTree -> Block;
+    IdentifiedTree -> For;
+  }
+
+  subgraph {
+    NamedTree -> DefTree;
+    NamedTree -> Label;
+  }
+
+
+  subgraph {
     DefTree -> TypeTree;
+    DefTree -> TermTree;
   }
 
   subgraph {
     TypeTree -> ClassDef;
   }
-  
-  subgraph {
-    DefTree -> ValDef;
-    DefTree -> MethodDef;
-  }
 
   subgraph {
-    Statement -> Block;
-    Statement -> Expr;
-    Statement -> Switch;
-    Statement -> Label;
-    Statement -> Synchronized;
-    Statement -> If;
-    Statement -> While;
-    Statement -> For;
-    Statement -> DoWhile;
-    Statement -> Break;
-    Statement -> Continue;
-    Statement -> Return;
-    Statement -> Try;
-    Statement -> Assign;
+    TermTree -> MethodDef;
+    TermTree -> ValDef;
   }
 
+
   subgraph {
-    Expr -> Postfix;
+    Expr -> Empty;
+    Expr -> Ident;
+    Expr -> Cast;
     Expr -> Binary;
     Expr -> Unary;
+    Expr -> Lit;
+    Expr -> Return;
+    Expr -> Block;
+    Expr -> Assign;
+    Expr -> If;
+    Expr -> While;
+    Expr -> For;
     Expr -> Ternary;
-    Expr -> Ident;
-    Expr -> Select;
-    Expr -> Literal;
     Expr -> Apply;
-    Expr -> ArrayAccess;
+    Expr -> Label;
+    Expr -> Break;
+    Expr -> Continue;
+    Expr -> Switch;
     Expr -> New;
-    Expr -> Throw;
-    Expr -> NewArray;
-    Expr -> Cast;
+    Expr -> This;
+    Expr -> Super;
   }
-  
 
+
+  subgraph {
+    UseTree -> TypeUse;
+    UseTree -> Ident;
+    UseTree -> Select;
+  }
 }
