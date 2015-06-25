@@ -46,6 +46,16 @@ trait Namers extends names.Namers {
       r       <- pointSW(Template(members, tmpl.owner))
     } yield r
 
+    def nameUseTrees(use: UseTree): NamerMonad[UseTree] = use match {
+      case tuse: TypeUse                                => for {
+        r <- nameTypeUses(tuse)
+      } yield r
+      case id: Ident                                    => for {
+        r <- nameIdents(id)
+      } yield r
+    }
+
+    def nameTypeUses(tuse: TypeUse): NamerMonad[TypeUse] = for {
       env  <- getSW
       name <- pointSW(tuse.nameAtParser.map(Name(_)).getOrElse(ERROR_NAME))
       tid  <- pointSW(env.lookup(name, _.kind.isInstanceOf[TypeKind], 
@@ -57,10 +67,7 @@ trait Namers extends names.Namers {
                 case tid     =>
                   pointSW(())
               }
-      } yield tuse match {
-        case tuse: TypeUse => TypeUse(tid, tuse.owner, tuse.pos)
-        case _             => tuse
-      }
+    } yield TypeUse(tid, tuse.owner, tuse.pos)
 
     def nameDefTrees(defTree: DefTree): NamerMonad[DefTree] = defTree match {
       case ttree: TermTree                            => for {
@@ -79,7 +86,7 @@ trait Namers extends names.Namers {
 
     def nameMethodDefs(meth: MethodDef): NamerMonad[MethodDef] = for {
       params  <- meth.params.map(nameValDefs(_)).sequenceU
-      ret     <- nameTypeUses(meth.ret)
+      ret     <- nameUseTrees(meth.ret)
       body    <- nameExprs(meth.body)
       m       <- pointSW(MethodDef(meth.mods, meth.id, ret, meth.name,
                 params, body, meth.pos, meth.owner))
@@ -89,7 +96,7 @@ trait Namers extends names.Namers {
 
 
     def nameValDefs(valdef: ValDef): NamerMonad[ValDef] = for {
-      tpt     <- nameTypeUses(valdef.tpt)
+      tpt     <- nameUseTrees(valdef.tpt)
       rhs     <- nameExprs(valdef.rhs)
       v       <- pointSW(ValDef(valdef.mods, valdef.id, tpt, valdef.name,
                     rhs, valdef.pos, valdef.owner))
@@ -117,7 +124,7 @@ trait Namers extends names.Namers {
         r   <- nameIdents(id)
       } yield r
       case cast:Cast                                  => for {
-       tpt  <- nameTypeUses(cast.tpt)
+       tpt  <- nameUseTrees(cast.tpt)
        expr <- nameExprs(cast.expr) 
       } yield Cast(tpt, expr, cast.pos)
       case bin:Binary                                 => for {
