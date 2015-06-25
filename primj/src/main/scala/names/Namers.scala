@@ -27,8 +27,7 @@ trait Namers extends names.Namers {
 
     def nameTrees(tree: Tree): NamerMonad[Tree] = tree match {
       case tmpl: Template  => for {
-        members <- tmpl.members.map(nameDefTrees(_)).sequenceU
-        r       <- pointSW(Template(members, tmpl.owner))
+        r       <- nameTemplates(tmpl)
       } yield r
       case deftree: DefTree                           => for {
        r <- nameDefTrees(deftree)
@@ -41,7 +40,12 @@ trait Namers extends names.Namers {
       } yield e
     }
 
-    def nameTypeUses(tuse: UseTree): NamerMonad[UseTree] = for {
+
+    def nameTemplates(tmpl: Template): NamerMonad[Template] = for {
+      members <- tmpl.members.map(nameDefTrees(_)).sequenceU
+      r       <- pointSW(Template(members, tmpl.owner))
+    } yield r
+
       env  <- getSW
       name <- pointSW(tuse.nameAtParser.map(Name(_)).getOrElse(ERROR_NAME))
       tid  <- pointSW(env.lookup(name, _.kind.isInstanceOf[TypeKind], 
