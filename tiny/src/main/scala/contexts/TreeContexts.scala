@@ -212,6 +212,8 @@ trait TreeContexts {
     /**
      * Extends this context with a given [[Context]].
      *
+     * @param owner The owner of the context that we want to add 
+     *              to this context.
      * @param decl The declaration to be added to this context
      * @return A tuple of the id of the new declaration and a new instance of
      *         a context with the given declaration added to it.
