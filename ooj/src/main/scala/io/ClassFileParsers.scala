@@ -50,7 +50,7 @@ trait ClassFileParsers {
     val innerClasses = reader.innerClasses.map(loadClass(_))
     val body         = Template(innerClasses ++ reader.clazz.body.members, NoId)
     ClassDef(reader.clazz.mods, NoId, reader.clazz.name, 
-              reader.clazz.parents, body, reader.clazz.tpe, None, NoId)
+              reader.clazz.parents, body, None, NoId)
   }
 
 
@@ -267,7 +267,7 @@ trait ClassFileParsers {
         val tpe = if(name == "java/lang/Object") ObjectType
                   else notype
         ClassDef(mods, NoId, Name(name), parents, body, 
-                  toTypeState(tpe), None, NoId)
+                  None, NoId)
       }
     }
 

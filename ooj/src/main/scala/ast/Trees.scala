@@ -7,15 +7,20 @@ import sana.calcj
 import sana.primj
 import sana.brokenj
 import sana.ooj
+
 import tiny.source.Position
 import tiny.contexts._
 import tiny.names.Name
 import tiny.modifiers.Flags
 import tiny.util.MonadUtils
+
 import calcj.ast.JavaOps._
-import primj.types
+
 import brokenj.ast
+
+
 import ooj.modifiers._
+import ooj.types
 
 
 import scalaz.{Name => _, _}
@@ -31,6 +36,12 @@ trait Trees extends ast.Trees {
     def name: Name
     def parents: List[UseTree]
     def body: Template
+
+    def tpe: TypeState[Type] = for {
+      ptpes   <- parents.map(_.tpe).sequenceU
+      ptpes2  =  ptpes.toSet
+      ty      <- toTypeState(ClassType(name, ptpes2))
+    } yield ty
 
     def show(ctx: Context): String = 
       s"""|ClassDef{
@@ -146,13 +157,11 @@ trait Trees extends ast.Trees {
   trait ClassDefFactory {
     private class ClassDefImpl(val mods: Flags, val id: TreeId, 
       val name: Name, val parents: List[UseTree], val body: Template,
-      val tpe: TypeState[Type], val pos: Option[Position], 
-      val owner: TreeId) extends ClassDef
+      val pos: Option[Position], val owner: TreeId) extends ClassDef
 
     def apply(mods: Flags, id: TreeId, name: Name, parents: List[UseTree],
-      body: Template, tpe: TypeState[Type], 
-      pos: Option[Position], owner: TreeId): ClassDef = {
-      new ClassDefImpl(mods, id, name, parents, body, tpe, pos, owner)
+      body: Template, pos: Option[Position], owner: TreeId): ClassDef = {
+      new ClassDefImpl(mods, id, name, parents, body, pos, owner)
     }
   }
 
