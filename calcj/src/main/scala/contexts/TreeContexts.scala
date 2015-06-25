@@ -13,7 +13,7 @@ import calcj.util.Definitions
 
 /**
  * A trait that contains types that represent context of a tree in  the
- * `primj` language.
+ * `calcj` language.
  *
  *
  * @author Amanj Sherwany
