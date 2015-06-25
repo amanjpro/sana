@@ -19,11 +19,13 @@ trait Types extends types.Types {
 
 
   trait ClassType extends RefType {
-    def parents: Set[ClassType]
+    def parents: Set[Type]
 
 
-    def allParents: Set[ClassType] = 
-      parents.flatMap(_.allParents)
+    def allParents: Set[Type] = parents.flatMap { 
+      case ctpe:ClassType  => ctpe.allParents
+      case _               => Set.empty[Type]
+    }
 
     def =:=(t: Type): Boolean = this == t
     def =/=(t: Type): Boolean = this != t
@@ -68,7 +70,7 @@ trait Types extends types.Types {
 
 
   object ObjectType extends ClassType {
-    val parents: Set[ClassType] = Set.empty
+    val parents: Set[Type] = Set.empty
 
     override def <:<(t: Type): Boolean = t match {
       case ObjectType         => true
@@ -102,7 +104,7 @@ trait Types extends types.Types {
 
 
   trait ClassTypeExtractor {
-    def unapply(ct: ClassType): Option[(Name, Set[ClassType])] = ct match {
+    def unapply(ct: ClassType): Option[(Name, Set[Type])] = ct match {
       case null         => None
       case _            => Some((ct.name, ct.parents))
     }
@@ -110,10 +112,10 @@ trait Types extends types.Types {
 
 
   trait ClassTypeFactory {
-    private class ClassTypeImpl(val name: Name, val parents: Set[ClassType])
+    private class ClassTypeImpl(val name: Name, val parents: Set[Type])
       extends ClassType
 
-    def apply(name: Name, parents: Set[ClassType]): ClassType =
+    def apply(name: Name, parents: Set[Type]): ClassType =
       new ClassTypeImpl(name, parents)
   }
 
