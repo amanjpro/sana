@@ -31,23 +31,30 @@ import scala.concurrent.ExecutionContext.Implicits.global
 object Main {
   def main(args: Array[String]): Unit = {
     val cp = 
-      "/Users/amanj/Documents/PhD/MyWork/Programming/SanaFM/jdk1.0/lib/classes/"
+      "/Users/amanj/Documents/PhD/MyWork/Programming/SanaFM/jdk1.0/lib/classes2/"
+
     val f1: Future[ClassPathCatalog] = Future {
-        new ClassPathCatalog(List(new JFile(cp)))
+      new ClassPathCatalog(List(new JFile(cp)))
     }
 
     val f2: Future[ClassPathCatalog] = Future {
-        new ClassPathCatalog(List(new JFile(cp)))
+      val catalog = new ClassPathCatalog(List(new JFile(cp)))
+      println(catalog.catalog)
+      catalog
     }
 
     val r = for {
       t1 <- f1
       t2 <- f2
-    } yield (t1.defines("java.lang.Exception"),
-             t2.defines("java.lang.Object"))
+    } yield (t1.defines("java", false),
+             t2.defines("java.lang.Object", true))
 
     r onSuccess {
-      case r => println(r)
+      case r => println(r + "KLJLJ")
+    }
+
+    r onFailure {
+      case r => println(r + "KLJLJ")
     }
 
     // f1 onComplete {
@@ -59,29 +66,27 @@ object Main {
     //   case Failure(t)        => println(t)
     //
     // }
-      // .defines("java.lang.Exception")
+    //   .defines("java.lang.Exception")
+    //
+    // val reader = new ClassFileParsers with Trees with Types 
+    //                   with TreeContexts with Definitions with
+    //                   MonadUtils with Constants with TreeInfos
+    //
 
-    val reader = new ClassFileParsers with Trees with Types 
-                      with TreeContexts with Definitions with
-                      MonadUtils with Constants with TreeInfos {
+    val compiler: ooj.Global = new ooj.Global with ClassFileParsers 
+                                with Trees with Types with TreeContexts
+                                with Definitions with MonadUtils with
+                                Constants with TreeInfos {
       val classPaths: List[JFile] = List(
         new JFile(cp)
       )
-
-      
-        
-      
-
-
-            val global: ooj.Global = new ooj.Global {
-        val isTest = true
-      }
+      val isTest = true
     }
 
     // // val cr = new ClassReader("java.lang.String")
     // val cr = new ClassReader("
     // cr.accept(reader, 0)
-    val clazz = reader.loadClass("java.lang.Boolean")
+    val clazz = compiler.loadClass("java.lang.Boolean")
 
 
     println(clazz)
