@@ -114,6 +114,8 @@ trait IDAssigners extends passes.Phases {
       rhs     <- assignExpr(valdef.rhs)
       enclM   =  ctx1.enclosingMethod(owner)
       nme     = valdef.name
+      // TODO: test weather it hides any fields or not, if so issue 
+      // a warning
       _       <- ctx1.boundedLookup(nme, const(true), owner, enclM) match {
         case Nil     => point(())
         case m       =>
