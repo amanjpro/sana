@@ -129,13 +129,13 @@ trait Namers extends names.Namers {
       locals <- ask
       tid    <- point(env.lookup(name, 
         alreadyDefinedVariablePredicate(_, locals), id.owner))
-      _      <- tid match {
-                case NoId    =>
-                  toNamerMonad(error(NAME_NOT_FOUND,
-                    id.toString, "a name", id.pos, id))
-                case _     =>
-                  point(())
-              }
+      // _      <- tid match {
+      //           case NoId    =>
+      //             toNamerMonad(error(NAME_NOT_FOUND,
+      //               id.toString, "a name", id.pos, id))
+      //           case _     =>
+      //             point(())
+      //         }
      } yield Ident(tid, id.owner, id.pos)
 
     def nameMethodTreeUses(fun: UseTree): NamerMonad[UseTree] = fun match {
@@ -144,13 +144,13 @@ trait Namers extends names.Namers {
         name   <- point(id.nameAtParser.map(Name(_)).getOrElse(ERROR_NAME))
         tid    <- point(env.lookup(name, 
           _.kind == MethodKind, id.owner))
-        _      <- tid match {
-                  case NoId    =>
-                    toNamerMonad(error(NAME_NOT_FOUND,
-                      id.toString, "a method name", id.pos, id))
-                  case _     =>
-                    point(())
-                  }
+        // _      <- tid match {
+        //           case NoId    =>
+        //             toNamerMonad(error(NAME_NOT_FOUND,
+        //               id.toString, "a method name", id.pos, id))
+        //           case _     =>
+        //             point(())
+        //           }
        } yield Ident(tid, id.owner, id.pos)
     }
 
