@@ -111,21 +111,23 @@ trait Namers extends names.Namers {
       _       <- modify(_.update(v.id, info))
     } yield v
 
-    def nameIdents(id: Ident): NamerMonad[Ident] = for {
+    protected def alreadyDefinedVariablePredicate(x: TreeInfo, 
+          locals: Set[NamedTree]): Boolean = {
+      // points to a local var? then it should be defined already
+      val localPred = ((x.mods.isLocalVariable ||
+        x.mods.isParam) && 
+        !locals.filter(_.name == x.name).isEmpty)
+      // it is global? Then, there should be no locals a long 
+      // the way to the global
+      val globalPred = x.mods.isField
+      (x.kind == VariableKind) && (localPred || globalPred)
+    }
+
       env    <- get
       name   <- point(id.nameAtParser.map(Name(_)).getOrElse(ERROR_NAME))
       locals <- ask
-      pdct   =  (x: TreeInfo) => {
-                  // points to a local var? then it should be defined already
-                  val localPred = ((x.mods.isLocalVariable ||
-                                         x.mods.isParam) &&
-                                         !locals.filter(_.name == x.name).isEmpty)
-                  // it is global? Then, there should be no locals a long the way
-                  // to the global
-                  val globalPred = x.mods.isField
-                  (x.kind == VariableKind) && (localPred || globalPred)
-                }
-      tid    <- point(env.lookup(name, pdct, id.owner))
+      tid    <- point(env.lookup(name, 
+        alreadyDefinedVariablePredicate(_, locals), id.owner))
       _      <- tid match {
                 case NoId    =>
                   toNamerMonad(error(NAME_NOT_FOUND,
