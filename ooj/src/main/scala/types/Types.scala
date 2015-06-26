@@ -57,6 +57,7 @@ trait Types extends types.Types {
       case _                  => false
     }
 
+    // FIXME: Follow Java's specification
     def >:>(t: Type): Boolean = this =:= t
 
     def name: Name   = ARRAY_TYPE_NAME
