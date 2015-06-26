@@ -4,26 +4,30 @@ import ch.usi.inf.l3.sana
 import sana.tiny
 import sana.primj
 import tiny.source.Position
-import tiny.contexts.TreeContexts
 import tiny.util.{CompilationUnits,MonadUtils}
 import tiny.contexts.{TreeId, NoId}
 import tiny.passes
 import tiny.debug.logger
 import tiny.names.{Namers => _, _}
 import tiny.names
+import primj.modifiers.Ops._
 import primj.Global
 import primj.report._
+import primj.contexts._
 
  
-import scalaz.{Name => _, Failure => _, _}
 import scala.language.higherKinds
+import scalaz.{Name => _, Failure => _, _}
 import Scalaz._
 
 trait Namers extends names.Namers {
+
   type G <: Global
   import global._
 
   trait Namer extends super.Namer {
+
+    import rwst.{local => _, _}
 
     def nameTrees(tree: Tree): NamerMonad[Tree] = tree match {
       case tmpl: Template  => for {
@@ -43,7 +47,7 @@ trait Namers extends names.Namers {
 
     def nameTemplates(tmpl: Template): NamerMonad[Template] = for {
       members <- tmpl.members.map(nameDefTrees(_)).sequenceU
-      r       <- pointSW(Template(members, tmpl.owner))
+      r       <- point(Template(members, tmpl.owner))
     } yield r
 
     def nameUseTrees(use: UseTree): NamerMonad[UseTree] = use match {
@@ -56,16 +60,16 @@ trait Namers extends names.Namers {
     }
 
     def nameTypeUses(tuse: TypeUse): NamerMonad[TypeUse] = for {
-      env  <- getSW
-      name <- pointSW(tuse.nameAtParser.map(Name(_)).getOrElse(ERROR_NAME))
-      tid  <- pointSW(env.lookup(name, _.kind.isInstanceOf[TypeKind], 
+      env  <- get
+      name <- point(tuse.nameAtParser.map(Name(_)).getOrElse(ERROR_NAME))
+      tid  <- point(env.lookup(name, _.kind.isInstanceOf[TypeKind], 
               tuse.owner))
       _    <- tid match {
                 case NoId    =>
                   toNamerMonad(error(TYPE_NOT_FOUND,
                     tuse.toString, "a type", tuse.pos, tuse))
                 case tid     =>
-                  pointSW(())
+                  point(())
               }
     } yield TypeUse(tid, tuse.owner, tuse.pos)
 
@@ -87,39 +91,52 @@ trait Namers extends names.Namers {
     def nameMethodDefs(meth: MethodDef): NamerMonad[MethodDef] = for {
       params  <- meth.params.map(nameValDefs(_)).sequenceU
       ret     <- nameUseTrees(meth.ret)
-      body    <- nameExprs(meth.body)
-      m       <- pointSW(MethodDef(meth.mods, meth.id, ret, meth.name,
+      body    <- local((_: Set[NamedTree]) => {
+                   val pset: Set[NamedTree] = params.toSet
+                   pset
+                 })(nameExprs(meth.body))
+      m       <- point(MethodDef(meth.mods, meth.id, ret, meth.name,
                 params, body, meth.pos, meth.owner))
       info    =  newMethodDefInfo(m.mods, m.name, m.tpe)
-      _       <- modifySW(_.update(meth.id, info))
+      _       <- modify(_.update(meth.id, info))
     } yield m
 
 
     def nameValDefs(valdef: ValDef): NamerMonad[ValDef] = for {
       tpt     <- nameUseTrees(valdef.tpt)
       rhs     <- nameExprs(valdef.rhs)
-      v       <- pointSW(ValDef(valdef.mods, valdef.id, tpt, valdef.name,
+      v       <- point(ValDef(valdef.mods, valdef.id, tpt, valdef.name,
                     rhs, valdef.pos, valdef.owner))
       info    =  newValDefInfo(v.mods, v.name, v.tpe)
-      _       <- modifySW(_.update(v.id, info))
+      _       <- modify(_.update(v.id, info))
     } yield v
 
     def nameIdents(id: Ident): NamerMonad[Ident] = for {
-      env  <- getSW
-      name <- pointSW(id.nameAtParser.map(Name(_)).getOrElse(ERROR_NAME))
-      tid  <- pointSW(env.lookup(name, 
-                 _.kind.isInstanceOf[TermKind], id.owner))
-      _    <- tid match {
+      env    <- get
+      name   <- point(id.nameAtParser.map(Name(_)).getOrElse(ERROR_NAME))
+      locals <- ask
+      pdct   =  (x: TreeInfo) => {
+                  // points to a local var? then it should be defined already
+                  val localPred = ((x.mods.isLocalVariable ||
+                                         x.mods.isParam) &&
+                                         !locals.filter(_.name == x.name).isEmpty)
+                  // it is global? Then, there should be no locals a long the way
+                  // to the global
+                  val globalPred = x.mods.isField
+                  (x.kind == VariableKind) && (localPred || globalPred)
+                }
+      tid    <- point(env.lookup(name, pdct, id.owner))
+      _      <- tid match {
                 case NoId    =>
                   toNamerMonad(error(NAME_NOT_FOUND,
                     id.toString, "a name", id.pos, id))
                 case _     =>
-                  pointSW(())
+                  point(())
               }
      } yield Ident(tid, id.owner, id.pos)
 
     def nameExprs(expr: Expr): NamerMonad[Expr] = expr match {
-      case lit:Lit                                    => pointSW(lit)
+      case lit:Lit                                    => point(lit)
       case id: Ident                                  => for {
         r   <- nameIdents(id)
       } yield r
@@ -148,15 +165,36 @@ trait Namers extends names.Namers {
         body  <- nameExprs(wile.body)
       } yield While(wile.mods, cond, body, wile.pos, wile.owner)
       case block:Block                                => for {
-        stmts <- block.stmts.map(nameTrees(_)).sequenceU
-        r     <- pointSW(Block(block.id, 
+        locals <- ask
+        zero   =  (Nil: List[NamerMonad[Tree]], locals)
+        stmts2 =  block.stmts.foldLeft(zero)((z, y) => {
+                    val locals = y match {
+                      case v: ValDef => z._2 + v
+                      case _         => z._2
+                    }
+                    val r = local((s: Set[NamedTree]) => 
+                                  locals)(nameTrees(y))
+                    (r::z._1, locals)
+                  })._1.reverse
+        stmts  <- stmts2.sequenceU
+        r      <- point(Block(block.id, 
           stmts, block.pos, block.owner))
       } yield r
       case forloop:For                                => for {
         inits <- forloop.inits.map(nameTrees(_)).sequenceU
-        cond  <- nameExprs(forloop.cond)
-        steps <- forloop.steps.map(nameExprs(_)).sequenceU
-        body  <- nameExprs(forloop.body)
+        vals  =  inits.filter(_.isInstanceOf[ValDef])
+        pset  = vals.asInstanceOf[List[NamedTree]].toSet
+        cond  <- local((_: Set[NamedTree]) => {
+                   pset
+                 })(nameExprs(forloop.cond))
+        steps <- forloop.steps.map((step) => {
+                   local((_: Set[NamedTree]) => {
+                   pset
+                   })(nameExprs(step))
+                 }).sequenceU
+        body  <- local((_: Set[NamedTree]) => {
+                   pset
+                 })(nameExprs(forloop.body))
       } yield For(forloop.id, inits, cond, steps, 
                 body, forloop.pos, forloop.owner)
       case ternary:Ternary                            => for {
@@ -169,12 +207,12 @@ trait Namers extends names.Namers {
         fun  <- nameExprs(apply.fun)
         args <- apply.args.map(nameExprs(_)).sequenceU
       } yield Apply(fun, args, apply.pos, apply.owner)
-      case ret:Return      if ret.expr == None        => pointSW(ret)
+      case ret:Return      if ret.expr == None        => point(ret)
       case ret:Return                                 => for {
         expr <- nameExprs(ret.expr.get)
       } yield Return(expr, ret.pos, ret.owner)
       case Empty                                      => for {
-        r <- pointSW(Empty)
+        r <- point(Empty)
       } yield {
         r
       }

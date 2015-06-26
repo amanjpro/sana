@@ -27,6 +27,8 @@ trait Namers extends names.Namers {
   import global._
 
   trait Namer extends super.Namer {
+    import rwst.{local => _, _}
+
     override def nameTrees(tree: Tree): NamerMonad[Tree] = tree match {
       case cse: Case                                 => for {
         r       <- nameCases(cse)
@@ -42,8 +44,8 @@ trait Namers extends names.Namers {
     } yield Case(guards, body, cse.pos, cse.owner)
 
     override def nameExprs(expr: Expr): NamerMonad[Expr] = expr match {
-      case brk: Break                         => pointSW(brk)
-      case cnt: Continue                      => pointSW(cnt)
+      case brk: Break                         => point(brk)
+      case cnt: Continue                      => point(cnt)
       case switch: Switch                     => for {
         expr  <- nameExprs(switch.expr)
         cases <- switch.cases.map(nameCases(_)).sequenceU

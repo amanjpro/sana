@@ -12,21 +12,26 @@ import tiny.report._
 import tiny.passes
 
  
-import scalaz.{Name => _, Failure => _, _}
 import scala.language.higherKinds
+import scalaz.{Name => _, Failure => _, _}
 import Scalaz._
 
 trait Namers extends passes.Phases {
 
   import global._
 
-  type NamerMonad[T <: Tree]  = StateWriter[T]
-
-  def toNamerMonad[A](x: ContextState[A]): StateWriter[A] =
-    toStateWriter(x)
-  def toNamerMonad[A](x: ErrorReportingMonad[A]): StateWriter[A] =
-    toStateWriter(x)
   trait Namer extends TransformerPhase {
+
+    type NamerMonad[T] = RWST[Set[NamedTree], T]
+    lazy val rwst = RWST[Set[NamedTree]]
+    import rwst.{local => _, _}
+
+    def toNamerMonad[A](x: ContextState[A]): NamerMonad[A] =
+      toRWST(x)
+
+    def toNamerMonad[A](x: ErrorReportingMonad[A]): NamerMonad[A] =
+      toRWST(x)
+
     val name: String = "namer"
     override val description: Option[String] = 
       Some("The main namer phase, bind uses to definitions.")
@@ -36,7 +41,7 @@ trait Namers extends passes.Phases {
     def startPhase(state: Context, unit: CompilationUnit): 
          (Vector[Report], CompilationUnit, Context) = {
       val tree  = unit.tree
-      val (w, (s, namedTree)) = nameTrees(tree).run(state).run
+      val (w, namedTree, s) = nameTrees(tree).run(Set(), state)
       logger.debug(namedTree.show(s))
       (w, CompilationUnit(unit.id, namedTree, unit.fileName), s)
     }

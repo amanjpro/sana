@@ -221,6 +221,21 @@ trait MonadUtils {
     st.rwst[Vector[Report], R]
   }
 
+  implicit def toRWST[A, R](wm: ErrorReportingMonad[A]): RWST[R, A] = {
+    ReaderWriterState[R, Vector[Report], Context, A] ((r, s) => {
+      val (ws, a) = wm.run
+      (ws, a, s)
+    })
+    // type M[F[_], a] = WriterT[F, Vector[Report], a]
+    // ReaderWriterState.liftM[M]
+    // wm.liftM[M](wm)
+    //[Context, R]
+  }
+
+
+  // implicit def toRWST[A, R](st: StateT[Id, Context, A]): RWST[R, A] = {
+  //   st.rwst[Vector[Report], R]
+  // }
 
   // def point[A, R](a: => A): RWST[R, A] = {
   //   Monad[RWST].point(f)
