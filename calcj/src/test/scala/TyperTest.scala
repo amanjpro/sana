@@ -6,7 +6,7 @@ import tiny.report._
 import tiny.contexts.TreeContexts
 import calcj.Global
 import calcj.ast.Trees
-import calcj.modifiers.noflags
+import calcj.modifiers.Ops._
 import calcj.ast.Constants
 import calcj.types.Types
 import calcj.ast.JavaOps._
