@@ -85,7 +85,7 @@ trait Types extends types.Types {
         true
       case _                  => false
     }
-    def name: Name = Name("java.lang.Object")
+    def name: Name = OBJECT_TYPE_NAME
   }
 
   object NullType extends RefType {
