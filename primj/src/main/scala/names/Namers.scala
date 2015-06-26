@@ -138,6 +138,33 @@ trait Namers extends names.Namers {
               }
      } yield Ident(tid, id.owner, id.pos)
 
+    def nameMethodTreeUses(fun: UseTree): NamerMonad[UseTree] = fun match {
+      case id: Ident                                => for {
+        env    <- get
+        name   <- point(id.nameAtParser.map(Name(_)).getOrElse(ERROR_NAME))
+        tid    <- point(env.lookup(name, 
+          _.kind == MethodKind, id.owner))
+        _      <- tid match {
+                  case NoId    =>
+                    toNamerMonad(error(NAME_NOT_FOUND,
+                      id.toString, "a method name", id.pos, id))
+                  case _     =>
+                    point(())
+                  }
+       } yield Ident(tid, id.owner, id.pos)
+    }
+
+    def nameMethodUses(fun: Expr): NamerMonad[Expr] = fun match {
+      case use: UseTree                   => for {
+        r <- nameMethodTreeUses(use)
+      } yield r match {
+        case e: Expr  => e
+        case _        => use
+      }
+      case _                              =>
+        nameExprs(fun)
+    }
+
     def nameExprs(expr: Expr): NamerMonad[Expr] = expr match {
       case lit:Lit                                    => point(lit)
       case id: Ident                                  => for {
@@ -210,7 +237,7 @@ trait Namers extends names.Namers {
       } yield Ternary(cond, thenp, elsep, ternary.tpe, 
                       ternary.pos, ternary.owner)
       case apply:Apply                                => for {
-        fun  <- nameExprs(apply.fun)
+        fun  <- nameMethodUses(apply.fun)
         args <- apply.args.map(nameExprs(_)).sequenceU
       } yield Apply(fun, args, apply.pos, apply.owner)
       case ret:Return      if ret.expr == None        => point(ret)
