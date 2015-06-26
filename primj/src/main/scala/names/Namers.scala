@@ -123,6 +123,7 @@ trait Namers extends names.Namers {
       (x.kind == VariableKind) && (localPred || globalPred)
     }
 
+    def nameIdents(id: Ident): NamerMonad[UseTree] = for {
       env    <- get
       name   <- point(id.nameAtParser.map(Name(_)).getOrElse(ERROR_NAME))
       locals <- ask
@@ -141,7 +142,10 @@ trait Namers extends names.Namers {
       case lit:Lit                                    => point(lit)
       case id: Ident                                  => for {
         r   <- nameIdents(id)
-      } yield r
+      } yield r match {
+        case id: Ident => id
+        case _         => id
+      }
       case cast:Cast                                  => for {
        tpt  <- nameUseTrees(cast.tpt)
        expr <- nameExprs(cast.expr) 
