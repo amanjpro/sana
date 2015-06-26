@@ -170,7 +170,7 @@ trait Namers extends names.Namers {
       case id: Ident                                  => for {
         r   <- nameIdents(id)
       } yield r match {
-        case id: Ident => id
+        case id: Expr  => id
         case _         => id
       }
       case cast:Cast                                  => for {
