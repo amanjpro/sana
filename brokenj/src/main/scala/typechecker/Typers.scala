@@ -21,6 +21,7 @@ trait Typers extends typechecker.Typers {
   override type G <: Global
   import global._
 
+  import rwst.{local => _, _}
   trait Typer extends super.Typer {
 
     
@@ -34,7 +35,7 @@ trait Typers extends typechecker.Typers {
       case forloop: For           => for {
         tf <- typeFor(forloop)
       } yield tf
-      case (_: Lit) | (_: Cast)   => pointSW(e)
+      case (_: Lit) | (_: Cast)   => point(e)
       case apply: Apply           => for {
         tapp <- typeApply(apply)
       } yield tapp
@@ -62,20 +63,20 @@ trait Typers extends typechecker.Typers {
                   ctpe =:= ByteType  ||
                   ctpe =:= ShortType ||
                   ctpe =:= IntType)
-                    pointSW(())
+                    point(())
                  else
                     toTypeChecker(error(TYPE_MISMATCH,
                       cond.toString, "char, byte, short or int", 
                       cond.pos, cond))
       cases   <- switch.cases.map(typeCase(_)).sequenceU
-      ctx     <- getSW
+      ctx     <- get
       // _       <- cases.map {
       //   case cse  =>
       //     cse.guards.map {
       //       case guard => 
       //         val gtpe = guard.tpe.eval(ctx)
       //         if(gtpe <:< ctpe) 
-      //           pointSW(())
+      //           point(())
       //         else
       //           toTypeChecker(error(TYPE_MISMATCH,
       //             gtpe.toString, ctpe.toString,
