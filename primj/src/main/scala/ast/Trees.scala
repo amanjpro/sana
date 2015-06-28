@@ -92,7 +92,7 @@ trait Trees extends ast.Trees {
     def tpe: TypeState[Type] = tpt.tpe
 
     def asString(ctx: Context): String = 
-      s"${mods.asString} ${tpt.asString(ctx)} = ${rhs.asString(ctx)}"
+      s"${mods.asString} ${tpt.asString(ctx)} $name = ${rhs.asString(ctx)}"
 
     def show(ctx: Context): String = 
       s"""|ValDef{
