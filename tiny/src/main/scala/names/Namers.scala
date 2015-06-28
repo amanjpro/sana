@@ -22,15 +22,13 @@ trait Namers extends passes.Phases {
 
   trait Namer extends TransformerPhase {
 
-    type NamerMonad[T] = RWST[Set[NamedTree], T]
-    lazy val rwst = RWST[Set[NamedTree]]
-    import rwst.{local => _, _}
+    type NamerMonad[T] = StateWriter[T]
 
     def toNamerMonad[A](x: ContextState[A]): NamerMonad[A] =
-      toRWST(x)
+      toStateWriter(x)
 
     def toNamerMonad[A](x: ErrorReportingMonad[A]): NamerMonad[A] =
-      toRWST(x)
+      toStateWriter(x)
 
     val name: String = "namer"
     override val description: Option[String] = 
@@ -41,7 +39,7 @@ trait Namers extends passes.Phases {
     def startPhase(state: Context, unit: CompilationUnit): 
          (Vector[Report], CompilationUnit, Context) = {
       val tree  = unit.tree
-      val (w, namedTree, s) = nameTrees(tree).run(Set(), state)
+      val (w, (s, namedTree)) = nameTrees(tree).run(state).run
       logger.debug(namedTree.show(s))
       (w, CompilationUnit(unit.id, namedTree, unit.fileName), s)
     }
