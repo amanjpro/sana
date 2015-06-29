@@ -9,15 +9,15 @@ import ooj.types.Types
 import ooj.ast.Trees
 import tiny.names.Name
 import tiny.modifiers.Flags
+import tiny.modifiers.Ops._
 
 import ooj.modifiers._
 
 trait TreeInfos extends primj.contexts.TreeInfos {
   self: Trees with Types =>
 
-  def newPackageDefInfo(mods: Flags, info: Name, 
-      tpe: TypeState[Type]): TreeInfo =
-    new TreeInfoImpl(mods, info, tpe, PackageKind)
+  def newPackageDefInfo(info: Name): TreeInfo =
+    new TreeInfoImpl(noflags, info, toTypeState(notype), PackageKind)
 
   def newClassDefInfo(mods: Flags, info: Name, 
       tpe: TypeState[Type]): TreeInfo =
