@@ -109,7 +109,7 @@ trait Trees extends ast.Trees {
   }
 
   trait Select extends UseTree {
-    def qual: UseTree
+    def qual: Tree
 
     def asString(ctx: Context): String =
       s"${qual.asString(ctx)}.${name(ctx)._2}"
@@ -225,16 +225,16 @@ trait Trees extends ast.Trees {
   }
 
   trait SelectFactory {
-    private class SelectImpl(val uses: TreeId, val qual: UseTree,
+    private class SelectImpl(val uses: TreeId, val qual: Tree,
       val nameAtParser: Option[String],
       val pos: Option[Position], val owner: TreeId) extends Select
 
-    def apply(uses: TreeId, qual: UseTree,
+    def apply(uses: TreeId, qual: Tree,
       nameAtParser: Option[String],
       pos: Option[Position], owner: TreeId): Select =
         new SelectImpl(uses, qual, nameAtParser, pos, owner)
 
-    def apply(uses: TreeId, qual: UseTree,
+    def apply(uses: TreeId, qual: Tree,
       pos: Option[Position], owner: TreeId): Select =
         new SelectImpl(uses, qual, None, pos, owner)
   }
