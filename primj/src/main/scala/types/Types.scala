@@ -50,6 +50,7 @@ trait Types extends types.Types {
     def show: String = s"MethodType((${params.mkString(", ")}) => ${ret})"
   }
 
+  // XXX: This method should stay here?
   def checkList[T](ts1: List[T], ts2: List[T], 
     f: (T, T) => Boolean): Boolean = {
     ts1.zip(ts2).foldLeft(true)((z, y) => {
