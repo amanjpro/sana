@@ -29,12 +29,31 @@ trait TreeContexts extends primj.contexts.TreeContexts {
         new PackageContext(tree, idGen, binds)
   }
 
-
+  protected class ClassContext(val tree: TreeInfo, 
+    protected val idGen: IDGen, 
+    val decls: Map[TreeId, Context] = Map.empty) extends NamedContext {
+    
+    
+    def updateTree(tree: TreeInfo): NamedContext = 
+      new ClassContext(tree, idGen, decls)
+    protected def newContext(idGen: IDGen, 
+      binds: Map[TreeId, Context]): Context = 
+        new ClassContext(tree, idGen, binds)
+  }
 
   def packageContext(treeInfo: TreeInfo): PackageContext = 
     new PackageContext(treeInfo, new IDGen)
 
+  // def packageContext(treeInfo: TreeInfo): ClassContext = 
+    // new ClassContext(treeInfo, new IDGen)
 
+  def classContext(treeInfo: TreeInfo): ClassContext = 
+    new ClassContext(treeInfo, new IDGen)
+
+  def classContext(clazz: ClassDef): ClassContext = {
+    val info = newClassDefInfo(clazz.mods, clazz.name, clazz.tpe)
+    new ClassContext(info, new IDGen)
+  }
   // def packageContext(tree: PackageContext): PackageContext = 
   //   new MethodContext(newMethodDefInfo(tree.mods, tree.name, tree.tpe), 
   //     new IDGen)
