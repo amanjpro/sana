@@ -390,6 +390,12 @@ trait TreeContexts {
       }
     }
 
+    override def lookup(name: Name, p: TreeInfo => Boolean, 
+      owner: TreeId): TreeId = super.lookup(name, p, owner) match {
+      case NoId => findInDefinitions(name, p)
+      case id   => id
+    }
+
     override def defines(id: TreeId): Boolean = {
       if(super.defines(id)) true
       else definitions.contains(id)
