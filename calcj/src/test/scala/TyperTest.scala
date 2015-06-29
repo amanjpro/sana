@@ -23,7 +23,7 @@ class TyperTest extends FlatSpec with Matchers with Typers {
   import global._
   val isTest: Boolean = true
   def getTpe(ts: TypeChecker[Tree]): Type = {
-    val (_, (_, tree)) = ts.run(emptyContext).run
+    val (_, tree, _) = ts.run(Set(), rootContext)
     tree.tpe.eval(emptyContext)
   }
   
