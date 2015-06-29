@@ -122,7 +122,8 @@ trait IDAssigners extends passes.Phases {
       nme     = valdef.name
       // TODO: test weather it hides any fields or not, if so issue 
       // a warning
-      _       <- ctx1.boundedLookup(nme, const(true), owner, enclM) match {
+      _       <- ctx1.boundedLookup(nme, _.kind == VariableKind, 
+                    owner, enclM) match {
         case Nil     => point(())
         case m       =>
           tell(Vector(genError(DOUBLE_DEF, "", "", valdef.pos, valdef)))
