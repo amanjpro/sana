@@ -6,6 +6,7 @@ import sana.primj
 import sana.tiny
 import sana.ooj
 import tiny.names.Name
+import tiny.contexts.TreeId
 import primj.types
 import ooj.util.Definitions
 
@@ -20,6 +21,7 @@ trait Types extends types.Types {
 
   trait ClassType extends RefType {
     def parents: Set[Type]
+    def id: TreeId
 
 
     def allParents: Set[Type] = parents.flatMap { 
@@ -27,10 +29,14 @@ trait Types extends types.Types {
       case _               => Set.empty[Type]
     }
 
-    def =:=(t: Type): Boolean = this == t
-    def =/=(t: Type): Boolean = this != t
+    def =:=(t: Type): Boolean = t match {
+      case ct: ClassType      => id == ct.id
+      case _                  => false
+    }
+
+    def =/=(t: Type): Boolean = !(this =:= t)
     def <:<(t: Type): Boolean = t match {
-      case ObjectType         => true
+      case _: ObjectType      => true
       case ct: ClassType      =>
         this.allParents.filter(_ =:= ct).size != 0
       case _                  => false
@@ -50,10 +56,13 @@ trait Types extends types.Types {
   trait ArrayType extends RefType {
     def elemType: Type
 
-    def =:=(t: Type): Boolean = this == t
-    def =/=(t: Type): Boolean = this != t
+    def =:=(t: Type): Boolean = t match {
+      case at: ArrayType      => elemType =:= at.elemType
+      case _                  => false
+    }
+    def =/=(t: Type): Boolean = !(this =:= t)
     def <:<(t: Type): Boolean = t match {
-      case ObjectType         => true
+      case _: ObjectType      => true
       case _                  => false
     }
 
@@ -70,21 +79,19 @@ trait Types extends types.Types {
   // }
 
 
-  object ObjectType extends ClassType {
+  trait ObjectType extends ClassType {
     val parents: Set[Type] = Set.empty
 
     override def <:<(t: Type): Boolean = t match {
-      case ObjectType         => true
+      case _: ObjectType      => true
       case _                  => false
     }
 
     override def >:>(t: Type): Boolean = t match {
-      case ct: ClassType      =>
-        true
-      case ct: ArrayType      =>
-        true
+      case _: RefType         => true
       case _                  => false
     }
+
     def name: Name = OBJECT_TYPE_NAME
   }
 
@@ -103,21 +110,34 @@ trait Types extends types.Types {
 
   }
 
+  trait ObjectTypeExtractor {
+    def unapply(ot: ObjectType): Option[TreeId] = ot match {
+      case null         => None
+      case _            => Some(ot.id)
+    }
+  }
+
+
+  trait ObjectTypeFactory {
+    private class ObjectTypeImpl(val id: TreeId) extends ObjectType
+
+    def apply(id: TreeId): ObjectType = new ObjectTypeImpl(id)
+  }
 
   trait ClassTypeExtractor {
-    def unapply(ct: ClassType): Option[(Name, Set[Type])] = ct match {
+    def unapply(ct: ClassType): Option[(TreeId, Name, Set[Type])] = ct match {
       case null         => None
-      case _            => Some((ct.name, ct.parents))
+      case _            => Some((ct.id, ct.name, ct.parents))
     }
   }
 
 
   trait ClassTypeFactory {
-    private class ClassTypeImpl(val name: Name, val parents: Set[Type])
-      extends ClassType
+    private class ClassTypeImpl(val id: TreeId,
+      val name: Name, val parents: Set[Type]) extends ClassType
 
-    def apply(name: Name, parents: Set[Type]): ClassType =
-      new ClassTypeImpl(name, parents)
+    def apply(id: TreeId, name: Name, parents: Set[Type]): ClassType =
+      new ClassTypeImpl(id, name, parents)
   }
 
   trait ArrayTypeExtractor {
@@ -134,7 +154,8 @@ trait Types extends types.Types {
     def apply(elemType: Type): ArrayType = new ArrayTypeImpl(elemType)
   }
 
-  val ClassType = new ClassTypeExtractor with ClassTypeFactory {}
+  val ClassType  = new ClassTypeExtractor with ClassTypeFactory {}
+  val ObjectType = new ObjectTypeExtractor with ObjectTypeFactory {}
 }
 
 

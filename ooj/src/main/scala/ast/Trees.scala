@@ -18,7 +18,6 @@ import calcj.ast.JavaOps._
 
 import brokenj.ast
 
-
 import ooj.modifiers._
 import ooj.types
 
@@ -28,7 +27,7 @@ import Scalaz._
 
 trait Trees extends ast.Trees {
   self: types.Types with Constants with TreeContexts with MonadUtils 
-        with ooj.util.Definitions =>
+        with ooj.util.Definitions with ooj.contexts.TreeContextApis =>
 
   /********************* AST Nodes *********************************/
 
@@ -38,9 +37,25 @@ trait Trees extends ast.Trees {
     def body: Template
 
     def tpe: TypeState[Type] = for {
+      ctx     <- get
       ptpes   <- parents.map(_.tpe).sequenceU
       ptpes2  =  ptpes.toSet
-      ty      <- toTypeState(ClassType(name, ptpes2))
+      // Is it java.lang.Object? use ObjectType then
+      ty      <- if(name == OBJECT_TYPE_NAME) {
+        val pckgLang = ctx.enclosingPackage(id)
+        if(ctx.getName(pckgLang) == Some(Name("lang"))) {
+          val pckgJava = ctx.enclosingPackage(pckgLang)
+          if(ctx.getName(pckgJava) == Some(Name("java"))) {
+            toTypeState(ObjectType(id))
+          } else {
+            toTypeState(ClassType(id, name, ptpes2))
+          }
+        } else {
+          toTypeState(ClassType(id, name, ptpes2))
+        }
+      } else {
+        toTypeState(ClassType(id, name, ptpes2))
+      }
     } yield ty
 
     def show(ctx: Context): String = 
