@@ -406,7 +406,7 @@ trait TreeContexts {
     override def getTree(id: TreeId): Option[TreeInfo] = {
       super.getTree(id) match {
         case Some(info)       => Some(info)
-        case None             => definitions.get(id.forward)
+        case None             => definitions.get(id)
       }
     }
   }
