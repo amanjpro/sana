@@ -31,6 +31,25 @@ trait Trees extends ast.Trees {
 
   /********************* AST Nodes *********************************/
 
+  trait PackageDef extends NamedTree with IdentifiedTree {
+    def members: List[DefTree]
+    
+    def tpe: TypeState[Type] = toTypeState(notype)
+    def show(ctx: Context): String = 
+      s"""|PackageDef{
+          |name=${name.asString},
+          |members=${showList(members, ctx)},
+          |owner=${owner},
+          |pos=${pos}
+          |}""".stripMargin
+
+    def asString(ctx: Context): String =
+      s"""|package ${name.asString} 
+          |${asStringList(members, ctx, "\n")}
+          |""".stripMargin
+
+  }
+
   trait ClassDef extends TypeTree {
     def name: Name
     def parents: List[UseTree]
@@ -148,7 +167,13 @@ trait Trees extends ast.Trees {
   
   /***************************** Extractors **************************/
 
-  
+  trait PackageDefExctractor {
+
+    def unapply(pdef: PackageDef): Option[(Name, List[DefTree])] = pdef match {
+      case null            => None
+      case _               => Some((pdef.name, pdef.members))
+    }
+  }
 
   trait ClassDefExtractor {
     def unapply(cd: ClassDef): Option[(Flags, Name, 
@@ -168,6 +193,16 @@ trait Trees extends ast.Trees {
 
   /***************************** Factories **************************/
 
+  trait PackageDefFactory {
+    private class PackageDefImpl(val id: TreeId, 
+      val name: Name, val members: List[DefTree], 
+      val pos: Option[Position], val owner: TreeId) extends PackageDef
+
+    def apply(id: TreeId, name: Name, members: List[DefTree],
+      pos: Option[Position], owner: TreeId): PackageDef = {
+      new PackageDefImpl(id, name, members, pos, owner)
+    }
+  }
 
   trait ClassDefFactory {
     private class ClassDefImpl(val mods: Flags, val id: TreeId, 
@@ -227,9 +262,10 @@ trait Trees extends ast.Trees {
 
   // TODO: Only let Extractors out, or none?
 
-  val ClassDef  = new ClassDefExtractor with ClassDefFactory {}
-  val New       = new NewExtractor with NewFactory {}
-  val Select    = new SelectFactory {}
-  val This      = new ThisFactory {}
-  val Super     = new SuperFactory {}
+  val PackageDef  = new PackageDefExctractor with PackageDefFactory {}
+  val ClassDef    = new ClassDefExtractor with ClassDefFactory {}
+  val New         = new NewExtractor with NewFactory {}
+  val Select      = new SelectFactory {}
+  val This        = new ThisFactory {}
+  val Super       = new SuperFactory {}
 }
