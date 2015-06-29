@@ -1,0 +1,30 @@
+// passes
+//
+
+class A {
+  int m () {
+    return 1;
+  }
+}
+
+class B {
+  String f () {
+    return "1";
+  }
+}
+
+
+class Test {
+  A k(int i) {
+    return new A();
+  }
+  B k(double i) {
+    return new B();
+  }
+
+
+  void test {
+    k(1).m();
+  }
+}
+
