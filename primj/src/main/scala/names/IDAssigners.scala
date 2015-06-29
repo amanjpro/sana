@@ -8,13 +8,14 @@ import tiny.report.Report
 import tiny.contexts.{TreeId, NoId}
 import tiny.passes
 import tiny.debug.logger
+import tiny.names.Name
 import primj.report._
 import tiny.names
 import primj.Global
 import primj.contexts._
 
  
-import scalaz._
+import scalaz.{Name => _, _}
 import Scalaz._
 import scala.language.{higherKinds,implicitConversions}
 
@@ -49,7 +50,7 @@ trait IDAssigners extends passes.Phases {
          (Vector[Report], CompilationUnit, Context) = {
       val tree  = unit.tree
       // Extend the tree context with an empty compilation unit context
-      val (id, state2) = state.extend(NoId, state)
+      val (id, state2) = state.extend(NoId, emptyContext)
       val (w, namedTree, s) = assign(tree).run(id, state2)
       logger.debug(namedTree.show(s))
       (w, CompilationUnit(id, namedTree, unit.fileName), s)
