@@ -160,13 +160,13 @@ trait ClassFileParsers {
 
       params.zipWithIndex.map {
         case (paramTpe, index) =>
-          ValDef(Flags(PARAM), NoId, stringToUseTree(paramTpe), 
+          ValDef(Flags(PARAM), NoId, stringToUseTree(paramTpe, false),
             Name("x" + index), Empty, None, NoId)
       }
     }
 
     protected def stringToUseTree(sig: String, 
-                  classSig: Boolean = false): UseTree = {
+                  classSig: Boolean): UseTree = {
       sig match {
         case "B"        => 
           TypeUse(NoId, Some(BYTE_TYPE_NAME.asString), NoId, None)
@@ -194,7 +194,14 @@ trait ClassFileParsers {
         case nme        =>
           val sig2 = if(classSig) nme
                      else nme.substring(1, nme.size -1)
-          stringToUseTree(sig2.split("/").toList)
+          stringToUseTree(sig2.split("/").toList) match {
+            case select@Select(qual, id: Ident)            =>
+              val tuse = TypeUse(id.uses, id.nameAtParser,
+                                 id.owner, id.pos)
+              Select(qual, tuse, select.pos, select.owner)
+            case use                                       =>
+              use
+          }
       }
     }
 
@@ -205,7 +212,7 @@ trait ClassFileParsers {
         throw new Exception("This should not happen")
       case xs                     =>
         val rest = stringToUseTree(xs.take(xs.size - 1))
-        Select(NoId, rest, Some(xs.last), None, NoId)
+        Select(rest, Ident(NoId, Some(xs.last), NoId, None), None, NoId)
     }
 
 
@@ -307,7 +314,7 @@ trait ClassFileParsers {
       val mods = acc | isFinal | isStatic | FIELD | COMPILED
 
 
-      val tpt  = stringToUseTree(desc)
+      val tpt  = stringToUseTree(desc, false)
       val vdef = ValDef(mods, NoId, tpt, Name(name), Empty, None, NoId)
       members = vdef::members
       null
@@ -332,7 +339,7 @@ trait ClassFileParsers {
         (fst.substring(1), snd.substring(1))
       }
 
-      val ret    = stringToUseTree(retString)
+      val ret    = stringToUseTree(retString, false)
       val params = methodParams(paramString)
 
       val meth = MethodDef(mods, NoId, ret, Name(name), params, 
