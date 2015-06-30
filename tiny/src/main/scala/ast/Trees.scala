@@ -240,6 +240,8 @@ trait Trees {
     }
   }
 
+  trait SimpleUseTree extends UseTree
+
   // Really common ASTs, I cannot imagine a compiler without them
   // FIXME: Do we really need TypeUse?
   /**
@@ -247,7 +249,7 @@ trait Trees {
     *
     * @group Api
     */
-  trait TypeUse extends UseTree {
+  trait TypeUse extends SimpleUseTree {
     // def tpe: TypeState[Type] = {
     //   State {
     //     (ctx: Context) => {
@@ -282,7 +284,7 @@ trait Trees {
     *
     * @group Api
     */
-  trait Ident extends Expr with UseTree {
+  trait Ident extends Expr with SimpleUseTree {
     
 
     def asString(ctx: Context): String = name(ctx)._2.asString
