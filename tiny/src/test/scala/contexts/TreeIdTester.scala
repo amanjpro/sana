@@ -56,6 +56,27 @@ class TreeIdTester extends FlatSpec with Matchers {
   s"$p1 concat ($p2)" should s"$r2" in {
     p1.concat(p2) should be (r2)
   }
+
+  val parent = TreeId(TreeId(TreeId(NoId, 1), 2), 3)
+  val kid    = 
+    TreeId(TreeId(TreeId(TreeId(TreeId(TreeId(NoId, 1), 2), 3), 4), 5), 6)
+
+  s"$parent contains $kid" should "true" in {
+    parent.contains(kid) should be (true)
+  }
+
+  s"$kid contains $parent" should "false" in {
+    kid.contains(parent) should be (false)
+  }
+
+  s"$parent isContainedIn $kid" should "false" in {
+    parent.isContainedIn(kid) should be (false)
+  }
+
+  s"$kid isContainedIn $parent" should "true" in {
+    kid.isContainedIn(parent) should be (true)
+  }
 }
+
 
 

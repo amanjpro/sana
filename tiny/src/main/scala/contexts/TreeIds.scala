@@ -75,6 +75,32 @@ trait TreeId extends Any {
   }
 
   /**
+   * Tests contains the other path
+   *
+   * {{{
+   * val tid1 = 1 -> 2 -> 3
+   * val tid2 = 1 -> 2 -> 3 -> 4 -> 5
+   * 
+   * tid1.contains(tid2) // true
+   * tid2.contains(tid1) // false
+   * }}}
+   */
+  def contains(other: TreeId): Boolean
+
+  /**
+   * Tests contains the other path
+   *
+   * {{{
+   * val tid1 = 1 -> 2 -> 3
+   * val tid2 = 1 -> 2 -> 3 -> 4 -> 5
+   * 
+   * tid2.isContainedIn(tid1) // true
+   * tid1.isContainedIn(tid2) // false
+   * }}}
+   */
+
+  def isContainedIn(other: TreeId): Boolean = other.contains(this)
+  /**
    * Returns the path to the parent context
    *
    * For the following path:
@@ -131,6 +157,7 @@ class SimpleId protected[contexts](val id: Long) extends AnyVal with TreeId {
   def forward: TreeId = NoId
   def head: TreeId = this
   def up: TreeId = NoId
+  def contains(other: TreeId): Boolean = false
   def merge(other: TreeId): TreeId = TreeId(other, id)
   def isComposite: Boolean = false
   def isSimple: Boolean    = true
@@ -150,6 +177,13 @@ class CompositeId protected[contexts](val path: TreeId,
   //   case _                                 => path.head
   // }
 
+  def contains(other: TreeId): Boolean = {
+    lazy val r = other match {
+      case _: SimpleId | NoId        => false
+      case _                         => this.contains(other.up)
+    }
+    this == other || r
+  }
   def up: TreeId = path
   def merge(other: TreeId): TreeId = other match {
     case NoId                      => this
@@ -176,6 +210,7 @@ class CompositeId protected[contexts](val path: TreeId,
 
 case object NoId extends TreeId {
   def forward: TreeId = NoId
+  def contains(other: TreeId): Boolean = false
   def head: TreeId = NoId
   def up: TreeId = NoId
   def merge(other: TreeId): TreeId = other
