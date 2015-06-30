@@ -15,6 +15,7 @@ import tiny.passes
 import scala.language.higherKinds
 import scalaz.{Name => _, Failure => _, _}
 import Scalaz._
+import scala.collection.immutable.Set
 
 trait Namers extends passes.Phases {
 
@@ -22,13 +23,15 @@ trait Namers extends passes.Phases {
 
   trait Namer extends TransformerPhase {
 
-    type NamerMonad[T] = StateWriter[T]
+    type NamerMonad[T] = RWST[Set[Name], T]
+    lazy val rwst = RWST[Set[Name]]
+    import rwst.{local => _, _}
 
     def toNamerMonad[A](x: ContextState[A]): NamerMonad[A] =
-      toStateWriter(x)
+      toRWST(x)
 
     def toNamerMonad[A](x: ErrorReportingMonad[A]): NamerMonad[A] =
-      toStateWriter(x)
+      toRWST(x)
 
     val name: String = "namer"
     override val description: Option[String] = 
@@ -39,7 +42,7 @@ trait Namers extends passes.Phases {
     def startPhase(state: Context, unit: CompilationUnit): 
          (Vector[Report], CompilationUnit, Context) = {
       val tree  = unit.tree
-      val (w, (s, namedTree)) = nameTrees(tree).run(state).run
+      val (w, namedTree, s) = nameTrees(tree).run(Set(), state)
       logger.debug(namedTree.show(s))
       (w, CompilationUnit(unit.id, namedTree, unit.fileName), s)
     }

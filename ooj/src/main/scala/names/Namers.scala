@@ -39,6 +39,7 @@ trait Namers extends primj.names.Namers {
 
   trait Namer extends super.Namer {
 
+    import rwst.{local => _, _}
 
     def loadFromClassPath(name: String, 
             owner: TreeId): NamerMonad[ClassDef] = {
@@ -46,9 +47,9 @@ trait Namers extends primj.names.Namers {
       // Namer needs to be able to talk to IDAssigners
       val clz =  loadClass(name)
       for { 
-        ctx              <- getSW
+        ctx              <- get
         (_, clazz, ctx2) =  idassigner.assignClassDef(clz).run(owner, ctx)
-        _                <- putSW(ctx2)
+        _                <- put(ctx2)
         r                <- nameClassDefs(clazz)
       } yield r
     }
@@ -83,7 +84,7 @@ trait Namers extends primj.names.Namers {
                      body, clazz.pos, clazz.owner)
 
     override def nameTypeUses(tuse: TypeUse): NamerMonad[TypeUse] = for {
-      ctx       <- getSW
+      ctx       <- get
       owner     =  tuse.owner
       name      =  tuse.nameAtParser.map(Name(_)).getOrElse(ERROR_NAME)
       // Do we have a Type with this name seeing from the owner?
@@ -96,8 +97,8 @@ trait Namers extends primj.names.Namers {
           // Is there a class in the classpath? with the same full name?
           // load it
           if(catalog.defines(fullName, true)) {
-            val (_, (ctx2, loadedClass)) = 
-              loadFromClassPath(fullName, owner).run(ctx).run
+            val (_, loadedClass, ctx2) = 
+              loadFromClassPath(fullName, owner).run(Set(), ctx)
             loadedClass match {
               case cd: ClassDef =>
                 (TypeUse(cd.id, tuse.nameAtParser, owner, tuse.pos), ctx2)
@@ -114,11 +115,11 @@ trait Namers extends primj.names.Namers {
       }
       nuse       =  nuse_ctx2._1
       ctx2       =  nuse_ctx2._2
-      _          <- putSW(ctx2)
+      _          <- put(ctx2)
     } yield nuse
 
     def nameIdents(id: Ident): NamerMonad[SimpleUseTree] = for {
-      ctx       <- getSW
+      ctx       <- get
       owner     =  id.owner
       name      =  id.nameAtParser.map(Name(_)).getOrElse(ERROR_NAME)
       // INFO
@@ -156,8 +157,8 @@ trait Namers extends primj.names.Namers {
               // Is there a class in the classpath? with the same full name?
               // load it
               if(catalog.defines(fullName, true)) {
-                val (_, (ctx2, loadedClass)) = 
-                  loadFromClassPath(fullName, owner).run(ctx).run
+                val (_, loadedClass, ctx2) = 
+                  loadFromClassPath(fullName, owner).run(Set(), ctx)
                 loadedClass match {
                   case cd: ClassDef =>
                     (TypeUse(cd.id, id.nameAtParser, owner, id.pos), ctx2)
@@ -181,7 +182,7 @@ trait Namers extends primj.names.Namers {
       }
       nid        =  nid_ctx2._1
       ctx2       =  nid_ctx2._2
-      _          <- putSW(ctx2)
+      _          <- put(ctx2)
     } yield nid
 
 
@@ -195,7 +196,7 @@ trait Namers extends primj.names.Namers {
     // At this stage, qual cannot be Type Name or Expression name
     def nameSelects(select: Select): NamerMonad[UseTree] = for {
       qual    <- nameTrees(select.qual)
-      ctx     <- getSW
+      ctx     <- get
       // The following snippet only happens when we introduce inner classes
       // qtpe    <- toNamerMonad(qual.tpe)
       // id      =  qtpe match {

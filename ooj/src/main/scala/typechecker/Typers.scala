@@ -137,7 +137,7 @@ trait Typers extends brokenj.typechecker.Typers {
       // Typing Type use, is simply naming the tree
       ctx       <- get
       tuse_ctx2 = {
-        val (_, (ctx2, r)) = namer.nameTypeUses(tuse).run(ctx).run
+        val (_, r, ctx2) = namer.nameTypeUses(tuse).run(Set(), ctx)
         (r, ctx2)
       }
       r         =  tuse_ctx2._1
@@ -189,9 +189,9 @@ trait Typers extends brokenj.typechecker.Typers {
                        val pkgs = env.enclosingPackageNames(id.owner)
                        val fullName = pkgs.mkString(".") + "." + name
                        if(catalog.defines(fullName, true)) {
-                         val (_, (ctx2, loadedClass)) = 
+                         val (_, loadedClass, ctx2) = 
                            namer.loadFromClassPath(fullName, 
-                             owner).run(env).run
+                             owner).run(Set(), env)
                          loadedClass match {
                            case cd: ClassDef =>
                              (TypeUse(cd.id, id.nameAtParser, 

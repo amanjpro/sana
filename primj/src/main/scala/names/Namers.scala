@@ -36,40 +36,42 @@ trait Namers extends names.Namers {
   type G <: Global
   import global._
 
+
   trait Namer extends super.Namer {
 
 
+    import rwst.{local => _, _}
     def nameTrees(tree: Tree): NamerMonad[Tree] = tree match {
       case tmpl: Template  => for {
         r       <- nameTemplates(tmpl)
       } yield r
-      case _               => pointSW(tree)
+      case _               => point(tree)
     }
 
 
     def nameTemplates(tmpl: Template): NamerMonad[Template] = for {
       members <- tmpl.members.map(nameDefTrees(_)).sequenceU
-      r       <- pointSW(Template(members, tmpl.owner))
+      r       <- point(Template(members, tmpl.owner))
     } yield r
 
     def nameUseTrees(use: UseTree): NamerMonad[UseTree] = use match {
       case tuse: TypeUse                                => for {
         r <- nameTypeUses(tuse)
       } yield r
-      case _                                            => pointSW(use)
+      case _                                            => point(use)
     }
 
     def nameTypeUses(tuse: TypeUse): NamerMonad[TypeUse] = for {
-      env  <- getSW
-      name <- pointSW(tuse.nameAtParser.map(Name(_)).getOrElse(ERROR_NAME))
-      tid  <- pointSW(env.lookup(name, _.kind.isInstanceOf[TypeKind], 
+      env  <- get
+      name <- point(tuse.nameAtParser.map(Name(_)).getOrElse(ERROR_NAME))
+      tid  <- point(env.lookup(name, _.kind.isInstanceOf[TypeKind], 
               tuse.owner))
       _    <- tid match {
                 case NoId    =>
                   toNamerMonad(error(TYPE_NOT_FOUND,
                     tuse.toString, "a type", tuse.pos, tuse))
                 case tid     =>
-                  pointSW(())
+                  point(())
               }
     } yield TypeUse(tid, tuse.owner, tuse.pos)
 
@@ -91,19 +93,19 @@ trait Namers extends names.Namers {
     def nameMethodDefs(meth: MethodDef): NamerMonad[MethodDef] = for {
       params  <- meth.params.map(nameValDefs(_)).sequenceU
       ret     <- nameUseTrees(meth.ret)
-      m       <- pointSW(MethodDef(meth.mods, meth.id, ret, meth.name,
+      m       <- point(MethodDef(meth.mods, meth.id, ret, meth.name,
                 params, meth.body, meth.pos, meth.owner))
       info    =  newMethodDefInfo(m.mods, m.name, m.tpe)
-      _       <- modifySW(_.update(meth.id, info))
+      _       <- modify(_.update(meth.id, info))
     } yield m
 
 
     def nameValDefs(valdef: ValDef): NamerMonad[ValDef] = for {
       tpt     <- nameUseTrees(valdef.tpt)
-      v       <- pointSW(ValDef(valdef.mods, valdef.id, tpt, valdef.name,
+      v       <- point(ValDef(valdef.mods, valdef.id, tpt, valdef.name,
                     valdef.rhs, valdef.pos, valdef.owner))
       info    =  newValDefInfo(v.mods, v.name, v.tpe)
-      _       <- modifySW(_.update(v.id, info))
+      _       <- modify(_.update(v.id, info))
     } yield v
 
   }
