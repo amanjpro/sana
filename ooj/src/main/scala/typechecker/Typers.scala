@@ -234,89 +234,48 @@ trait Typers extends brokenj.typechecker.Typers {
       } yield tid
 
 
-    // Typing an Ident is a bit more involving than typing a type use,
-    // we need to decide weather we resolve it to a local variable,
-    // field, type name or a package name,
-    //
+    
     // This method is only called if the ident is not part of a select tree
-
     def typeQualifiedIdent(id: Ident): TypeChecker[SimpleUseTree] = for {
-      ctx   <- get
+      env   <- get
       lvars <- ask
       owner     =  id.owner
       name      =  id.nameAtParser.map(Name(_)).getOrElse(ERROR_NAME)
-      // INFO
-      // Ident here? Then it should be package name (or probably
-      // a type name, but start with a package name first)
-      //
-      // The following select:
-      // java.lang.Object
-      //
-      // will produce:
-      // Select(Select(Ident("java"), Ident("lang")), TypeUse("Object"))
-      //
-      // After we support inner classes (Java 1.1), we need to resolve
-      // the types if needed, as an example:
-      // 
-      // pkg.OuterClass.InnerClass
-      //
-      // Will be parsed as:
-      // Select(Select(Ident("pkg"), Ident("OuterClass")), 
-      //           TypeUse("InnerClass"))
-      // 
-      // But after namer should be (or if it is a local use, after typer) to:
-      // Select(Select(Ident("pkg"), TypeUse("OuterClass")), 
-      //           TypeUse("InnerClass"))
-
-      // Do we have a package with this name seeing from the owner?
-      nid_ctx2  =  ctx.lookup(name, _.kind == PackageKind, owner) match {
-        case NoId                   =>
-          // Do we have a Type with this name seeing from the owner?
-          ctx.lookup(name, _.kind.isInstanceOf[TypeKind], owner) match {
-            case NoId                    =>
-              // Do we have the (package, or type) in classpath?
-              val pkgs     = ctx.enclosingPackageNames(owner)
-              val fullName = pkgs.mkString(".") + "." + name
-              // Is there a class in the classpath? with the same full name?
-              // load it
-              if(self.catalog.defines(fullName, true)) {
-                val (_, (ctx2, loadedClass)) = 
-                  namer.loadFromClassPath(fullName, owner).run(ctx).run
-                loadedClass match {
-                  case cd: ClassDef =>
-                    (TypeUse(cd.id, id.nameAtParser, owner, id.pos), ctx2)
-                  case _            =>
-                    // This case should never happen
-                    (Ident(NoId, id.nameAtParser, owner, id.pos), ctx2)
+      res   =  {
+                  val qkind = env.getTree(owner).map(_.kind)
+                  // At this point, we don't have 
+                  if(qkind == Some(PackageKind)) {
+                    val tuse = env.lookup(name, _.kind.isInstanceOf[TypeKind],
+                              id.owner)
+                    if(tuse != NoId) {
+                      (TypeUse(tuse, id.owner, id.pos), env)
+                    } else {
+                      val tuse = env.lookup(name, 
+                        _.kind == PackageKind, id.owner)
+                      (Ident(tuse, id.owner, id.pos), env)
+                    }
+                  } else if(qkind != None){
+                    val tuse = env.lookup(name, 
+                      _.kind == VariableKind, id.owner)
+                    (Ident(tuse, id.owner, id.pos), env)
+                  } else {
+                    (Ident(NoId, id.owner, id.pos), env)
+                  }
                 }
-              } else if(self.catalog.defines(fullName, false)) { 
-                val info = newPackageDefInfo(name)
-                val (i, ctx2) = ctx.extend(owner, packageContext(info))
-                (Ident(i, id.nameAtParser, owner, id.pos), ctx2)
-              } else {
-                // Couldn't resolve the name, then don't resolve it
-                (Ident(NoId, id.nameAtParser, owner, id.pos), ctx)
-              }
-            case i                       =>
-              (TypeUse(i, id.nameAtParser, owner, id.pos), ctx)
-          }
-        case i                      =>
-          (Ident(NoId, id.nameAtParser, owner, id.pos), ctx)
-      }
-      nid        =  nid_ctx2._1
-      ctx2       =  nid_ctx2._2
-      _          <- put(ctx2)
-    } yield nid
+        tid  =  res._1
+        env2 =  res._2
+        _    <- tid.uses match {
+          case NoId             =>
+            toTypeChecker(error(NAME_NOT_FOUND,
+              id.toString, "a name", id.pos, id))
+          case _                 =>
+            point(())
+        }
+        _    <- put(env2)
+      } yield tid
 
 
-    // Before Java 1.1:
-    // qual is package name? then:
-    // - if this package defines this name, then resolve this use 
-    //   to that name, and it is a type use (or a package name)
-    // - if it doesn't, see if this package (or probably type) is
-    //   defined by the classpath
-    //
-    // At this stage, qual cannot be Type Name or Expression name
+    
     def typeSelect(select: Select): TypeChecker[UseTree] = for {
       qual    <- typeTree(select.qual)
       ctx     <- get
