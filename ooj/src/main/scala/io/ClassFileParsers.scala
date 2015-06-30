@@ -169,35 +169,35 @@ trait ClassFileParsers {
                   classSig: Boolean): UseTree = {
       sig match {
         case "B"        => 
-          TypeUse(NoId, Some(BYTE_TYPE_NAME.asString), NoId, None)
+          TypeUse(NoId, Some(BYTE_TYPE_NAME.asString), None, NoId)
         case "C"        => 
-          TypeUse(NoId, Some(CHAR_TYPE_NAME.asString), NoId, None)
+          TypeUse(NoId, Some(CHAR_TYPE_NAME.asString), None, NoId)
         case "S"        => 
-          TypeUse(NoId, Some(SHORT_TYPE_NAME.asString), NoId, None)
+          TypeUse(NoId, Some(SHORT_TYPE_NAME.asString), None, NoId)
         case "I"        => 
-          TypeUse(NoId, Some(INT_TYPE_NAME.asString), NoId, None)
+          TypeUse(NoId, Some(INT_TYPE_NAME.asString), None, NoId)
         case "J"        => 
-          TypeUse(NoId, Some(LONG_TYPE_NAME.asString), NoId, None)
+          TypeUse(NoId, Some(LONG_TYPE_NAME.asString), None, NoId)
         case "F"        => 
-          TypeUse(NoId, Some(FLOAT_TYPE_NAME.asString), NoId, None)
+          TypeUse(NoId, Some(FLOAT_TYPE_NAME.asString), None, NoId)
         case "D"        => 
-          TypeUse(NoId, Some(DOUBLE_TYPE_NAME.asString), NoId, None)
+          TypeUse(NoId, Some(DOUBLE_TYPE_NAME.asString), None, NoId)
         case "Z"        => 
-          TypeUse(NoId, Some(BOOLEAN_TYPE_NAME.asString), NoId, None)
+          TypeUse(NoId, Some(BOOLEAN_TYPE_NAME.asString), None, NoId)
         case "V"        => 
-          TypeUse(NoId, Some(VOID_TYPE_NAME.asString), NoId, None)
+          TypeUse(NoId, Some(VOID_TYPE_NAME.asString), None, NoId)
         case "["        => 
           // Array type tree?
           // val elemTye = stringToUse.substring
-          // TypeUse(NoId, Some(ARRAY_TYPE_NAME.asString), NoId, None)
-          TypeUse(NoId, Some(VOID_TYPE_NAME.asString), NoId, None)
+          // TypeUse(NoId, Some(ARRAY_TYPE_NAME.asString), None, NoId)
+          TypeUse(NoId, Some(VOID_TYPE_NAME.asString), None, NoId)
         case nme        =>
           val sig2 = if(classSig) nme
                      else nme.substring(1, nme.size -1)
           stringToUseTree(sig2.split("/").toList) match {
             case select@Select(qual, id: Ident)            =>
-              val tuse = TypeUse(id.uses, id.nameAtParser,
-                                 id.owner, id.pos)
+              val tuse = TypeUse(id.uses, id.nameAtParser, id.pos,
+                                 id.owner)
               Select(qual, tuse, select.pos, select.owner)
             case use                                       =>
               use
@@ -207,12 +207,12 @@ trait ClassFileParsers {
 
     private def stringToUseTree(sig: List[String]): UseTree = sig match {
       case List(x)                =>
-        TypeUse(NoId, Some(x), NoId, None)
+        TypeUse(NoId, Some(x), None, NoId)
       case Nil                    =>
         throw new Exception("This should not happen")
       case xs                     =>
         val rest = stringToUseTree(xs.take(xs.size - 1))
-        Select(rest, Ident(NoId, Some(xs.last), NoId, None), None, NoId)
+        Select(rest, Ident(NoId, Some(xs.last), None, NoId), None, NoId)
     }
 
 

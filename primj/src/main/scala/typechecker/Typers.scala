@@ -352,7 +352,7 @@ trait Typers extends typechecker.Typers {
                 case _     =>
                   point(())
               }
-     } yield Ident(tid, id.owner, id.pos)
+     } yield Ident(tid, id.pos, id.owner)
 
 
     // def nameMethodTreeUses(fun: UseTree): TypeChecker[UseTree] = fun match {
@@ -405,6 +405,6 @@ trait Typers extends typechecker.Typers {
                 case tid     =>
                   point(())
               }
-    } yield TypeUse(tid, tuse.owner, tuse.pos)
+    } yield TypeUse(tid, tuse.pos, tuse.owner)
   }
 }

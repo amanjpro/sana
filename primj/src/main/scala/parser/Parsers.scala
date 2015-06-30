@@ -109,7 +109,7 @@ trait Parsers extends parser.Parsers {
 
     override def visitAssign(@NotNull ctx: PrimjParser.AssignContext): Tree = {
       val name   = ctx.Identifier.getText
-      val id     = Ident(NoId, Some(name), NoId, pos(ctx))
+      val id     = Ident(NoId, Some(name), pos(ctx), NoId)
       val e2     = visit(ctx.expression).asInstanceOf[Expr]
       val op: Option[BOp] = ctx.op.getText match {
         case "+="   => Some(Add)
@@ -201,7 +201,7 @@ trait Parsers extends parser.Parsers {
                       PARAM | FINAL
                     else
                       Flags(PARAM)
-      val tpe = TypeUse(NoId, Some(ctx.`type`.getText), NoId, pos(ctx))
+      val tpe = TypeUse(NoId, Some(ctx.`type`.getText),pos(ctx), NoId)
       val name = Name(ctx.Identifier.getText)
       ValDef(mods, NoId, tpe, name, Empty, pos(ctx), NoId)
     }
@@ -236,7 +236,7 @@ trait Parsers extends parser.Parsers {
 
 	
 		override def visitVoidType(@NotNull ctx: PrimjParser.VoidTypeContext): Tree = { 
-      TypeUse(NoId, Some(ctx.getText), NoId, pos(ctx))
+      TypeUse(NoId, Some(ctx.getText), pos(ctx), NoId)
     }
 
 		override def visitBlock(@NotNull ctx: PrimjParser.BlockContext): Tree = { 
@@ -367,7 +367,7 @@ trait Parsers extends parser.Parsers {
     }
 		override def visitApply(@NotNull ctx: PrimjParser.ApplyContext): Tree = {
       val name   = ctx.Identifier.getText
-      val id     = Ident(NoId, Some(name), NoId, pos(ctx))
+      val id     = Ident(NoId, Some(name), pos(ctx), NoId)
       val args   = ctx.arguments.expressionList match {
         case null           => Nil
         case args           => 
@@ -392,12 +392,12 @@ trait Parsers extends parser.Parsers {
     }
 
     override def visitId(@NotNull ctx: PrimjParser.IdContext): Tree = {
-      Ident(NoId, Some(ctx.getText), NoId, pos(ctx))
+      Ident(NoId, Some(ctx.getText), pos(ctx), NoId)
     }
 
     override def visitPrimitiveType(
       @NotNull ctx: PrimjParser.PrimitiveTypeContext): Tree = { 
-      TypeUse(NoId, Some(ctx.getText), NoId, pos(ctx))
+      TypeUse(NoId, Some(ctx.getText), pos(ctx), NoId)
     }
 
     override def visitCast(@NotNull ctx: PrimjParser.CastContext): Tree = { 

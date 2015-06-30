@@ -240,27 +240,32 @@ trait Trees {
     }
   }
 
-  trait SimpleUseTree extends UseTree
+  /**
+    * A trait that represents simple use trees, that compose of
+    * one tee exactly. An example is Ident and TypeUse, but not
+    * Select.
+    *
+    * @group Api
+    */
+  trait SimpleUseTree extends UseTree {
+    /**
+     * The id (or the owner) of the directly enclosing tree of this
+     * tree.
+     *
+     * SimpleTree is the only Tree that needs this field, and it is
+     * because they can become part of Select, and be owned by the
+     * Select tree, while geographically be inside another tree.
+     */
+    def enclosingId: TreeId
+  }
 
   // Really common ASTs, I cannot imagine a compiler without them
-  // FIXME: Do we really need TypeUse?
   /**
     * A trait that represents identifiers that point to a [[TypeTree]]
     *
     * @group Api
     */
   trait TypeUse extends SimpleUseTree {
-    // def tpe: TypeState[Type] = {
-    //   State {
-    //     (ctx: Context) => {
-    //       val r = for {
-    //         r <- ctx.getTpe(uses)
-    //       } yield r
-    //       (ctx, r.eval(ctx))
-    //     }
-    //   }
-    // }
-
     def asString(ctx: Context): String = name(ctx)._2.asString
 
     def show(ctx: Context): String = 
@@ -318,8 +323,8 @@ trait Trees {
     */
   trait TypeUseFactory {
     private class TypeUseImpl(val uses: TreeId, 
-      val nameAtParser: Option[String],
-      val owner: TreeId, val pos: Option[Position]) extends TypeUse
+      val nameAtParser: Option[String], val pos: Option[Position],
+      val owner: TreeId, val enclosingId: TreeId) extends TypeUse
 
     /**
       * Creates a [[TypeUse]] instance.
@@ -328,13 +333,13 @@ trait Trees {
       *
       * @param uses the id of the [[DefTree]] that this instance uses
       * @param nameAtParser the name of this type-use when parsed
-      * @param owner the owner of this tree
       * @param pos the position of this tree
+      * @param owner the owner of this tree
       * @return a new [[TypeUse]] instance.
       */
     def apply(uses: TreeId, nameAtParser: Option[String], 
-      owner: TreeId, pos: Option[Position]): TypeUse = 
-        new TypeUseImpl(uses, nameAtParser, owner, pos)
+      pos: Option[Position], owner: TreeId): TypeUse = 
+        new TypeUseImpl(uses, nameAtParser, pos, owner, owner)
 
     /**
       * Creates a [[TypeUse]] instance.
@@ -343,12 +348,48 @@ trait Trees {
       * after parser phase.
       *
       * @param uses the id of the [[DefTree]] that this instance uses
-      * @param owner the owner of this tree
       * @param pos the position of this tree
+      * @param owner the owner of this tree
       * @return a new [[TypeUse]] instance.
       */
-    def apply(uses: TreeId, owner: TreeId, pos: Option[Position]): TypeUse = 
-        new TypeUseImpl(uses, None, owner, pos)
+    def apply(uses: TreeId, pos: Option[Position], owner: TreeId): TypeUse = 
+        new TypeUseImpl(uses, None, pos, owner, owner)
+
+    /**
+      * Creates a [[TypeUse]] instance.
+      *
+      * Please be reminded, you almost always need this this constructor
+      * after parser phase, when dealing with Select and TypeUse
+      *
+      * @param uses the id of the [[DefTree]] that this instance uses
+      * @param pos the position of this tree
+      * @param owner the owner of this tree
+      * @param enclosingId the id of the enclosing tree or its owner
+      * @return a new [[TypeUse]] instance.
+      */
+    def apply(uses: TreeId, 
+      pos: Option[Position], owner: TreeId, enclosingId: TreeId): TypeUse = 
+        new TypeUseImpl(uses, None, pos, owner, enclosingId)
+
+
+
+    /**
+      * Creates a [[TypeUse]] instance.
+      *
+      * You don't need to use this constructor after parsing
+      *
+      * @param uses the id of the [[DefTree]] that this instance uses
+      * @param nameAtParser the name of this type-use when parsed
+      * @param pos the position of this tree
+      * @param owner the owner of this tree
+      * @param enclosingId the id of the enclosing tree or its owner
+      * @return a new [[TypeUse]] instance.
+      */
+    def apply(uses: TreeId, nameAtParser: Option[String], 
+      pos: Option[Position], owner: TreeId, enclosingId: TreeId): TypeUse = 
+        new TypeUseImpl(uses, nameAtParser, pos, owner, enclosingId)
+
+
   }
 
   /**
@@ -358,21 +399,57 @@ trait Trees {
     */
   trait IdentFactory {
     private class IdentImpl(val uses: TreeId, 
-      val nameAtParser: Option[String], 
-      val owner: TreeId, val pos: Option[Position]) extends Ident 
+      val nameAtParser: Option[String], val pos: Option[Position],
+      val owner: TreeId, val enclosingId: TreeId) extends Ident 
 
     /**
       * Creates a [[Ident]] instance.
       *
+      * You don't need to use this constructor after parsing
+      *
       * @param uses the id of the [[DefTree]] that this instance uses
       * @param nameAtParser the name of this identifier when parsed
-      * @param owner the owner of this tree
       * @param pos the position of this tree
+      * @param owner the owner of this tree
+      * @param enclosingId the id of the enclosing tree or its owner
       * @return a new [[Ident]] instance.
       */
-    def apply(uses: TreeId, nameAtParser: Option[String], 
-      owner: TreeId, pos: Option[Position]): Ident = 
-        new IdentImpl(uses, nameAtParser, owner, pos)
+    def apply(uses: TreeId, nameAtParser: Option[String], pos: Option[Position],
+      owner: TreeId, enclosingId: TreeId): Ident = 
+        new IdentImpl(uses, nameAtParser, pos, owner, enclosingId)
+
+    /**
+      * Creates a [[Ident]] instance.
+      *
+      * Please be reminded, you almost always need this this constructor
+      * after parser phase, when dealing with Select and Ident.
+      *
+      * @param uses the id of the [[DefTree]] that this instance uses
+      * @param pos the position of this tree
+      * @param owner the owner of this tree
+      * @param enclosingId the id of the enclosing tree or its owner
+      * @return a new [[Ident]] instance.
+      */
+    def apply(uses: TreeId, pos: Option[Position],
+      owner: TreeId, enclosingId: TreeId): Ident = 
+        new IdentImpl(uses, None, pos, owner, enclosingId)
+
+
+
+    /**
+      * Creates a [[Ident]] instance.
+      *
+      * You don't need to use this constructor after parsing
+      *
+      * @param uses the id of the [[DefTree]] that this instance uses
+      * @param nameAtParser the name of this identifier when parsed
+      * @param pos the position of this tree
+      * @param owner the owner of this tree
+      * @return a new [[Ident]] instance.
+      */
+    def apply(uses: TreeId, nameAtParser: Option[String], pos: Option[Position],
+      owner: TreeId): Ident = 
+        new IdentImpl(uses, nameAtParser, pos, owner, owner)
 
 
     /**
@@ -382,12 +459,12 @@ trait Trees {
       * after parser phase.
       *
       * @param uses the id of the [[DefTree]] that this instance uses
-      * @param owner the owner of this tree
       * @param pos the position of this tree
+      * @param owner the owner of this tree
       * @return a new [[Ident]] instance.
       */
-    def apply(uses: TreeId, owner: TreeId, 
-      pos: Option[Position]): Ident = new IdentImpl(uses, None, owner, pos)
+    def apply(uses: TreeId, pos: Option[Position], owner: TreeId): Ident = 
+        new IdentImpl(uses, None, pos, owner, owner)
 
   }
 

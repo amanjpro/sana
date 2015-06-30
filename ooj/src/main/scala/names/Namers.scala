@@ -88,6 +88,7 @@ trait Namers extends primj.names.Namers {
       owner     =  tuse.owner
       name      =  tuse.nameAtParser.map(Name(_)).getOrElse(ERROR_NAME)
       // Do we have a Type with this name seeing from the owner?
+      // TODO: Perform visibility checks too
       nuse_ctx2 =  ctx.lookup(name, 
         _.kind.isInstanceOf[TypeKind], owner) match {
         case NoId                   =>
@@ -99,19 +100,24 @@ trait Namers extends primj.names.Namers {
           if(catalog.defines(fullName, true)) {
             val (_, loadedClass, ctx2) = 
               loadFromClassPath(fullName, owner).run(Set(), ctx)
+            // TODO: Perform visibility checks too
             loadedClass match {
               case cd: ClassDef =>
-                (TypeUse(cd.id, tuse.nameAtParser, owner, tuse.pos), ctx2)
+                (TypeUse(cd.id, tuse.nameAtParser, tuse.pos, owner, 
+                                tuse.enclosingId), ctx2)
               case _            =>
                 // This case should never happen
-                (TypeUse(NoId, tuse.nameAtParser, owner, tuse.pos), ctx2)
+                (TypeUse(NoId, tuse.nameAtParser, tuse.pos, owner, 
+                    tuse.enclosingId), ctx2)
             }
           } else {
             // Couldn't resolve the name, then don't resolve it
-            (TypeUse(NoId, tuse.nameAtParser, owner, tuse.pos), ctx)
+            (TypeUse(NoId, tuse.nameAtParser, tuse.pos, owner, 
+              tuse.enclosingId), ctx)
           }
         case i                      =>
-          (TypeUse(i, tuse.nameAtParser, owner, tuse.pos), ctx)
+          (TypeUse(i, tuse.nameAtParser, tuse.pos, owner, 
+            tuse.enclosingId), ctx)
       }
       nuse       =  nuse_ctx2._1
       ctx2       =  nuse_ctx2._2
@@ -149,6 +155,7 @@ trait Namers extends primj.names.Namers {
       nid_ctx2  =  ctx.lookup(name, _.kind == PackageKind, owner) match {
         case NoId                   =>
           // Do we have a Type with this name seeing from the owner?
+          // TODO: Perform visibility checks too
           ctx.lookup(name, _.kind.isInstanceOf[TypeKind], owner) match {
             case NoId                    =>
               // Do we have the (package, or type) in classpath?
@@ -161,24 +168,27 @@ trait Namers extends primj.names.Namers {
                   loadFromClassPath(fullName, owner).run(Set(), ctx)
                 loadedClass match {
                   case cd: ClassDef =>
-                    (TypeUse(cd.id, id.nameAtParser, owner, id.pos), ctx2)
+                    (TypeUse(cd.id, id.nameAtParser, id.pos, 
+                      owner, id.enclosingId), ctx2)
                   case _            =>
                     // This case should never happen
-                    (Ident(NoId, id.nameAtParser, owner, id.pos), ctx2)
+                    (Ident(NoId, id.nameAtParser, id.pos, owner, 
+                      id.enclosingId), ctx2)
                 }
               } else if(catalog.defines(fullName, false)) { 
                 val info = newPackageDefInfo(name)
                 val (i, ctx2) = ctx.extend(owner, packageContext(info))
-                (Ident(i, id.nameAtParser, owner, id.pos), ctx2)
+                (Ident(i, id.nameAtParser, id.pos, owner, id.enclosingId), ctx2)
               } else {
                 // Couldn't resolve the name, then don't resolve it
-                (Ident(NoId, id.nameAtParser, owner, id.pos), ctx)
+                (Ident(NoId, id.nameAtParser, id.pos, owner, 
+                  id.enclosingId), ctx)
               }
             case i                       =>
-              (TypeUse(i, id.nameAtParser, owner, id.pos), ctx)
+              (TypeUse(i, id.nameAtParser, id.pos, owner, id.enclosingId), ctx)
           }
         case i                      =>
-          (Ident(NoId, id.nameAtParser, owner, id.pos), ctx)
+          (Ident(NoId, id.nameAtParser, id.pos, owner, id.enclosingId), ctx)
       }
       nid        =  nid_ctx2._1
       ctx2       =  nid_ctx2._2
@@ -212,9 +222,11 @@ trait Namers extends primj.names.Namers {
       }
       tree    <- select.tree match {
         case id: Ident      => 
-          nameIdents(Ident(id.uses, id.nameAtParser, qid, id.pos))
+          nameIdents(Ident(id.uses, id.nameAtParser, id.pos, 
+            qid, id.enclosingId))
         case tuse: TypeUse  => 
-          nameTypeUses(TypeUse(tuse.uses, tuse.nameAtParser, qid, tuse.pos))
+          nameTypeUses(TypeUse(tuse.uses, tuse.nameAtParser, tuse.pos, 
+            qid, tuse.enclosingId))
       }
     } yield Select(qual, tree, select.pos, select.owner)
 

@@ -73,7 +73,7 @@ trait Namers extends names.Namers {
                 case tid     =>
                   point(())
               }
-    } yield TypeUse(tid, tuse.owner, tuse.pos)
+    } yield TypeUse(tid, tuse.pos, tuse.owner)
 
     def nameDefTrees(defTree: DefTree): NamerMonad[DefTree] = defTree match {
       case ttree: TermTree                            => for {

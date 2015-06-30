@@ -143,7 +143,7 @@ trait IDAssigners extends passes.Phases {
       owner   <- ask
       r       <- tuse match {
         case tuse: TypeUse =>
-          point(TypeUse(tuse.uses, tuse.nameAtParser, owner, tuse.pos))
+          point(TypeUse(tuse.uses, tuse.nameAtParser, tuse.pos, owner))
         case _             =>
           point(tuse)
       }
@@ -156,7 +156,7 @@ trait IDAssigners extends passes.Phases {
       } yield r
       case id: Ident                                 => for {
         owner   <- ask
-        r       <- point(Ident(id.uses, id.nameAtParser, owner, id.pos))
+        r       <- point(Ident(id.uses, id.nameAtParser, id.pos, owner))
       } yield r
       case cast: Cast                                => for {
         tpt     <- assignTypeUse(cast.tpt)

@@ -162,7 +162,7 @@ trait Typers extends brokenj.typechecker.Typers {
                      id.owner)
                  // Is there any local variables with the same name?
                  if(variable != NoId) { 
-                   (Ident(variable, id.owner, id.pos), env)
+                   (Ident(variable, id.pos, id.owner, id.enclosingId), env)
                  } else {
                    // OK, this seems to be ugly, but we don't want to
                    // re-compute operations
@@ -176,12 +176,12 @@ trait Typers extends brokenj.typechecker.Typers {
                    // this compilation unit defines this name? Bind it to that
                    // it is type name
                    if(tuse != NoId) {
-                     (TypeUse(tuse, id.owner, id.pos), env)
+                     (TypeUse(tuse, id.pos, id.owner, id.enclosingId), env)
                    } else {
                      val pkg = env.lookup(name, _.kind == PackageKind,
                        id.owner)
                      if(pkg != NoId) {
-                       (Ident(pkg, id.owner, id.pos), env) 
+                       (Ident(pkg, id.pos, id.owner, id.enclosingId), env) 
                      } else {
                        // Does the classpath defines this name
                        // in a package hierarchy similar to this
@@ -195,18 +195,19 @@ trait Typers extends brokenj.typechecker.Typers {
                          loadedClass match {
                            case cd: ClassDef =>
                              (TypeUse(cd.id, id.nameAtParser, 
-                                 owner, id.pos), ctx2)
+                                 id.pos, owner, id.enclosingId), ctx2)
                            case _            =>
                              // This case should never happen
-                             (Ident(NoId, id.nameAtParser, owner, id.pos), 
-                                 ctx2)
+                             (Ident(NoId, id.nameAtParser, id.pos, owner, 
+                               id.enclosingId), ctx2)
                          }
                        } else if(self.catalog.defines(fullName, false)) { 
                          val info = newPackageDefInfo(name)
                          val (i, ctx2) = env.extend(owner, packageContext(info))
-                           (Ident(i, id.nameAtParser, owner, id.pos), ctx2)
+                           (Ident(i, id.nameAtParser, id.pos, 
+                             owner, id.enclosingId), ctx2)
                        } else {
-                          (Ident(NoId, id.owner, id.pos), env)
+                          (Ident(NoId, id.pos, id.owner, id.enclosingId), env)
                        }
                      }
                      // When we introduce import statements, we need to 
@@ -248,18 +249,18 @@ trait Typers extends brokenj.typechecker.Typers {
                     val tuse = env.lookup(name, _.kind.isInstanceOf[TypeKind],
                               id.owner)
                     if(tuse != NoId) {
-                      (TypeUse(tuse, id.owner, id.pos), env)
+                      (TypeUse(tuse, id.pos, id.owner, id.enclosingId), env)
                     } else {
                       val tuse = env.lookup(name, 
                         _.kind == PackageKind, id.owner)
-                      (Ident(tuse, id.owner, id.pos), env)
+                      (Ident(tuse, id.pos, id.owner, id.enclosingId), env)
                     }
                   } else if(qkind != None){
                     val tuse = env.lookup(name, 
                       _.kind == VariableKind, id.owner)
-                    (Ident(tuse, id.owner, id.pos), env)
+                    (Ident(tuse, id.pos, id.owner, id.enclosingId), env)
                   } else {
-                    (Ident(NoId, id.owner, id.pos), env)
+                    (Ident(NoId, id.pos, id.owner, id.enclosingId), env)
                   }
                 }
         tid  =  res._1
@@ -294,9 +295,11 @@ trait Typers extends brokenj.typechecker.Typers {
       }
       tree    <- select.tree match {
         case id: Ident      => 
-          typeQualifiedIdent(Ident(id.uses, id.nameAtParser, qid, id.pos))
+          typeQualifiedIdent(
+            Ident(id.uses, id.nameAtParser, id.pos, qid, id.enclosingId))
         case tuse: TypeUse  => 
-          typeTypeUse(TypeUse(tuse.uses, tuse.nameAtParser, qid, tuse.pos))
+          typeTypeUse(TypeUse(tuse.uses, tuse.nameAtParser, tuse.pos, 
+            qid, tuse.enclosingId))
       }
     } yield Select(qual, tree, select.pos, select.owner)
 

@@ -154,7 +154,7 @@ trait Typers extends passes.Phases {
       if(t1 =:= t2) e
       else {
         val pos = e.pos
-        val id = TypeUse(castId, e.owner, pos)
+        val id = TypeUse(castId, pos, e.owner)
         Cast(id, e, pos)
       }
     }

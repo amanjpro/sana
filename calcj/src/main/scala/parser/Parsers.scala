@@ -113,7 +113,7 @@ trait Parsers extends parser.Parsers {
 
     override def visitPrimitiveType(
       @NotNull ctx: CalcjParser.PrimitiveTypeContext): Tree = { 
-      TypeUse(NoId, Some(ctx.getText), NoId, pos(ctx))
+      TypeUse(NoId, Some(ctx.getText), pos(ctx), NoId)
     }
 
     override def visitCast(@NotNull ctx: CalcjParser.CastContext): Tree = { 
