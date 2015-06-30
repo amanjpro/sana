@@ -318,8 +318,13 @@ trait Typers extends brokenj.typechecker.Typers {
     }
     
     // We override it, to support Method Overloading, this addresses Issue #1
-    // override def nameMethodTreeUses(fun: UseTree): 
-    //   TypeChecker[UseTree] = fun match {
+    def typeApplyFunIdent(fun: Ident, 
+      args: List[Expr]): TypeChecker[UseTree] 
+    
+    def typeApplyFunQualifiedIdent(fun: Ident, 
+      args: List[Expr]): TypeChecker[Ident] 
+
+    // = fun match {
     //   case id: Ident                                => for {
     //     env    <- get
     //     name   <- point(id.nameAtParser.map(Name(_)).getOrElse(ERROR_NAME))
@@ -350,6 +355,16 @@ trait Typers extends brokenj.typechecker.Typers {
 
     override def typeApply(apply: Apply): TypeChecker[Apply] = for {
       args      <- apply.args.map(typeExpr(_)).sequenceU
+      fun       <- apply.fun match {
+        case id: Ident                    =>
+          typeApplyFunIdent(id, args)
+        case s@Select(qual, tree: Ident)  =>
+          for {
+            tree <- typeApplyFunQualifiedIdent(tree, args)
+          } yield Select(qual, tree, s.pos, s.owner)
+        case _                            =>
+          typeTree(apply.fun)
+      }
     } yield null
   }
 }
