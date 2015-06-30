@@ -6,8 +6,9 @@ import sana.brokenj
 import sana.ooj
 import sana.primj
 import sana.calcj
-import primj.report._
 import tiny.contexts._
+import tiny.names.Name
+import primj.report._
 import calcj.ast.JavaOps._
 
 import ooj.Global
@@ -17,10 +18,10 @@ import scalaz.{Name => _, Failure => _, _}
 import scalaz.Scalaz._
 
 trait Typers extends brokenj.typechecker.Typers {
-  // To support method overloading, typer should be able to redo
-  // naming trees, that because we might have chosen a wrong 
-  // overloaded methods during the namer phase (that is when, we don't
-  // really know the types).
+  // INFO:
+  // To support method overloading, typer should take care of nameing
+  // inner definitions (local definitions). 
+  //
   // Take this an example:
   // class A {
   //   int k() { ... }
@@ -34,13 +35,12 @@ trait Typers extends brokenj.typechecker.Typers {
   //   B m(String s) { ... }
   //  
   //   void test() {
-  //     m("1").s();   // Namer might wrongly resolve s to the a non-existing
-  //                   // method name, but typer knows that this method
-  //                   // application is actually correct, and has to redo
-  //                   // the name resolution of s.
+  //     m("1").s();   // If we rely on Namer only, we wrongly resolve s to 
+  //                   // the a non-existing method name, but typer knows 
+  //                   // that this method application is actually correct,
+  //                   // because it can always pick the correct method.
   //   }
   // }
-  self: Namers =>
 
   type G <: Global
   import global._
