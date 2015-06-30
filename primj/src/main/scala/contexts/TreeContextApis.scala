@@ -16,7 +16,6 @@ trait TreeContextApis {
   self: TreeContexts with TreeInfos =>
 
   
-  // TODO: Implement this class
   implicit class ImplicitContextApi(val ctx: Context) extends ContextApi {
     def isBlock(id: TreeId): Boolean = true
     def isFor(id: TreeId): Boolean = true
