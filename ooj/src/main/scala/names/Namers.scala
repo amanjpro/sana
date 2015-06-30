@@ -168,7 +168,7 @@ trait Namers extends primj.names.Namers {
               } else if(catalog.defines(fullName, false)) { 
                 val info = newPackageDefInfo(name)
                 val (i, ctx2) = ctx.extend(owner, packageContext(info))
-                (Ident(NoId, id.nameAtParser, owner, id.pos), ctx2)
+                (Ident(i, id.nameAtParser, owner, id.pos), ctx2)
               } else {
                 // Couldn't resolve the name, then don't resolve it
                 (Ident(NoId, id.nameAtParser, owner, id.pos), ctx)
