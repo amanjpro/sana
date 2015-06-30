@@ -110,6 +110,11 @@ trait Trees extends ast.Trees {
 
   trait Select extends UseTree {
     def qual: Tree
+    def tree: SimpleUseTree
+
+    override def name: ContextState[Name] = tree.name
+    def uses: TreeId = tree.uses
+    def nameAtParser: Option[String] = tree.nameAtParser
 
     def asString(ctx: Context): String =
       s"${qual.asString(ctx)}.${name(ctx)._2}"
@@ -121,7 +126,7 @@ trait Trees extends ast.Trees {
           |nameAtParser=$nameAtParser,
           |owner=$owner,
           |pos=$pos,
-          |name=${name(ctx)._2}
+          |tree=${tree.show(ctx)}
           |}""".stripMargin
   }
 
@@ -191,6 +196,13 @@ trait Trees extends ast.Trees {
     }
   }
 
+  trait SelectExtractor {
+    def unapply(select: Select): Option[(Tree, SimpleUseTree)] = select match {
+      case null            => None
+      case _               => Some((select.qual, select.tree))
+    }
+  }
+
   /***************************** Factories **************************/
 
   trait PackageDefFactory {
@@ -225,18 +237,12 @@ trait Trees extends ast.Trees {
   }
 
   trait SelectFactory {
-    private class SelectImpl(val uses: TreeId, val qual: Tree,
-      val nameAtParser: Option[String],
+    private class SelectImpl(val qual: Tree, val tree: SimpleUseTree,
       val pos: Option[Position], val owner: TreeId) extends Select
 
-    def apply(uses: TreeId, qual: Tree,
-      nameAtParser: Option[String],
+    def apply(qual: Tree, tree: SimpleUseTree,
       pos: Option[Position], owner: TreeId): Select =
-        new SelectImpl(uses, qual, nameAtParser, pos, owner)
-
-    def apply(uses: TreeId, qual: Tree,
-      pos: Option[Position], owner: TreeId): Select =
-        new SelectImpl(uses, qual, None, pos, owner)
+        new SelectImpl(qual, tree, pos, owner)
   }
 
   trait ThisFactory {
@@ -265,7 +271,7 @@ trait Trees extends ast.Trees {
   val PackageDef  = new PackageDefExctractor with PackageDefFactory {}
   val ClassDef    = new ClassDefExtractor with ClassDefFactory {}
   val New         = new NewExtractor with NewFactory {}
-  val Select      = new SelectFactory {}
+  val Select      = new SelectFactory with SelectExtractor {}
   val This        = new ThisFactory {}
   val Super       = new SuperFactory {}
 }
