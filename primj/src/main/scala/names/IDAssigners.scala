@@ -104,7 +104,7 @@ trait IDAssigners extends passes.Phases {
       params  <- meth.params.map {
         case v => local(const(id))(assignValDef(v))
       }.sequenceU
-      ret     <- assignTypeUse(meth.ret)
+      ret     <- assignUseTree(meth.ret)
       body    <- local(const(id))(assignExpr(meth.body))
       m       <- point(MethodDef(meth.mods, id, ret, meth.name, 
                 params, body, meth.pos, owner))
@@ -116,7 +116,7 @@ trait IDAssigners extends passes.Phases {
     def assignValDef(valdef: ValDef): IDAssignerMonad[ValDef] = for {
       owner   <- ask
       ctx1    <- get
-      tpt     <- assignTypeUse(valdef.tpt)
+      tpt     <- assignUseTree(valdef.tpt)
       rhs     <- assignExpr(valdef.rhs)
       enclM   =  ctx1.enclosingMethod(owner)
       nme     = valdef.name
@@ -139,27 +139,34 @@ trait IDAssigners extends passes.Phases {
       _       <- point(v)
     } yield v
 
-    def assignTypeUse(tuse: UseTree): IDAssignerMonad[UseTree] = for {
+    def assignUseTree(use: UseTree): IDAssignerMonad[UseTree] = use match {
+      case tuse: TypeUse       => for {
+        r <- assignUseTree(tuse)
+      } yield r
+      case id: Ident           => for {
+        r <- assignIdent(id)
+      } yield r
+    }
+
+    def assignTypeUse(tuse: TypeUse): IDAssignerMonad[TypeUse] = for {
       owner   <- ask
-      r       <- tuse match {
-        case tuse: TypeUse =>
-          point(TypeUse(tuse.uses, tuse.nameAtParser, tuse.pos, owner))
-        case _             =>
-          point(tuse)
-      }
+      r       <- point(TypeUse(tuse.uses, tuse.nameAtParser, tuse.pos, owner))
     } yield r
 
+    def assignIdent(id: Ident): IDAssignerMonad[Ident] = for {
+      owner   <- ask
+      r       <- point(Ident(id.uses, id.nameAtParser, id.pos, owner))
+    } yield r
 
     def assignExpr(expr: Expr): IDAssignerMonad[Expr] = expr match {
       case lit: Lit                                  => for {
         r       <- point(lit)
       } yield r
       case id: Ident                                 => for {
-        owner   <- ask
-        r       <- point(Ident(id.uses, id.nameAtParser, id.pos, owner))
+        r <- assignIdent(id)
       } yield r
       case cast: Cast                                => for {
-        tpt     <- assignTypeUse(cast.tpt)
+        tpt     <- assignUseTree(cast.tpt)
         expr    <- assignExpr(cast.expr)
       } yield Cast(tpt, expr, cast.pos)
       case bin: Binary                               => for {
