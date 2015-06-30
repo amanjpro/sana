@@ -50,9 +50,11 @@ trait TreeContextApis {
     def isVariable(id: TreeId): Boolean
 
     def enclosingMethod(id: TreeId): TreeId
-    // = for {
-      // tree <- getTree(id)
-      // _    
-    // }
+    def enclosingMethodName(id: TreeId): Option[Name] =
+      ctx.getTree(enclosingMethod(id)) match {
+        case Some(c: NamedContext)      => Some(c.tree.name)
+        case _                          => None
+      }
+
   }
 }

@@ -17,7 +17,6 @@ trait TreeContextApis extends primj.contexts.TreeContextApis {
   self: TreeContexts with TreeInfos =>
 
   
-  // TODO: Implement this class
   implicit class ImplicitContextApi(override val ctx: Context) extends 
       super.ImplicitContextApi(ctx) {
     def enclosingPackage(id: TreeId): TreeId = ??? 
