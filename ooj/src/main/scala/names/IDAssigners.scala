@@ -63,10 +63,30 @@ trait IDAssigners extends brokenj.names.IDAssigners {
       case clazz: ClassDef                           => for {
         r       <- assignClassDef(clazz)
       } yield r
+      case select: Select                            => for {
+        r       <- assignSelect(select)
+      } yield r
       case _                                         =>
         super.assign(tree)
     }
 
+    override def assignUseTree(use: UseTree): IDAssignerMonad[UseTree] = 
+      use match {
+        case s: Select => for {
+          r <- assignSelect(s)
+        } yield r
+        case _         => super.assignUseTree(use)
+      }
+
+
+    def assignSelect(select: Select): IDAssignerMonad[Select] = for {
+      owner   <- ask
+      qual    <- assign(select.qual)
+      tree    <- assignUseTree(select.tree) match {
+        case s: SimpleUseTree     => point(s)
+        case _                    => point(select.tree)
+      }
+    } yield Select(qual, tree, select.pos, owner)
 
     /**
      * Assign id's the members of PackageDef. The package definition itself
