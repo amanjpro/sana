@@ -199,7 +199,6 @@ trait Trees extends ast.Trees {
   }
 
 
-  // TODO: Add Do-While to the toString
   trait While extends Expr with Modifiable {
     def cond: Expr
     def body: Expr
