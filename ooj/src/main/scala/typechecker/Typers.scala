@@ -7,12 +7,14 @@ import sana.ooj
 import sana.primj
 import sana.calcj
 import tiny.contexts._
+import tiny.modifiers.Flags
 import tiny.names.Name
 import primj.report._
 import calcj.ast.JavaOps._
 
 import ooj.Global
 import ooj.names.Namers
+import ooj.modifiers.Ops._
 
 import scalaz.{Name => _, Failure => _, _}
 import scalaz.Scalaz._
@@ -145,6 +147,42 @@ trait Typers extends brokenj.typechecker.Typers {
       _         <- put(ctx2)
     } yield r
 
+
+    def termIsVisible(id: TreeId, mods: Flags, from: TreeId,
+      ctx: Context): Boolean = {
+
+      def privateCheck(id: TreeId, from: TreeId): Boolean = {
+        // Get the enclosing classes of this id
+        val enclosingClasses   = ctx.enclosingClasses(from)
+        val enclosingClassId   = ctx.enclosingClass(id)
+        enclosingClasses.contains(enclosingClassId)
+      }
+
+      def packageCheck(id: TreeId, from: TreeId): Boolean = {
+        val pkgFrom          = ctx.enclosingPackage(from)
+        val pkgId            = ctx.enclosingPackage(id)
+        pkgId == pkgFrom
+      }
+      if(mods.isPrivateAcc) {
+        privateCheck(id, from)
+      } else if(mods.isPackageAcc) {
+        packageCheck(id, from)
+      } else if(mods.isProtectedAcc) {
+        val lowerCheck = packageCheck(id, from) || privateCheck(id, from)
+        if(lowerCheck) true
+        else {
+          val enclosingClassFrom = ctx.enclosingClass(from)
+          val enclosingClassId   = ctx.enclosingClass(id)
+          val treeFrom           = ctx.getTree(enclosingClassFrom)
+          treeFrom match {
+            case Some(cf: ClassInfo)        =>
+              cf.parents.contains(enclosingClassId)
+            case _                          => false
+          }
+        }
+      } else true
+    }
+
     // Typing an Ident is a bit more involving than typing a type use,
     // we need to decide weather we resolve it to a local variable,
     // field, type name or a package name,
@@ -153,21 +191,36 @@ trait Typers extends brokenj.typechecker.Typers {
     override def typeIdent(id: Ident): TypeChecker[UseTree] = for {
       env   <- get
       lvars <- ask
-      owner     =  id.owner
-      name      =  id.nameAtParser.map(Name(_)).getOrElse(ERROR_NAME)
+      owner =  id.owner
+      encl  = id.enclosingId
+      name  =  id.nameAtParser.map(Name(_)).getOrElse(ERROR_NAME)
       res   =  {
                  val enclosingMethod = env.enclosingMethod(id.owner)
                  val variable        = env.lookup(name,
                      alreadyDefinedVariablePredicate(_, lvars),
                      id.owner)
+                 val visible         = env.getTree(variable) match {
+                   case Some(t)          =>
+                     !t.mods.isField || 
+                       termIsVisible(variable, t.mods, encl, env)
+                   case _                => false
+                 }
                  // Is there any local variables with the same name?
-                 if(variable != NoId) { 
-                   (Ident(variable, id.pos, id.owner, id.enclosingId), env)
+                 if(variable != NoId && visible) { 
+                   (Ident(variable, id.pos, id.owner, encl), env)
                  } else {
                    // OK, this seems to be ugly, but we don't want to
                    // re-compute operations
                    val tuse = env.lookup(name, _.kind.isInstanceOf[TypeKind],
                      id.owner)
+
+                   val visible         = env.getTree(tuse) match {
+                     case Some(t)          =>
+                       !t.mods.isField || 
+                         namer.typeIsVisible(tuse, t.mods, encl, env)
+                     case _                => false
+                   }
+
                    // compilation unit defines this name? Bind it to that
                    // The way Context works, makes sure that it first searches
                    // for this compilation unit, then to this package and then
@@ -175,13 +228,13 @@ trait Typers extends brokenj.typechecker.Typers {
                    // another compilation unit with the same package name as 
                    // this compilation unit defines this name? Bind it to that
                    // it is type name
-                   if(tuse != NoId) {
-                     (TypeUse(tuse, id.pos, id.owner, id.enclosingId), env)
+                   if(tuse != NoId && visible) {
+                     (TypeUse(tuse, id.pos, id.owner, encl), env)
                    } else {
                      val pkg = env.lookup(name, _.kind == PackageKind,
                        id.owner)
                      if(pkg != NoId) {
-                       (Ident(pkg, id.pos, id.owner, id.enclosingId), env) 
+                       (Ident(pkg, id.pos, id.owner, encl), env) 
                      } else {
                        // Does the classpath defines this name
                        // in a package hierarchy similar to this
@@ -193,21 +246,22 @@ trait Typers extends brokenj.typechecker.Typers {
                            namer.loadFromClassPath(fullName, 
                              owner).run(Set(), env)
                          loadedClass match {
-                           case cd: ClassDef =>
+                           case cd: ClassDef if namer.typeIsVisible(cd.id, 
+                                       cd.mods, encl, ctx2)      =>
                              (TypeUse(cd.id, id.nameAtParser, 
-                                 id.pos, owner, id.enclosingId), ctx2)
-                           case _            =>
+                                 id.pos, owner, encl), ctx2)
+                           case _                                =>
                              // This case should never happen
                              (Ident(NoId, id.nameAtParser, id.pos, owner, 
-                               id.enclosingId), ctx2)
+                               encl), ctx2)
                          }
                        } else if(self.catalog.defines(fullName, false)) { 
                          val info = newPackageDefInfo(name)
                          val (i, ctx2) = env.extend(owner, packageContext(info))
                            (Ident(i, id.nameAtParser, id.pos, 
-                             owner, id.enclosingId), ctx2)
+                             owner, encl), ctx2)
                        } else {
-                          (Ident(NoId, id.pos, id.owner, id.enclosingId), env)
+                          (Ident(NoId, id.pos, id.owner, encl), env)
                        }
                      }
                      // When we introduce import statements, we need to 
@@ -240,27 +294,43 @@ trait Typers extends brokenj.typechecker.Typers {
     def typeQualifiedIdent(id: Ident): TypeChecker[SimpleUseTree] = for {
       env   <- get
       lvars <- ask
-      owner     =  id.owner
-      name      =  id.nameAtParser.map(Name(_)).getOrElse(ERROR_NAME)
+      owner =  id.owner
+      encl  =  id.enclosingId
+      name  =  id.nameAtParser.map(Name(_)).getOrElse(ERROR_NAME)
       res   =  {
                   val qkind = env.getTree(owner).map(_.kind)
                   // At this point, we don't have 
                   if(qkind == Some(PackageKind)) {
                     val tuse = env.lookup(name, _.kind.isInstanceOf[TypeKind],
                               id.owner)
-                    if(tuse != NoId) {
-                      (TypeUse(tuse, id.pos, id.owner, id.enclosingId), env)
+                    val visible         = env.getTree(tuse) match {
+                      case Some(t)          =>
+                        !t.mods.isField || 
+                          namer.typeIsVisible(tuse, t.mods, encl, env)
+                      case _                => false
+                    }
+                    if(tuse != NoId && visible) {
+                      (TypeUse(tuse, id.pos, id.owner, encl), env)
                     } else {
                       val tuse = env.lookup(name, 
                         _.kind == PackageKind, id.owner)
-                      (Ident(tuse, id.pos, id.owner, id.enclosingId), env)
+                      (Ident(tuse, id.pos, id.owner, encl), env)
                     }
                   } else if(qkind != None){
-                    val tuse = env.lookup(name, 
+                    val variable = env.lookup(name, 
                       _.kind == VariableKind, id.owner)
-                    (Ident(tuse, id.pos, id.owner, id.enclosingId), env)
+                    val visible         = env.getTree(variable) match {
+                      case Some(t)          =>
+                        !t.mods.isField || 
+                          termIsVisible(variable, t.mods, encl, env)
+                      case _                => false
+                    }
+                    if(visible)
+                      (Ident(variable, id.pos, id.owner, encl), env)
+                    else
+                      (Ident(NoId, id.pos, id.owner, encl), env)
                   } else {
-                    (Ident(NoId, id.pos, id.owner, id.enclosingId), env)
+                    (Ident(NoId, id.pos, id.owner, encl), env)
                   }
                 }
         tid  =  res._1
