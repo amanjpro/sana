@@ -89,14 +89,6 @@ trait IDAssigners extends passes.Phases {
     def assignMethodDef(meth: MethodDef): IDAssignerMonad[MethodDef] = for {
       owner   <- ask
       ctx1    <- get
-      // _       <- ctx.getContext(owner) match {
-      //           case
-      //            }.directlyDefines(meth.name) match {
-      //              case true =>
-      //                error(TYPE_NOT_FOUND,
-      //                  "", "a type", meth.pos, meth)
-      //              case _    => point(())
-      //            }
       id_ctx2 =  ctx1.extend(owner, methodContext(meth))
       id      =  id_ctx2._1
       ctx2    =  id_ctx2._2
@@ -141,7 +133,7 @@ trait IDAssigners extends passes.Phases {
 
     def assignUseTree(use: UseTree): IDAssignerMonad[UseTree] = use match {
       case tuse: TypeUse       => for {
-        r <- assignUseTree(tuse)
+        r <- assignTypeUse(tuse)
       } yield r
       case id: Ident           => for {
         r <- assignIdent(id)
