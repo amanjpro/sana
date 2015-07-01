@@ -136,7 +136,7 @@ trait Typers extends typechecker.Typers {
       rhs  <- typeExpr(assign.rhs)
       ltpe <- toTypeChecker(lhs.tpe)
       rtpe <- toTypeChecker(rhs.tpe)
-      _    <- if (ltpe <:< rtpe)
+      _    <- if (rtpe <:< ltpe)
                 point(())
               else 
                 toTypeChecker(error(TYPE_MISMATCH,
