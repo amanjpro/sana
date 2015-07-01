@@ -20,6 +20,9 @@ trait TreeContextApis extends primj.contexts.TreeContextApis {
   implicit class ImplicitContextApi(override val ctx: Context) extends 
       super.ImplicitContextApi(ctx) with ContextApi {
 
+    def isStatic(id: TreeId): Boolean = 
+      ctx.getTree(id).map(_.mods.isStatic).getOrElse(false)
+
     def enclosingClass(id: TreeId): TreeId = 
       ctx.getContext(id) match {
         case Some(ctx: NamedContext) if ctx.tree.kind == ClassKind   =>
@@ -40,6 +43,19 @@ trait TreeContextApis extends primj.contexts.TreeContextApis {
         case Some(ctx)                                               =>
           enclosingPackage(id.up)
         case None                                                    =>
+          NoId
+      }
+
+    def enclosingNonLocal(id: TreeId): TreeId =
+      ctx.getContext(id) match {
+        case Some(ctx: NamedContext) 
+            if ctx.tree.kind == VariableKind && ctx.tree.mods.isField =>
+          id
+        case Some(ctx: NamedContext)                                  =>
+          id
+        case Some(ctx)                                                =>
+          enclosingPackage(id.up)
+        case None                                                     =>
           NoId
       }
   }
@@ -79,6 +95,8 @@ trait TreeContextApis extends primj.contexts.TreeContextApis {
       }
     }
 
+    def enclosingNonLocal(id: TreeId): TreeId 
+
     def topLevelClass(id: TreeId): TreeId = enclosingClasses(id) match {
       case Nil                  => NoId
       case classes              => classes.last
@@ -105,6 +123,8 @@ trait TreeContextApis extends primj.contexts.TreeContextApis {
      * and return NoId
      */
     def enclosingClass(id: TreeId): TreeId
+
+    def isStatic(id: TreeId): Boolean
 
     def enclosingClassName(id: TreeId): Option[Name] =
       ctx.getTree(enclosingClass(id)) match {
