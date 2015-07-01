@@ -15,6 +15,7 @@ import calcj.ast.JavaOps._
 import ooj.Global
 import ooj.names.Namers
 import ooj.modifiers.Ops._
+import ooj.report._
 
 import scalaz.{Name => _, Failure => _, _}
 import scalaz.Scalaz._
@@ -359,9 +360,11 @@ trait Typers extends brokenj.typechecker.Typers {
       //   // type uses
       //   case _             => NoId
       // }
-      qid     =  qual match {
-        case qual: UseTree       => qual.uses
-        case _                   => NoId
+      qtpe    <- toTypeChecker(qual.tpe)
+      qid     =  qtpe match {
+        // TODO: Array type????
+        case c: ClassType           => c.id
+        case _                      => NoId
       }
       tree    <- select.tree match {
         case id: Ident      => 
@@ -387,55 +390,162 @@ trait Typers extends brokenj.typechecker.Typers {
       } yield r
     }
     
-    // We override it, to support Method Overloading, this addresses Issue #1
+
+    def methodCanBeApplied(ptpes: List[Type],
+                           atpes: List[Type]): Boolean = {
+      if(ptpes.size != atpes.size) false
+      else 
+        atpes.zip(ptpes).foldLeft(true)((z, y) => {
+          z && (y._1 <:< y._2)
+        })
+    }
+
+
+    def qualifiedMethods(ids: List[TreeId], enclClass: TreeId, ctx: Context,
+      tpes: List[Type]): List[(TreeId, MethodType)] = ids match {
+      case Nil                                                           => 
+        Nil
+      case (id::rest)                                                    => 
+        ctx.getTree(id) match {
+          case Some(t)                if enclClass.contains(id)          => 
+            t.tpe.eval(ctx) match {
+              case mt: MethodType if methodCanBeApplied(mt.params, tpes) =>
+                (id, mt)::qualifiedMethods(rest, enclClass, ctx, tpes)
+              case _                                                     =>
+                qualifiedMethods(rest, enclClass, ctx, tpes)
+            }
+          case Some(t)      if ! t.mods.isPrivateAcc                     => 
+            t.tpe.eval(ctx) match {
+              case mt: MethodType if methodCanBeApplied(mt.params, tpes) =>
+                (id, mt)::qualifiedMethods(rest, enclClass, ctx, tpes)
+              case _                                                     =>
+                qualifiedMethods(rest, enclClass, ctx, tpes)
+            }
+          case _                                                         =>
+            qualifiedMethods(rest, enclClass, ctx, tpes)
+      }
+    }
+
+
+    def mostSpecificMethods(ids: List[(TreeId, MethodType)]): 
+        List[(TreeId, MethodType)] = 
+      ids.filter((x) => {
+        ids.foldLeft(true)((z, y) => 
+          if(x._1 == y._1) z
+          else methodCanBeApplied(y._2.params, x._2.params)
+        )
+      })
+      
+
+    // jointly this method and typeApplyFunQualifiedIdent address Issue #1
     def typeApplyFunIdent(fun: Ident, 
-      args: List[Expr]): TypeChecker[UseTree] 
+      tpes: List[Type]): TypeChecker[Ident] = for {
+      ctx        <- get
+      enclClass  =  ctx.enclosingClass(fun.enclosingId)
+      name       =  fun.nameAtParser.map(Name(_)).getOrElse(ERROR_NAME)
+      methods    =  { // a list of method ids and their types
+        ctx.getContext(enclClass) match {
+          case None                        => Nil
+          case Some(ctx)                   =>
+            val ids       = ctx.findAllInThisContextAndInherited(name, 
+                      _.kind == MethodKind)
+            qualifiedMethods(ids, enclClass, ctx, tpes) 
+        }
+      }
+      specficis  = mostSpecificMethods(methods)
+      _          <- specficis match {
+        case List(id)                 => point(())
+        case Nil                      =>
+          toTypeChecker(error(NAME_NOT_FOUND,
+              fun.toString, "a method name", fun.pos, fun))
+      }
+      _          <- specficis match {
+        case List(id)                 => point(())
+        case _                        =>
+          toTypeChecker(error(AMBIGUOUS_METHOD_INVOCATION,
+              fun.toString, "a method name", fun.pos, fun))
+
+      }
+      mid        =  methods.headOption.map(_._1).getOrElse(NoId)
+      isStatic   =  ctx.getTree(ctx.enclosingNonLocal(enclClass)) match {
+        case Some(t)                     => t.mods.isStatic
+        case _                           => false
+      }
+      isMStatic  =  ctx.getTree(mid) match {
+        case Some(t)                     => t.mods.isStatic
+        case _                           => false
+      }
+      _          =  (isStatic, isMStatic) match {
+        case (true, false)               => 
+          toTypeChecker(error(INSTANCE_METHOD_IN_STATIC_CONTEXT_INVOK,
+              fun.toString, "a method name", fun.pos, fun))
+        case (_, _)                      => point(())
+      }
+      _          <- put(ctx)
+    } yield Ident(mid, fun.pos, fun.owner)
     
     def typeApplyFunQualifiedIdent(fun: Ident, 
-      args: List[Expr]): TypeChecker[Ident] 
+      tpes: List[Type]): TypeChecker[Ident] = for {
+      ctx        <- get
+      enclClass  =  ctx.enclosingClass(fun.enclosingId)
+      name       =  fun.nameAtParser.map(Name(_)).getOrElse(ERROR_NAME)
+      methods    =  { // a list of method ids and their types
+        ctx.getContext(fun.owner) match {
+          case None                        => Nil
+          case Some(ctx)                   =>
+            val ids       = ctx.findAllInThisContextAndInherited(name, 
+                      _.kind == MethodKind)
+            qualifiedMethods(ids, enclClass, ctx, tpes) 
+        }
+      }
+      specficis  = mostSpecificMethods(methods)
+      _          <- specficis match {
+        case List(id)                 => point(())
+        case Nil                      =>
+          toTypeChecker(error(NAME_NOT_FOUND,
+              fun.toString, "a method name", fun.pos, fun))
+      }
+      _          <- specficis match {
+        case List(id)                 => point(())
+        case _                        =>
+          toTypeChecker(error(AMBIGUOUS_METHOD_INVOCATION,
+              fun.toString, "a method name", fun.pos, fun))
 
-    // = fun match {
-    //   case id: Ident                                => for {
-    //     env    <- get
-    //     name   <- point(id.nameAtParser.map(Name(_)).getOrElse(ERROR_NAME))
-    //     tid    <- point(env.lookup(name, 
-    //       _.kind == MethodKind, id.owner))
-    //     // _      <- tid match {
-    //     //           case NoId    =>
-    //     //             toTypeChecker(error(NAME_NOT_FOUND,
-    //     //               id.toString, "a method name", id.pos, id))
-    //     //           case _     =>
-    //     //             point(())
-    //     //           }
-    //    } yield Ident(tid, id.owner, id.pos)
-    //   case slct: Select                             =>
-    //     // - if qual part points to Class, Then OK
-    //     // - if it points to Interface, then report an error
-    //     //   Java 1.0 doesn't have static methods in interfaces
-    //     // - if qual is `super`, then search in the super class
-    //     //   (Not interface, because interface cannot be accessed
-    //     //   using super keyword). If `this` is interface, or
-    //     //   Object class, then report an error, or if the context is
-    //     //   a static context.
-    //     // - Otherwise, qual should be an expression, and
-    //     //   search in the context of the qual's uses
-    //     ???
-    // }
+      }
+      mid        =  methods.headOption.map(_._1).getOrElse(NoId)
+      _          <- put(ctx)
+    } yield Ident(mid, fun.pos, fun.owner, enclClass)
 
-
+    
     override def typeApply(apply: Apply): TypeChecker[Apply] = for {
       args      <- apply.args.map(typeExpr(_)).sequenceU
+      ctx       <- get
+      tpes      <- args.map(x => toTypeChecker(x.tpe)).sequenceU
       fun       <- apply.fun match {
         case id: Ident                    =>
-          typeApplyFunIdent(id, args)
+          typeApplyFunIdent(id, tpes)
         case s@Select(qual, tree: Ident)  =>
           for {
-            tree <- typeApplyFunQualifiedIdent(tree, args)
+            qual <- typeTree(qual)
+            qtpe <- toTypeChecker(qual.tpe)
+            qid  = qtpe match {
+              case c: ClassType             => c.id
+              case _                        => NoId
+            }
+            tree <- typeApplyFunQualifiedIdent(Ident(tree.uses, qual.pos, 
+                                          qid, tree.enclosingId), tpes)
           } yield Select(qual, tree, s.pos, s.owner)
         case _                            =>
-          typeTree(apply.fun)
+          typeExpr(apply.fun)
       }
-    } yield null
+      _           <- fun match {
+        case s@Select(q: TypeUse, _) if ! ctx.isStatic(s.uses)     =>
+          toTypeChecker(error(INSTANCE_METHOD_IN_STATIC_CONTEXT_INVOK,
+              fun.toString, "a method name", fun.pos, fun))
+        case _                                                     =>
+          point(())
+      }
+    } yield Apply(fun, args, apply.pos, apply.owner)
   }
 }
 
