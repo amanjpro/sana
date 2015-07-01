@@ -9,6 +9,7 @@ import sana.ooj
 import tiny.source.Position
 import tiny.util.{CompilationUnits,MonadUtils}
 import tiny.contexts.{TreeId, NoId}
+import tiny.modifiers.Flags
 import tiny.passes
 import tiny.names.Name
 import tiny.debug.logger
@@ -16,9 +17,9 @@ import tiny.io.ClassPathCatalog
 
 
 import primj.report._
-import primj.modifiers.Ops.noflags
 
 import ooj.Global
+import ooj.modifiers.Ops._
  
 import scalaz.{Name => _, Failure => _, _}
 import Scalaz._
@@ -83,41 +84,71 @@ trait Namers extends primj.names.Namers {
     } yield ClassDef(clazz.mods, clazz.id, clazz.name, parents,
                      body, clazz.pos, clazz.owner)
 
+    def isVisible(id: TreeId, mods: Flags, from: TreeId,
+      ctx: Context): Boolean = {
+      if(mods.isPrivateAcc) {
+        // Get the enclosing classes of this id
+        val enclosingClasses = ctx.enclosingClasses(from)
+        enclosingClasses.contains(id)
+      } else if(mods.isPackageAcc) {
+        val pkgFrom          = ctx.enclosingPackage(from)
+        val pkgId            = ctx.enclosingPackage(id)
+        pkgId == pkgFrom
+      } else if(mods.isProtectedAcc) {
+        val pkgFrom          = ctx.enclosingPackage(from)
+        val pkgId            = ctx.enclosingPackage(id)
+        if(pkgId == pkgFrom) true
+        else {
+          val enclosingClassFrom = ctx.enclosingClass(from)
+          val enclosingClassId   = ctx.enclosingClass(id)
+          val treeFrom           = ctx.getTree(enclosingClassFrom)
+          treeFrom match {
+            case Some(cf: ClassInfo)        =>
+              cf.parents.contains(enclosingClassId)
+            case _                          => false
+          }
+        }
+      } else true
+    }
+    
     override def nameTypeUses(tuse: TypeUse): NamerMonad[TypeUse] = for {
       ctx       <- get
       owner     =  tuse.owner
+      enclId    = tuse.enclosingId
       name      =  tuse.nameAtParser.map(Name(_)).getOrElse(ERROR_NAME)
       // Do we have a Type with this name seeing from the owner?
       // TODO: Perform visibility checks too
-      nuse_ctx2 =  ctx.lookup(name, 
-        _.kind.isInstanceOf[TypeKind], owner) match {
-        case NoId                   =>
-          // Do we have the (package, or type) in classpath?
-          val pkgs     = ctx.enclosingPackageNames(owner)
-          val fullName = pkgs.mkString(".") + "." + name
-          // Is there a class in the classpath? with the same full name?
-          // load it
-          if(catalog.defines(fullName, true)) {
-            val (_, loadedClass, ctx2) = 
-              loadFromClassPath(fullName, owner).run(Set(), ctx)
-            // TODO: Perform visibility checks too
-            loadedClass match {
-              case cd: ClassDef =>
-                (TypeUse(cd.id, tuse.nameAtParser, tuse.pos, owner, 
-                                tuse.enclosingId), ctx2)
-              case _            =>
-                // This case should never happen
-                (TypeUse(NoId, tuse.nameAtParser, tuse.pos, owner, 
-                    tuse.enclosingId), ctx2)
+      nuse_ctx2 =  {
+        val i = ctx.lookup(name, _.kind.isInstanceOf[TypeKind], owner) 
+        ctx.getTree(i) match {
+          case Some(t)  if isVisible(i, t.mods, enclId, ctx)    =>
+            (TypeUse(i, tuse.nameAtParser, tuse.pos, owner, 
+              enclId), ctx)
+          case _                                                =>
+            // Do we have the (package, or type) in classpath?
+            val pkgs     = ctx.enclosingPackageNames(owner)
+            val fullName = pkgs.mkString(".") + "." + name
+            // Is there a class in the classpath? with the same full name?
+            // load it
+            if(catalog.defines(fullName, true)) {
+              val (_, loadedClass, ctx2) = 
+                loadFromClassPath(fullName, owner).run(Set(), ctx)
+              // TODO: Perform visibility checks too
+              loadedClass match {
+                case cd: ClassDef if isVisible(cd.id, cd.mods, enclId, ctx2)  =>
+                  (TypeUse(cd.id, tuse.nameAtParser, tuse.pos, owner, 
+                                  enclId), ctx2)
+                case _                                                        =>
+                  // This case should never happen
+                  (TypeUse(NoId, tuse.nameAtParser, tuse.pos, owner, 
+                      enclId), ctx2)
+              }
+            } else {
+              // Couldn't resolve the name, then don't resolve it
+              (TypeUse(NoId, tuse.nameAtParser, tuse.pos, owner, 
+                enclId), ctx)
             }
-          } else {
-            // Couldn't resolve the name, then don't resolve it
-            (TypeUse(NoId, tuse.nameAtParser, tuse.pos, owner, 
-              tuse.enclosingId), ctx)
-          }
-        case i                      =>
-          (TypeUse(i, tuse.nameAtParser, tuse.pos, owner, 
-            tuse.enclosingId), ctx)
+        }
       }
       nuse       =  nuse_ctx2._1
       ctx2       =  nuse_ctx2._2
@@ -152,12 +183,15 @@ trait Namers extends primj.names.Namers {
       //           TypeUse("InnerClass"))
 
       // Do we have a package with this name seeing from the owner?
+      enclId    = id.enclosingId
       nid_ctx2  =  ctx.lookup(name, _.kind == PackageKind, owner) match {
         case NoId                   =>
           // Do we have a Type with this name seeing from the owner?
-          // TODO: Perform visibility checks too
-          ctx.lookup(name, _.kind.isInstanceOf[TypeKind], owner) match {
-            case NoId                    =>
+          val i = ctx.lookup(name, _.kind.isInstanceOf[TypeKind], owner) 
+          ctx.getTree(i) match {
+            case Some(t) if isVisible(i, t.mods, enclId, ctx)  =>
+              (TypeUse(i, id.nameAtParser, id.pos, owner, enclId), ctx)
+            case None                                          =>
               // Do we have the (package, or type) in classpath?
               val pkgs     = ctx.enclosingPackageNames(owner)
               val fullName = pkgs.mkString(".") + "." + name
@@ -167,28 +201,26 @@ trait Namers extends primj.names.Namers {
                 val (_, loadedClass, ctx2) = 
                   loadFromClassPath(fullName, owner).run(Set(), ctx)
                 loadedClass match {
-                  case cd: ClassDef =>
+                  case cd:ClassDef if isVisible(cd.id, cd.mods, enclId, ctx2) =>
                     (TypeUse(cd.id, id.nameAtParser, id.pos, 
-                      owner, id.enclosingId), ctx2)
-                  case _            =>
+                      owner, enclId), ctx2)
+                  case _                                                      =>
                     // This case should never happen
                     (Ident(NoId, id.nameAtParser, id.pos, owner, 
-                      id.enclosingId), ctx2)
+                      enclId), ctx2)
                 }
               } else if(catalog.defines(fullName, false)) { 
                 val info = newPackageDefInfo(name)
                 val (i, ctx2) = ctx.extend(owner, packageContext(info))
-                (Ident(i, id.nameAtParser, id.pos, owner, id.enclosingId), ctx2)
+                (Ident(i, id.nameAtParser, id.pos, owner, enclId), ctx2)
               } else {
                 // Couldn't resolve the name, then don't resolve it
                 (Ident(NoId, id.nameAtParser, id.pos, owner, 
-                  id.enclosingId), ctx)
+                  enclId), ctx)
               }
-            case i                       =>
-              (TypeUse(i, id.nameAtParser, id.pos, owner, id.enclosingId), ctx)
           }
         case i                      =>
-          (Ident(NoId, id.nameAtParser, id.pos, owner, id.enclosingId), ctx)
+          (Ident(NoId, id.nameAtParser, id.pos, owner, enclId), ctx)
       }
       nid        =  nid_ctx2._1
       ctx2       =  nid_ctx2._2
