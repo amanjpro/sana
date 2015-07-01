@@ -78,6 +78,25 @@ trait TreeContexts {
     }
 
     /**
+     * Finds all bindings for the given Name directly in this Scope,
+     * or inherited.
+     *
+     * @see [[contexts.TreeId]]
+     * @param name The name that we want to check
+     * @param p The predicate that the resulted tree should satisfy
+     * @return list of ids of the trees, and Nil if none found
+     */
+    def findAllInThisContextAndInherited(name: Name, 
+      p: TreeInfo => Boolean): List[TreeId] = {
+      findAllInThisContext(name, p) ++ 
+        inheritedContexts.flatMap(
+          getContext(_) match {
+            case None      => Nil
+            case Some(ctx) => ctx.findAllInThisContextAndInherited(name, p)
+          })
+    }
+
+    /**
      * Finds all bindings for the given Name directly in this Scope.
      *
      * @see [[contexts.TreeId]]
