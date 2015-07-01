@@ -128,10 +128,10 @@ trait Typers extends typechecker.Typers {
       ctx  <- get
       _    <- if(! pointsToUse(lhs, x => ctx.isVariable(x.uses)))
                 toTypeChecker(error(ASSIGNING_NOT_TO_VARIABLE,
-                  lhs.toString, lhs.toString, lhs.pos, lhs))
+                  lhs.asString(ctx), lhs.asString(ctx), lhs.pos, lhs))
               else if(! pointsToUse(lhs, x => ctx.isFinal(x.uses)))
                 toTypeChecker(error(REASSIGNING_FINAL_VARIABLE,
-                  lhs.toString, lhs.toString, lhs.pos, lhs))
+                  lhs.asString(ctx), lhs.asString(ctx), lhs.pos, lhs))
               else point(())
       rhs  <- typeExpr(assign.rhs)
       ltpe <- toTypeChecker(lhs.tpe)
@@ -203,7 +203,7 @@ trait Typers extends typechecker.Typers {
             point(())
           else
             toTypeChecker(error(TYPE_MISMATCH,
-              rtpe.toString, mtpe.toString, ret.pos, ret))
+              rtpe.toString, mrtpe.toString, ret.pos, ret))
 
       }
     } yield ret2
@@ -258,13 +258,12 @@ trait Typers extends typechecker.Typers {
     
     def typeFor(forloop: For): TypeChecker[For] = for {
       inits <- forloop.inits.map(typeTree(_)).sequenceU
+      ctx   <- get
       vals  =  inits.filter(_.isInstanceOf[ValDef])
-      pset  = vals.asInstanceOf[List[NamedTree]].toSet
+      pset  =  vals.asInstanceOf[List[NamedTree]].toSet
       cond  <- local((_: Set[NamedTree]) => pset)(typeExpr(forloop.cond))
       steps <- forloop.steps.map((step) => {
-                 local((_: Set[NamedTree]) => {
-                 pset
-                 })(typeExpr(step))
+                 local((_: Set[NamedTree]) => pset)(typeExpr(step))
                }).sequenceU
       body  <- local((_: Set[NamedTree]) => pset)(typeExpr(forloop.body))
       tpe   <- toTypeChecker(cond.tpe)
