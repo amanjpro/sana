@@ -189,17 +189,21 @@ trait Typers extends typechecker.Typers {
         case None       => point(Return(ret.pos, ret.owner))
         case Some(e)    => point(Return(e, ret.pos, ret.owner))
       }
+      mrtpe  =  mtpe match {
+        case mt: MethodType      => mt.ret
+        case _                   => mtpe
+      }
       rtpe   <- toTypeChecker(ret2.tpe)
       _      <- ret2.expr match {
         // add constructor later
-        case None     if mtpe =/= VoidType    =>
+        case None     if mrtpe =/= VoidType    =>
           toTypeChecker(error(VOID_RETURN,
             ret.toString, ret.toString, ret.pos, ret))
-        case Some(e)  if mtpe =:= VoidType    =>
+        case Some(e)  if mrtpe =:= VoidType    =>
           toTypeChecker(error(NON_VOID_RETURN,
             ret.toString, ret.toString, ret.pos, ret))
-        case Some(e)                          =>
-          if(rtpe <:< mtpe)
+        case Some(e)                           =>
+          if(rtpe <:< mrtpe)
             point(())
           else
             toTypeChecker(error(TYPE_MISMATCH,
