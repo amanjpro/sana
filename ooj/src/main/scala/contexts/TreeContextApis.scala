@@ -21,24 +21,25 @@ trait TreeContextApis extends primj.contexts.TreeContextApis {
       super.ImplicitContextApi(ctx) with ContextApi {
 
     def enclosingClass(id: TreeId): TreeId = 
-      ctx.getTree(id) match {
-        case Some(info) if info.kind == ClassKind    =>
+      ctx.getContext(id) match {
+        case Some(ctx: NamedContext) if ctx.tree.kind == ClassKind   =>
           id
-        case Some(info) if info.kind == PackageKind  =>
+        case Some(ctx: NamedContext) if ctx.tree.kind == PackageKind =>
           NoId
-        case Some(info)                              =>
-          enclosingMethod(id.up)
-        case None                                    =>
+        case Some(ctx)                                               =>
+          enclosingClass(id.up)
+        case None                                                    =>
           NoId
       }
+      
 
     def enclosingPackage(id: TreeId): TreeId = 
-      ctx.getTree(id) match {
-        case Some(info) if info.kind == PackageKind  =>
+      ctx.getContext(id) match {
+        case Some(ctx: NamedContext) if ctx.tree.kind == PackageKind =>
           id
-        case Some(info)                              =>
-          enclosingMethod(id.up)
-        case None                                    =>
+        case Some(ctx)                                               =>
+          enclosingPackage(id.up)
+        case None                                                    =>
           NoId
       }
   }

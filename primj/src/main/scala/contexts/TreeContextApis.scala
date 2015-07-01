@@ -25,13 +25,14 @@ trait TreeContextApis {
       ctx.getTree(id).map(_.kind == VariableKind).getOrElse(false)
     def isFinal(id: TreeId): Boolean = 
       ctx.getTree(id).map(_.mods.isFinal).getOrElse(false)
+
     def enclosingMethod(id: TreeId): TreeId = {
-      ctx.getTree(id) match {
-        case Some(info) if info.kind == MethodKind  =>
+      ctx.getContext(id) match {
+        case Some(ctx: NamedContext) if ctx.tree.kind == MethodKind  =>
           id
-        case Some(info)                             =>
+        case Some(ctx)                                               =>
           enclosingMethod(id.up)
-        case None                                   =>
+        case None                                                    =>
           NoId
       }
     }
