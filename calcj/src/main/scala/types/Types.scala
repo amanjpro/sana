@@ -41,26 +41,76 @@ trait Types extends types.Types {
   object ByteType extends IntegralType {
     override def show: String = "byte type"
     def name: Name = Name("byte")
+
+    override def <:<(t: Type): Boolean = t match {
+      case IntType              => true
+      case LongType             => true
+      case ByteType             => true
+      case _: FloatingPointType => true
+      case _                    => false
+    }
   }
 
   object ShortType extends IntegralType {
     override def show: String = "short type"
     def name: Name = Name("short")
+
+    override def <:<(t: Type): Boolean = t match {
+      case IntType              => true
+      case LongType             => true
+      case ShortType            => true
+      case _: FloatingPointType => true
+      case _                    => false
+    }
   }
 
   object IntType extends IntegralType {
     override def show: String = "int type"
     def name: Name = Name("int")
+
+    override def <:<(t: Type): Boolean = t match {
+      case IntType              => true
+      case LongType             => true
+      case _: FloatingPointType => true    
+      case _                    => false
+    }
+
+    override def >:>(t: Type): Boolean = t match {
+      case IntType           => true
+      case ShortType         => true
+      case ByteType          => true
+      case CharType          => true
+      case _                 => false
+    }
   }
 
   object LongType extends IntegralType {
     override def show: String = "long type"
     def name: Name = Name("long")
+    
+    override def <:<(t: Type): Boolean = t match {
+      case LongType             => true
+      case _: FloatingPointType => true    
+      case _                    => false
+    }
+
+    override def >:>(t: Type): Boolean = t match {
+      case _: IntegralType      => true
+      case _                    => false
+    }
   }
 
   object CharType extends IntegralType {
     override def show: String = "char type"
     def name: Name = Name("char")
+
+    override def <:<(t: Type): Boolean = t match {
+      case IntType              => true
+      case LongType             => true
+      case CharType             => true
+      case _: FloatingPointType => true
+      case _                    => false
+    }
   }
 
 
@@ -69,11 +119,33 @@ trait Types extends types.Types {
   object FloatType extends FloatingPointType {
     override def show: String = "float type"
     def name: Name = Name("float")
+
+    override def <:<(t: Type): Boolean = t match {
+      case _: IntegralType      => true
+      case FloatType            => true    
+      case _                    => false
+    }
+
+    override def >:>(t: Type): Boolean = t match {
+      case DoubleType           => true
+      case FloatType            => true    
+      case _                    => false
+    }
   }
 
   object DoubleType extends FloatingPointType {
     override def show: String = "double type"
     def name: Name = Name("double")
+
+    override def <:<(t: Type): Boolean = t match {
+      case _: NumericType       => true
+      case _                    => false
+    }
+
+    override def >:>(t: Type): Boolean = t match {
+      case DoubleType           => true
+      case _                    => false
+    }
   }
 
 
