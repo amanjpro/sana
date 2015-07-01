@@ -108,7 +108,7 @@ trait Trees extends ast.Trees {
           |}""".stripMargin
   }
 
-  trait Select extends UseTree {
+  trait Select extends UseTree with Expr {
     def qual: Tree
     def tree: SimpleUseTree
 
