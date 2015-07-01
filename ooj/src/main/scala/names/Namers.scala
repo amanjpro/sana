@@ -84,7 +84,7 @@ trait Namers extends primj.names.Namers {
     } yield ClassDef(clazz.mods, clazz.id, clazz.name, parents,
                      body, clazz.pos, clazz.owner)
 
-    def isVisible(id: TreeId, mods: Flags, from: TreeId,
+    def typeIsVisible(id: TreeId, mods: Flags, from: TreeId,
       ctx: Context): Boolean = {
       if(mods.isPrivateAcc) {
         // Get the enclosing classes of this id
@@ -99,12 +99,10 @@ trait Namers extends primj.names.Namers {
         val pkgId            = ctx.enclosingPackage(id)
         if(pkgId == pkgFrom) true
         else {
-          val enclosingClassFrom = ctx.enclosingClass(from)
-          val enclosingClassId   = ctx.enclosingClass(id)
-          val treeFrom           = ctx.getTree(enclosingClassFrom)
+          val treeFrom           = ctx.getTree(from)
           treeFrom match {
             case Some(cf: ClassInfo)        =>
-              cf.parents.contains(enclosingClassId)
+              cf.parents.contains(id)
             case _                          => false
           }
         }
@@ -117,14 +115,13 @@ trait Namers extends primj.names.Namers {
       enclId    = tuse.enclosingId
       name      =  tuse.nameAtParser.map(Name(_)).getOrElse(ERROR_NAME)
       // Do we have a Type with this name seeing from the owner?
-      // TODO: Perform visibility checks too
       nuse_ctx2 =  {
         val i = ctx.lookup(name, _.kind.isInstanceOf[TypeKind], owner) 
         ctx.getTree(i) match {
-          case Some(t)  if isVisible(i, t.mods, enclId, ctx)    =>
+          case Some(t)  if typeIsVisible(i, t.mods, enclId, ctx)    =>
             (TypeUse(i, tuse.nameAtParser, tuse.pos, owner, 
               enclId), ctx)
-          case _                                                =>
+          case _                                                    =>
             // Do we have the (package, or type) in classpath?
             val pkgs     = ctx.enclosingPackageNames(owner)
             val fullName = pkgs.mkString(".") + "." + name
@@ -133,9 +130,9 @@ trait Namers extends primj.names.Namers {
             if(catalog.defines(fullName, true)) {
               val (_, loadedClass, ctx2) = 
                 loadFromClassPath(fullName, owner).run(Set(), ctx)
-              // TODO: Perform visibility checks too
               loadedClass match {
-                case cd: ClassDef if isVisible(cd.id, cd.mods, enclId, ctx2)  =>
+                case cd: ClassDef if typeIsVisible(cd.id, cd.mods, 
+                                                               enclId, ctx2)  =>
                   (TypeUse(cd.id, tuse.nameAtParser, tuse.pos, owner, 
                                   enclId), ctx2)
                 case _                                                        =>
@@ -189,9 +186,9 @@ trait Namers extends primj.names.Namers {
           // Do we have a Type with this name seeing from the owner?
           val i = ctx.lookup(name, _.kind.isInstanceOf[TypeKind], owner) 
           ctx.getTree(i) match {
-            case Some(t) if isVisible(i, t.mods, enclId, ctx)  =>
+            case Some(t) if typeIsVisible(i, t.mods, enclId, ctx)  =>
               (TypeUse(i, id.nameAtParser, id.pos, owner, enclId), ctx)
-            case None                                          =>
+            case None                                              =>
               // Do we have the (package, or type) in classpath?
               val pkgs     = ctx.enclosingPackageNames(owner)
               val fullName = pkgs.mkString(".") + "." + name
@@ -201,7 +198,8 @@ trait Namers extends primj.names.Namers {
                 val (_, loadedClass, ctx2) = 
                   loadFromClassPath(fullName, owner).run(Set(), ctx)
                 loadedClass match {
-                  case cd:ClassDef if isVisible(cd.id, cd.mods, enclId, ctx2) =>
+                  case cd: ClassDef if typeIsVisible(cd.id, 
+                                                       cd.mods, enclId, ctx2) =>
                     (TypeUse(cd.id, id.nameAtParser, id.pos, 
                       owner, enclId), ctx2)
                   case _                                                      =>
