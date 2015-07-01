@@ -129,7 +129,7 @@ trait Typers extends typechecker.Typers {
       _    <- if(! pointsToUse(lhs, x => ctx.isVariable(x.uses)))
                 toTypeChecker(error(ASSIGNING_NOT_TO_VARIABLE,
                   lhs.asString(ctx), lhs.asString(ctx), lhs.pos, lhs))
-              else if(! pointsToUse(lhs, x => ctx.isFinal(x.uses)))
+              else if(pointsToUse(lhs, x => ctx.isFinal(x.uses)))
                 toTypeChecker(error(REASSIGNING_FINAL_VARIABLE,
                   lhs.asString(ctx), lhs.asString(ctx), lhs.pos, lhs))
               else point(())
@@ -216,7 +216,7 @@ trait Typers extends typechecker.Typers {
                   if(! pointsToUse(expr, x => ctx.isVariable(x.uses)))
                     toTypeChecker(error(ASSIGNING_NOT_TO_VARIABLE,
                        expr.toString, expr.toString, expr.pos, expr))
-                  else if(! pointsToUse(expr, x => ctx.isFinal(x.uses)))
+                  else if(pointsToUse(expr, x => ctx.isFinal(x.uses)))
                     toTypeChecker(error(REASSIGNING_FINAL_VARIABLE,
                       expr.toString, expr.toString, expr.pos, expr))
                   else point(())
