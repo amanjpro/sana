@@ -30,63 +30,37 @@ trait TreeContexts extends primj.contexts.TreeContexts {
   }
 
   protected class ClassContext(val tree: TreeInfo, 
-    protected val idGen: IDGen, 
+    protected val idGen: IDGen, override val inheritedContexts: List[TreeId],
     val decls: Map[TreeId, Context] = Map.empty) extends NamedContext {
     
-    
-    def updateTree(tree: TreeInfo): NamedContext = 
-      new ClassContext(tree, idGen, decls)
+    def updateTree(tree: TreeInfo): NamedContext = tree match {
+      case ci: ClassInfo  =>
+        new ClassContext(tree, idGen, ci.parents, decls)
+      case _              =>
+        new ClassContext(tree, idGen, List(), decls)
+    }
+
+
+
     protected def newContext(idGen: IDGen, 
       binds: Map[TreeId, Context]): Context = 
-        new ClassContext(tree, idGen, binds)
+        new ClassContext(tree, idGen, inheritedContexts, binds)
   }
 
   def packageContext(treeInfo: TreeInfo): PackageContext = 
     new PackageContext(treeInfo, new IDGen)
 
-  // def packageContext(treeInfo: TreeInfo): ClassContext = 
-    // new ClassContext(treeInfo, new IDGen)
+  def packageContext(pkg: PackageDef): PackageContext = {
+    val info = newPackageDefInfo(pkg.name)
+    new PackageContext(info, new IDGen)
+  }
 
-  def classContext(treeInfo: TreeInfo): ClassContext = 
-    new ClassContext(treeInfo, new IDGen)
+  def classContext(treeInfo: ClassInfo): ClassContext = 
+    new ClassContext(treeInfo, new IDGen, treeInfo.parents)
 
   def classContext(clazz: ClassDef): ClassContext = {
-    val info = newClassDefInfo(clazz.mods, clazz.name, clazz.tpe)
-    new ClassContext(info, new IDGen)
+    val info = newClassDefInfo(clazz.mods, clazz.name, 
+      clazz.parents.map(_.uses), clazz.tpe)
+    new ClassContext(info, new IDGen, info.parents)
   }
-  // def packageContext(tree: PackageContext): PackageContext = 
-  //   new MethodContext(newMethodDefInfo(tree.mods, tree.name, tree.tpe), 
-  //     new IDGen)
-  // trait RootContext extends super.RootContext {
-  //   override protected def findInDefinitions(name: Name, 
-  //               p: TreeInfo => Boolean): TreeId =
-  //     definitions.toList.foldLeft(NoId: TreeId)((z, y) => y._2 match {
-  //       case info  if info.name == name && p(info)                 =>
-  //         y._1
-  //       case _                                                     => z
-  //     })
-  //
-  //   override def findInThisContext(name: Name, 
-  //     p: TreeInfo => Boolean): TreeId = {
-  //     super.findInThisContext(name, p) match {
-  //       case NoId =>
-  //         findInDefinitions(name, p)
-  //       case id   => id
-  //     }
-  //   }
-  //
-  //   override def defines(id: TreeId): Boolean = {
-  //     if(super.defines(id)) true
-  //     else definitions.contains(id)
-  //   }
-  //
-  //   // override def lookup(name: Name, p: TreeInfo => Boolean, 
-  //     // owner: TreeId): TreeId = getContext(owner) match {
-  //   override def getTree(id: TreeId): Option[TreeInfo] = {
-  //     super.getTree(id) match {
-  //       case Some(info)       => Some(info)
-  //       case None             => definitions.get(id.forward)
-  //     }
-  //   }
-  // }
 }

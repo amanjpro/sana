@@ -31,6 +31,13 @@ trait TreeContexts {
     /** A unique id generator */
     protected def idGen: IDGen
 
+    /** 
+     * A set of inherited contexts by this context
+     *
+     * Only ClassContext uses this field, which comes later.
+     */
+    protected def inheritedContexts: List[TreeId] = Nil
+
     /**
      * A map from ids to [[Context]]s.
      * 
@@ -109,7 +116,8 @@ trait TreeContexts {
     }
 
     /**
-     * Finds a binding for the given Name directly in this Scope.
+     * Finds a binding for the given Name directly in this Scope, or in
+     * one of its inherited scopes.
      *
      * @see [[contexts.TreeId]]
      * @param name The name that we want to check
@@ -122,20 +130,35 @@ trait TreeContexts {
           y._1
         case _                                                     => z
       })
-      id
+      if(id == NoId) {
+          // Didn't find anything? then search in the inherited contexts
+          inheritedContexts.foldLeft(NoId: TreeId)((z, y) => {
+            if(z == NoId)
+              getContext(y) match {
+                case Some(ctx) =>
+                  ctx.findInThisContext(name, p)
+                case None      => z
+              }
+            else
+              z
+          })
+      } else {
+        id
+      }
     }
-    /**
-     * Checks if there is a binding for the given Name directly in this
-     * Scope.
-     *
-     * @see [[contexts.TreeId]]
-     * @param name The name that we want to check
-     * @return True if the name is defined, and false otherwise
-     */
-    def directlyDefines(name: Name): Boolean = {
-      if(findInThisContext(name, _ => true) == NoId) false
-      else true
-    }
+
+    // /**
+    //  * Checks if there is a binding for the given Name directly in this
+    //  * Scope.
+    //  *
+    //  * @see [[contexts.TreeId]]
+    //  * @param name The name that we want to check
+    //  * @return True if the name is defined, and false otherwise
+    //  */
+    // def directlyDefines(name: Name): Boolean = {
+    //   if(findInThisContext(name, _ => true) == NoId) false
+    //   else true
+    // }
 
     /**
      * Checks if there is a binding for the given [[TreeId]] id.
@@ -166,11 +189,6 @@ trait TreeContexts {
         None
       case Some(c) if id.isSimple         => Some(c)
       case Some(c)                        => c.getContext(id.forward)
-      //   ctx.getContext(id.forward)
-      // for {
-      //   ctx   <- decls.get(id.head)
-      //   r     <- ctx.getContext(id.forward)
-      // } yield r
     }
 
     /**
@@ -188,13 +206,24 @@ trait TreeContexts {
       owner: TreeId): TreeId = getContext(owner) match {
       case Some(ctx)                                                     =>
         val id = ctx.findInThisContext(name, p)
-        if(id == NoId) 
-          lookup(name, p, owner.up)
+        if(id == NoId) {
+          // Didn't find anything? then search in the inherited contexts
+          val id2 = inheritedContexts.foldLeft(NoId: TreeId)((z, y) => {
+            if(z == NoId)
+              getContext(y) match {
+                case Some(ctx) =>
+                  ctx.findInThisContext(name, p)
+                case None      => z
+              }
+            else
+              z
+          })
+          if(id2 == NoId)
+            lookup(name, p, owner.up)
+          else id2
+        }
         else {
-          //TODO: Make sure this is correct
           owner.concat(id)
-          // TreeId(owner, id)
-          // id.merge(owner.head)
         }
       case None                                                          =>
         logger.warning("Name not found " + name.asString)
