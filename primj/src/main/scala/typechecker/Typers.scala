@@ -39,6 +39,9 @@ trait Typers extends typechecker.Typers {
           typedMembers <- tmpl.members.map(typeDefTree(_)).sequenceU
           r            <- point(Template(typedMembers, tmpl.owner))
         } yield r
+      case vdef: ValDef    => for {
+          r            <- typeValDef(vdef)
+        } yield r
       case dtree: TermTree => for {
         ttree <- typeTermTree(dtree)
       } yield ttree
