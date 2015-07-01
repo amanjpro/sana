@@ -97,10 +97,8 @@ trait Typers extends typechecker.Typers {
       // Name it's type-use, if it is not named yet
       isNamed    <- point(vdef.tpt.uses != NoId)
       tpt        <- if(isNamed) point(vdef.tpt) else typeUseTree(vdef.tpt)
-      _          <- if(isNamed) {
-        val info = newValDefInfo(vdef.mods, vdef.name, tpt.tpe)
-        modify(_.update(vdef.id, info))
-      } else point(())
+      info       = newValDefInfo(vdef.mods, vdef.name, tpt.tpe)
+      _          <- modify(_.update(vdef.id, info))
       // Now name it
       rhs        <- typeExpr(vdef.rhs)
       rhsty      <- toTypeChecker(rhs.tpe)
