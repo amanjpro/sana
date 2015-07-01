@@ -27,7 +27,7 @@ trait Constants {
     def tpe: TypeState[Type]
 
     final def show(ctx: Context): String = 
-      s"Constant(Type=${tpe.eval(ctx).show}, value=${value}"
+      s"Constant(Type=${tpe.eval(ctx).show}, value=${value})"
     override final def toString: String = show(emptyContext)
   }
 
