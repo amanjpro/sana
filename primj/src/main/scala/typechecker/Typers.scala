@@ -77,6 +77,7 @@ trait Typers extends typechecker.Typers {
                  })(typeExpr(mdef.body))
       rhsty    <- toTypeChecker(body.tpe)
       rty      <- toTypeChecker(mdef.ret.tpe)
+      ctx      <- get
       _        <- (rhsty <:< rty) match {
         case false if rty =/= VoidType =>
           toTypeChecker(error(TYPE_MISMATCH,
@@ -84,7 +85,7 @@ trait Typers extends typechecker.Typers {
         case _                         =>
           point(())
       }
-      _        <- if(rty =/= VoidType && !allPathsReturn(body))
+      _        <- if(rty =/= VoidType && !allPathsReturn(body, ctx))
                     toTypeChecker(error(MISSING_RETURN_STATEMENT,
                       body.toString, body.toString, body.pos, mdef))
                   else

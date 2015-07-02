@@ -7,10 +7,12 @@ import sana.primj
 import tiny.ast
 import calcj.ast.JavaOps.{Inc, Dec}
 import primj.modifiers.Ops._
+import primj.contexts.{TreeContexts, TreeContextApis}
+import primj.types.Types
 
 
 trait TreeUtils extends ast.TreeUtils {
-  self: Trees =>
+  self: Trees with Types with TreeContexts with TreeContextApis =>
 
   def isValidStatement(e: Tree): Boolean = e match {
     // Statements in primj: if, while, for, block, return, valdef
@@ -23,10 +25,23 @@ trait TreeUtils extends ast.TreeUtils {
   }
 
 
-  // TODO: Implement me
-  def isSimpleExpression(tree: Tree): Boolean = ???
+  // TODO: Update this for OOJ and Brokenj
+  def isSimpleExpression(tree: Tree): Boolean = tree match {
+      case _: While                 => false
+      case _: For                   => false
+      case _: ValDef                => false
+      case _: MethodDef             => false
+      case _: Template              => false
+      case BadTree                  => false
+      case _: Return                => false
+      case _: If                    => false
+      case _: Block                 => false
+      case _: TypeUse               => false
+      case _                        => true
+  }
 
-  def allPathsReturn(tree: Tree): Boolean = tree match {
+  def allPathsReturn(tree: Tree,
+        ctx: Context): Boolean = tree match {
     // tiny
     case BadTree | _: Empty | _: Ident | _: TypeUse    => false
     // calcj
@@ -40,25 +55,46 @@ trait TreeUtils extends ast.TreeUtils {
     case r: Return                                     =>
       true
     case ifelse: If                                    =>
-      allPathsReturn(ifelse.thenp) && allPathsReturn(ifelse.elsep)
+      allPathsReturn(ifelse.thenp, ctx) &&
+        allPathsReturn(ifelse.elsep, ctx)
     case wile: While                                   =>
       if(wile.mods.isDoWhile ||
-          isConstantExpression(wile.cond))
-        allPathsReturn(wile.body)
+          isConstantExpression(wile.cond, ctx))
+        allPathsReturn(wile.body, ctx)
       else false
     case forloop: For                                  =>
-      isConstantExpression(forloop.cond) &&
-        allPathsReturn(forloop.body)
+      isConstantExpression(forloop.cond, ctx) &&
+        allPathsReturn(forloop.body, ctx)
     case block: Block                                  =>
       block.stmts match {
         case Nil         => false
-        case stmts       => allPathsReturn(stmts.last)
+        case stmts       => allPathsReturn(stmts.last, ctx)
       }
   }
 
-  // TODO: Implement me
   // make sure that the guards are constant expressions Section 15.27
-  def isConstantExpression(e: Expr): Boolean = ???
+  def isConstantExpression(e: Expr, ctx: Context): Boolean = e match {
+    case lit: Lit                                     => true
+    case Cast(tpt, e)                                 =>
+      // permit casts to primitive and string
+      // TODO: Change this in OOJ, to handle String too
+      tpt.tpe.eval(ctx) match {
+        case _: PrimitiveType      => isConstantExpression(e, ctx)
+        case _                     => false
+      }
+    case u: Unary    if u.op != Inc && u.op != Dec    =>
+      isConstantExpression(u.expr, ctx)
+    case b: Binary                                    =>
+      isConstantExpression(b.lhs, ctx) &&
+        isConstantExpression(b.rhs, ctx)
+    case id: Ident                                    =>
+      ctx.isFinal(id.uses) && ctx.isVariable(id.uses)
+
+    // TODO: Add qualified Select later in ooj
+    // TypeName.Identifier only, and only when Identifier is already
+    // a final variable
+    // TODO: Add
+  }
 
   // INFO: Update this to Java as we go
   def isExpression(e: Tree): Boolean = e match {
