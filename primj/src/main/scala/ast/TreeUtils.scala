@@ -25,7 +25,6 @@ trait TreeUtils extends ast.TreeUtils {
   }
 
 
-  // TODO: Update this for OOJ and Brokenj
   def isSimpleExpression(tree: Tree): Boolean = tree match {
       case _: While                 => false
       case _: For                   => false
@@ -70,6 +69,8 @@ trait TreeUtils extends ast.TreeUtils {
         case Nil         => false
         case stmts       => allPathsReturn(stmts.last, ctx)
       }
+    case _                                             =>
+      false
   }
 
   // make sure that the guards are constant expressions Section 15.27
@@ -89,7 +90,6 @@ trait TreeUtils extends ast.TreeUtils {
         isConstantExpression(b.rhs, ctx)
     case id: Ident                                    =>
       ctx.isFinal(id.uses) && ctx.isVariable(id.uses)
-
     // TODO: Add qualified Select later in ooj
     // TypeName.Identifier only, and only when Identifier is already
     // a final variable
