@@ -401,7 +401,17 @@ trait Typers extends brokenj.typechecker.Typers {
     }
 
 
-    def qualifiedMethods(ids: List[TreeId], enclClass: TreeId, ctx: Context,
+    /**
+     * A method to filter out methods that cannot be applied within a scope
+     * with a list of parameters.
+     *
+     * @param ids list of method id's that needs to be filtered out
+     * @param enclClass the enclosing class of this method application
+     * @param ctx the compilation context (the state of the whole program)
+     * @param tpes the list of applied arguments
+     */
+    protected def qualifiedMethods(ids: List[TreeId], 
+      enclClass: TreeId, ctx: Context,
       tpes: List[Type]): List[(TreeId, MethodType)] = ids match {
       case Nil                                                           => 
         Nil
@@ -427,6 +437,13 @@ trait Typers extends brokenj.typechecker.Typers {
     }
 
 
+    /**
+     * Taking a list of method id and method type pairs, finds the most
+     * specific methods.
+     *
+     * According to Java's spec (1.0 ed) a method is more specific than the
+     * other, if all its parameters can be passed to the latter.
+     */
     def mostSpecificMethods(ids: List[(TreeId, MethodType)]): 
         List[(TreeId, MethodType)] = 
       ids.filter((x) => {
