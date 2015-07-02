@@ -184,9 +184,8 @@ trait Typers extends brokenj.typechecker.Typers {
                       env.getContext(owner) match {
                         case None                => NoId
                         case Some(ctx)           =>
-                          ctx.findAllInThisContextAndInherited(name,
+                          ctx.findFirstInThisContextAndInherited(name,
                             alreadyDefinedVariablePredicate(_, lvars))
-                            .headOption.getOrElse(NoId)
                       }
                     case id                  => id
                  }
@@ -318,9 +317,8 @@ trait Typers extends brokenj.typechecker.Typers {
                     val variable        = env.getContext(owner) match {
                         case None                => NoId
                         case Some(ctx)           =>
-                          ctx.findAllInThisContextAndInherited(name,
+                          ctx.findFirstInThisContextAndInherited(name,
                             alreadyDefinedVariablePredicate(_, lvars))
-                            .headOption.getOrElse(NoId)
                       }
                     val visible         = env.getTree(variable) match {
                       case Some(t)          =>
