@@ -271,9 +271,8 @@ trait ClassFileParsers {
       }
 
       clazzFactory = (body: Template) => {
-        val tpe = if(name == "java/lang/Object") ObjectType
-                  else notype
-        ClassDef(mods, NoId, Name(name), parents, body,
+        val simpleName = name.split("/").last
+        ClassDef(mods, NoId, Name(simpleName), parents, body,
                   None, NoId)
       }
     }
