@@ -31,7 +31,7 @@ trait TreeUtils extends ast.TreeUtils {
     case _: Label | _: If | _: While | _: For | _: Block |
          _: Empty | _: Switch | _: Continue | _: Break   |
          _: Return                                         =>
-      true  
+      true
     case e                                                 =>
       isValidStatementExpression(e)
   }
@@ -47,6 +47,6 @@ trait TreeUtils extends ast.TreeUtils {
     case _: While | _: For            => true
     case _                            => false
   }
-  
+
 }
 

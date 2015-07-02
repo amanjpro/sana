@@ -15,7 +15,7 @@ trait TreeUtils extends ast.TreeUtils {
   def isValidStatement(e: Tree): Boolean = e match {
     // Statements in primj: if, while, for, block, return, valdef
     // brokenj adds: Switch, continue, break
-    case _: If | _: While | _: For | _: Block | 
+    case _: If | _: While | _: For | _: Block |
          _: Return | _: ValDef | _: Empty =>
       true
     case _                                =>
@@ -25,7 +25,7 @@ trait TreeUtils extends ast.TreeUtils {
 
   // TODO: Implement me
   def isSimpleExpression(tree: Tree): Boolean = ???
-  
+
   def allPathsReturn(tree: Tree): Boolean = tree match {
     // tiny
     case BadTree | _: Empty | _: Ident | _: TypeUse    => false
@@ -69,11 +69,11 @@ trait TreeUtils extends ast.TreeUtils {
 
   // expressions in primj
   // lit, ident, binary, unary, postfix, assign, ternary,apply
-    
+
 
 
   // INFO: Needs to be extended once Select is introduced
-  def pointsToUse(tree: Tree, 
+  def pointsToUse(tree: Tree,
             p: UseTree => Boolean): Boolean = tree match {
     case id: Ident         => p(id)
     case tuse: TypeUse     => p(tuse)

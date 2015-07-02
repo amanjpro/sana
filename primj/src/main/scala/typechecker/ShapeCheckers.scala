@@ -36,12 +36,12 @@ trait ShapeCheckers extends passes.Phases {
     toStateWriter(x)
 
   trait Checker extends CheckerPhase {
-    
+
     val name: String = "shape-checkers"
-    override val description: Option[String] = 
+    override val description: Option[String] =
       Some("Check weather an AST tree is welformed.")
     override def runRightAfter: Option[String] = Some("typer")
-    // def startPhase(state: Context, unit: CompilationUnit): 
+    // def startPhase(state: Context, unit: CompilationUnit):
     //      (Vector[Report], CompilationUnit, Context) = {
     //   val tree  = unit.tree
     //   val (w, (s, typedTree)) = typeTree(tree).run(state).run
@@ -119,7 +119,7 @@ trait ShapeCheckers extends passes.Phases {
                 // TODO: Better error message
                 toShapeChecker(error(UNEXPETED_TREE,
                   valdef.toString, "an expression", valdef.pos, valdef))
-              } else if(ctx.isMethodDef(valdef.owner) && 
+              } else if(ctx.isMethodDef(valdef.owner) &&
                     !(valdef.mods.isParam)) {
                 // TODO: Better error message
                 toShapeChecker(error(UNEXPETED_TREE,
@@ -137,7 +137,7 @@ trait ShapeCheckers extends passes.Phases {
                    valdef.toString, "an expression", valdef.pos, valdef))
     } yield ()
 
-    
+
     // postfix flag can only be set if the operator is postfix
     def checkUnary(e: Unary): ShapeChecker = {
       if(e.mods.isPostfix && (e.op != Inc || e.op != Dec))
@@ -157,7 +157,7 @@ trait ShapeCheckers extends passes.Phases {
     }
 
 
-    def isValidInitStatements(inits: List[Tree], 
+    def isValidInitStatements(inits: List[Tree],
           forloop: For): ShapeChecker = {
       if(!allValDefsOrNone(inits))
         // TODO: Better error message
@@ -169,7 +169,7 @@ trait ShapeCheckers extends passes.Phases {
         val errors = inits.zip(initsRes).foldLeft(empty)((z, y) => {
           y match {
             case (init, false) =>
-              z ++ Vector(genError(UNEXPETED_TREE, init.toString, 
+              z ++ Vector(genError(UNEXPETED_TREE, init.toString,
                           "", init.pos, forloop))
             case (_, true)     =>
               z
@@ -185,7 +185,7 @@ trait ShapeCheckers extends passes.Phases {
       valdefs.size == trees.size || valdefs.size == 0
     }
 
-    
-    
+
+
   }
 }

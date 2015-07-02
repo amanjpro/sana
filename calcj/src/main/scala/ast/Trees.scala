@@ -23,8 +23,8 @@ import scalaz.{Name => _, _}
 trait Trees extends ast.Trees {
   self: types.Types with TreeContexts with Constants with MonadUtils with
         Definitions =>
-  
-  
+
+
   /********************* AST Nodes *********************************/
 
   // Conversions and Casts
@@ -34,9 +34,9 @@ trait Trees extends ast.Trees {
     val owner: TreeId = expr.owner
     override def tpe: TypeState[Type] = tpt.tpe
 
-    def asString(ctx: Context): String = 
+    def asString(ctx: Context): String =
       s"(${tpt.asString(ctx)}) ${expr.asString(ctx)}"
-    def show(ctx: Context): String = 
+    def show(ctx: Context): String =
       s"""|Cast{
           |tpt=${tpt.show(ctx)},
           |expr=${expr.show(ctx)},
@@ -53,10 +53,10 @@ trait Trees extends ast.Trees {
     val owner: TreeId = lhs.owner
 
 
-    def asString(ctx: Context): String = 
+    def asString(ctx: Context): String =
       s"(${lhs.asString(ctx)}) $op (${rhs.asString(ctx)})"
 
-    def show(ctx: Context): String = 
+    def show(ctx: Context): String =
       s"""|Binary{
           |lhs=${lhs.show(ctx)},
           |op=${op.toString},
@@ -65,7 +65,7 @@ trait Trees extends ast.Trees {
           |pos=${pos}
           |}""".stripMargin
 
-  
+
   }
 
   // trait Postfix extends Expr {
@@ -74,7 +74,7 @@ trait Trees extends ast.Trees {
   //
   //   val owner: TreeId = expr.owner
   //
-  //   def show(ctx: Context): String = 
+  //   def show(ctx: Context): String =
   //     s"""|Postfix{
   //         |op=${op.toString},
   //         |expr=${expr.show(ctx)},
@@ -95,7 +95,7 @@ trait Trees extends ast.Trees {
       case true    => s"${expr.asString(ctx)}$op"
       case false   => s"${op}${expr.asString(ctx)}"
     }
-    def show(ctx: Context): String = 
+    def show(ctx: Context): String =
       s"""|Unary{
           |mods=${mods.asString},
           |expr=${expr.show(ctx)},
@@ -113,7 +113,7 @@ trait Trees extends ast.Trees {
     override def tpe: TypeState[Type] = const.tpe
 
     def asString(ctx: Context): String = const.toString
-    def show(ctx: Context): String = 
+    def show(ctx: Context): String =
       s"Lit($const)"
   }
 
@@ -160,15 +160,15 @@ trait Trees extends ast.Trees {
     private class CastImpl(val tpt: UseTree, val expr: Expr,
       val pos: Option[Position]) extends Cast
 
-    def apply(tpt: UseTree, expr: Expr, pos: Option[Position]): Cast = 
+    def apply(tpt: UseTree, expr: Expr, pos: Option[Position]): Cast =
       new CastImpl(tpt, expr, pos)
   }
 
   trait LitFactory {
-    private class LitImpl(val const: Constant, 
+    private class LitImpl(val const: Constant,
       val pos: Option[Position]) extends Lit
 
-    def apply(const: Constant, pos: Option[Position]): Lit = 
+    def apply(const: Constant, pos: Option[Position]): Lit =
       new LitImpl(const, pos)
   }
 
@@ -178,7 +178,7 @@ trait Trees extends ast.Trees {
       val op: BOp, val rhs: Expr, val tpe: TypeState[Type],
       val pos: Option[Position]) extends Binary
 
-    def apply(lhs: Expr, op: BOp, rhs: Expr, tpe: TypeState[Type], 
+    def apply(lhs: Expr, op: BOp, rhs: Expr, tpe: TypeState[Type],
       pos: Option[Position]): Binary = new BinaryImpl(lhs, op, rhs, tpe, pos)
   }
 
@@ -187,12 +187,12 @@ trait Trees extends ast.Trees {
       val expr: Expr, val tpe: TypeState[Type],
       val pos: Option[Position]) extends Unary
 
-    def apply(mods: Flags, op: UOp, expr: Expr, tpe: TypeState[Type], 
+    def apply(mods: Flags, op: UOp, expr: Expr, tpe: TypeState[Type],
       pos: Option[Position]): Unary =
       new UnaryImpl(mods, op, expr, tpe, pos)
   }
 
-  
+
   /******************* Factory and Extractor instances ***************/
 
 
