@@ -24,7 +24,7 @@ trait Typers extends brokenj.typechecker.Typers {
   self: Namers =>
   // INFO:
   // To support method overloading, typer should take care of nameing
-  // inner definitions (local definitions). 
+  // inner definitions (local definitions).
   //
   // Take this an example:
   // class A {
@@ -37,10 +37,10 @@ trait Typers extends brokenj.typechecker.Typers {
   // class Test {
   //   A m(int i) { ... }
   //   B m(String s) { ... }
-  //  
+  //
   //   void test() {
-  //     m("1").s();   // If we rely on Namer only, we wrongly resolve s to 
-  //                   // the a non-existing method name, but typer knows 
+  //     m("1").s();   // If we rely on Namer only, we wrongly resolve s to
+  //                   // the a non-existing method name, but typer knows
   //                   // that this method application is actually correct,
   //                   // because it can always pick the correct method.
   //   }
@@ -54,7 +54,7 @@ trait Typers extends brokenj.typechecker.Typers {
   def namer: Namer
 
   trait Typer extends super.Typer {
-    override def binaryTyper(ltpe: Type, 
+    override def binaryTyper(ltpe: Type,
       rtpe: Type, bin: Binary): TypeChecker[Type] = bin.op match {
       case Add                                    =>
         (ltpe.name, rtpe.name) match {
@@ -65,9 +65,9 @@ trait Typers extends brokenj.typechecker.Typers {
           case _                                  =>
             super.binaryTyper(ltpe, rtpe, bin)
         }
-      case Eq | Neq                               => 
+      case Eq | Neq                               =>
         (ltpe, rtpe) match {
-          case (_: RefType, _: RefType)           => 
+          case (_: RefType, _: RefType)           =>
             point(BinaryType(ltpe, rtpe, BooleanType))
           case _                                  =>
             super.binaryTyper(ltpe, rtpe, bin)
@@ -86,8 +86,8 @@ trait Typers extends brokenj.typechecker.Typers {
     //                  alreadyDefinedVariablePredicate(_, lvars),
     //                  id.owner)
     //              // Is there any local variables with the same name?
-    //              if(variable != NoId) { 
-    //                point(Ident(variable, id.owner, id.pos)) 
+    //              if(variable != NoId) {
+    //                point(Ident(variable, id.owner, id.pos))
     //              } else {
     //                // OK, this seems to be ugly, but we don't want to
     //                // re-compute operations
@@ -97,27 +97,27 @@ trait Typers extends brokenj.typechecker.Typers {
     //                // The way Context works, makes sure that it first searches
     //                // for this compilation unit, then to this package and then
     //                // falls back to other options.
-    //                // another compilation unit with the same package name as 
+    //                // another compilation unit with the same package name as
     //                // this compilation unit defines this name? bind it to that
     //                // it is type name
     //                if(tuse != NoId) {
-    //                  point(TypeUse(tuse, id.owner, id.pos)) 
+    //                  point(TypeUse(tuse, id.owner, id.pos))
     //                } else {
-    //                  // When we introduce import statements, we need to 
+    //                  // When we introduce import statements, we need to
     //                  // implement the following resolution steps
     //                  // - an exactly one import statement, imports this name?
     //                  //   bind it to that, it is a type name
     //                  // - A wild-card import and a one-type import import this?
     //                  //   resolve to the one-type, and report a warning
     //                  //   and it is a type name
-    //                  // - more than two import statements of the same kind import 
+    //                  // - more than two import statements of the same kind import
     //                  //   this name? report an error
     //
     //
     //                  // The fall back is: resolve it to a package name!
     //                  // XXX: For now I just add NoId to it
     //                  // FIXME: Don't we need to report an error now?
-    //                  point(Ident(NoId, id.owner, id.pos)) 
+    //                  point(Ident(NoId, id.owner, id.pos))
     //                }
     //              }
     //            }
@@ -129,7 +129,7 @@ trait Typers extends brokenj.typechecker.Typers {
 
     // INFO
     // The following methods (typeTypeUse, typeIdent, typeSelect, typeUseTree),
-    // Seem almost like a copy of (nameTypeUses, nameIdents, nameSelects, 
+    // Seem almost like a copy of (nameTypeUses, nameIdents, nameSelects,
     // nameUseTrees), but they are not.
     //
     // These methods are aware of types, and they help us in method overloading,
@@ -202,12 +202,12 @@ trait Typers extends brokenj.typechecker.Typers {
                      id.owner)
                  val visible         = env.getTree(variable) match {
                    case Some(t)          =>
-                     !t.mods.isField || 
+                     !t.mods.isField ||
                        termIsVisible(variable, t.mods, encl, env)
                    case _                => false
                  }
                  // Is there any local variables with the same name?
-                 if(variable != NoId && visible) { 
+                 if(variable != NoId && visible) {
                    (Ident(variable, id.pos, id.owner, encl), env)
                  } else {
                    // OK, this seems to be ugly, but we don't want to
@@ -217,7 +217,7 @@ trait Typers extends brokenj.typechecker.Typers {
 
                    val visible         = env.getTree(tuse) match {
                      case Some(t)          =>
-                       !t.mods.isField || 
+                       !t.mods.isField ||
                          namer.typeIsVisible(tuse, t.mods, encl, env)
                      case _                => false
                    }
@@ -226,7 +226,7 @@ trait Typers extends brokenj.typechecker.Typers {
                    // The way Context works, makes sure that it first searches
                    // for this compilation unit, then to this package and then
                    // falls back to other options.
-                   // another compilation unit with the same package name as 
+                   // another compilation unit with the same package name as
                    // this compilation unit defines this name? Bind it to that
                    // it is type name
                    if(tuse != NoId && visible) {
@@ -235,7 +235,7 @@ trait Typers extends brokenj.typechecker.Typers {
                      val pkg = env.lookup(name, _.kind == PackageKind,
                        id.owner)
                      if(pkg != NoId) {
-                       (Ident(pkg, id.pos, id.owner, encl), env) 
+                       (Ident(pkg, id.pos, id.owner, encl), env)
                      } else {
                        // Does the classpath defines this name
                        // in a package hierarchy similar to this
@@ -243,36 +243,36 @@ trait Typers extends brokenj.typechecker.Typers {
                        val pkgs = env.enclosingPackageNames(id.owner)
                        val fullName = pkgs.mkString(".") + "." + name
                        if(catalog.defines(fullName, true)) {
-                         val (_, loadedClass, ctx2) = 
-                           namer.loadFromClassPath(fullName, 
+                         val (_, loadedClass, ctx2) =
+                           namer.loadFromClassPath(fullName,
                              owner).run(Set(), env)
                          loadedClass match {
-                           case cd: ClassDef if namer.typeIsVisible(cd.id, 
+                           case cd: ClassDef if namer.typeIsVisible(cd.id,
                                        cd.mods, encl, ctx2)      =>
-                             (TypeUse(cd.id, id.nameAtParser, 
+                             (TypeUse(cd.id, id.nameAtParser,
                                  id.pos, owner, encl), ctx2)
                            case _                                =>
                              // This case should never happen
-                             (Ident(NoId, id.nameAtParser, id.pos, owner, 
+                             (Ident(NoId, id.nameAtParser, id.pos, owner,
                                encl), ctx2)
                          }
-                       } else if(self.catalog.defines(fullName, false)) { 
+                       } else if(self.catalog.defines(fullName, false)) {
                          val info = newPackageDefInfo(name)
                          val (i, ctx2) = env.extend(owner, packageContext(info))
-                           (Ident(i, id.nameAtParser, id.pos, 
+                           (Ident(i, id.nameAtParser, id.pos,
                              owner, encl), ctx2)
                        } else {
                           (Ident(NoId, id.pos, id.owner, encl), env)
                        }
                      }
-                     // When we introduce import statements, we need to 
+                     // When we introduce import statements, we need to
                      // implement the following resolution steps
                      // - an exactly one import statement, imports this name?
                      //   bind it to that, it is a type name
                      // - A wild-card import and a one-type import import this?
                      //   resolve to the one-type, and report a warning
                      //   and it is a type name
-                     // - more than two import statements of the same kind import 
+                     // - more than two import statements of the same kind import
                      //   this name? Report an error
                    }
                  }
@@ -290,7 +290,7 @@ trait Typers extends brokenj.typechecker.Typers {
       } yield tid
 
 
-    
+
     // This method is only called if the ident is not part of a select tree
     def typeQualifiedIdent(id: Ident): TypeChecker[SimpleUseTree] = for {
       env   <- get
@@ -300,29 +300,29 @@ trait Typers extends brokenj.typechecker.Typers {
       name  =  id.nameAtParser.map(Name(_)).getOrElse(ERROR_NAME)
       res   =  {
                   val qkind = env.getTree(owner).map(_.kind)
-                  // At this point, we don't have 
+                  // At this point, we don't have
                   if(qkind == Some(PackageKind)) {
                     val tuse = env.lookup(name, _.kind.isInstanceOf[TypeKind],
                               id.owner)
                     val visible         = env.getTree(tuse) match {
                       case Some(t)          =>
-                        !t.mods.isField || 
+                        !t.mods.isField ||
                           namer.typeIsVisible(tuse, t.mods, encl, env)
                       case _                => false
                     }
                     if(tuse != NoId && visible) {
                       (TypeUse(tuse, id.pos, id.owner, encl), env)
                     } else {
-                      val tuse = env.lookup(name, 
+                      val tuse = env.lookup(name,
                         _.kind == PackageKind, id.owner)
                       (Ident(tuse, id.pos, id.owner, encl), env)
                     }
                   } else if(qkind != None){
-                    val variable = env.lookup(name, 
+                    val variable = env.lookup(name,
                       _.kind == VariableKind, id.owner)
                     val visible         = env.getTree(variable) match {
                       case Some(t)          =>
-                        !t.mods.isField || 
+                        !t.mods.isField ||
                           termIsVisible(variable, t.mods, encl, env)
                       case _                => false
                     }
@@ -347,7 +347,7 @@ trait Typers extends brokenj.typechecker.Typers {
       } yield tid
 
 
-    
+
     def typeSelect(select: Select): TypeChecker[UseTree] = for {
       qual    <- typeTree(select.qual)
       ctx     <- get
@@ -367,11 +367,11 @@ trait Typers extends brokenj.typechecker.Typers {
         case _                      => NoId
       }
       tree    <- select.tree match {
-        case id: Ident      => 
+        case id: Ident      =>
           typeQualifiedIdent(
             Ident(id.uses, id.nameAtParser, id.pos, qid, id.enclosingId))
-        case tuse: TypeUse  => 
-          typeTypeUse(TypeUse(tuse.uses, tuse.nameAtParser, tuse.pos, 
+        case tuse: TypeUse  =>
+          typeTypeUse(TypeUse(tuse.uses, tuse.nameAtParser, tuse.pos,
             qid, tuse.enclosingId))
       }
     } yield Select(qual, tree, select.pos, select.owner)
@@ -389,12 +389,12 @@ trait Typers extends brokenj.typechecker.Typers {
         r  <- typeSelect(select)
       } yield r
     }
-    
+
 
     def methodCanBeApplied(ptpes: List[Type],
                            atpes: List[Type]): Boolean = {
       if(ptpes.size != atpes.size) false
-      else 
+      else
         atpes.zip(ptpes).foldLeft(true)((z, y) => {
           z && (y._1 <:< y._2)
         })
@@ -410,21 +410,21 @@ trait Typers extends brokenj.typechecker.Typers {
      * @param ctx the compilation context (the state of the whole program)
      * @param tpes the list of applied arguments
      */
-    protected def qualifiedMethods(ids: List[TreeId], 
+    protected def qualifiedMethods(ids: List[TreeId],
       enclClass: TreeId, ctx: Context,
       tpes: List[Type]): List[(TreeId, MethodType)] = ids match {
-      case Nil                                                           => 
+      case Nil                                                           =>
         Nil
-      case (id::rest)                                                    => 
+      case (id::rest)                                                    =>
         ctx.getTree(id) match {
-          case Some(t)                if enclClass.contains(id)          => 
+          case Some(t)                if enclClass.contains(id)          =>
             t.tpe.eval(ctx) match {
               case mt: MethodType if methodCanBeApplied(mt.params, tpes) =>
                 (id, mt)::qualifiedMethods(rest, enclClass, ctx, tpes)
               case _                                                     =>
                 qualifiedMethods(rest, enclClass, ctx, tpes)
             }
-          case Some(t)      if ! t.mods.isPrivateAcc                     => 
+          case Some(t)      if ! t.mods.isPrivateAcc                     =>
             t.tpe.eval(ctx) match {
               case mt: MethodType if methodCanBeApplied(mt.params, tpes) =>
                 (id, mt)::qualifiedMethods(rest, enclClass, ctx, tpes)
@@ -444,34 +444,34 @@ trait Typers extends brokenj.typechecker.Typers {
      * According to Java's spec (1.0 ed) a method is more specific than the
      * other, if all its parameters can be passed to the latter.
      */
-    def mostSpecificMethods(ids: List[(TreeId, MethodType)]): 
-        List[(TreeId, MethodType)] = 
+    def mostSpecificMethods(ids: List[(TreeId, MethodType)]):
+        List[(TreeId, MethodType)] =
       ids.filter((x) => {
-        ids.foldLeft(true)((z, y) => 
+        ids.foldLeft(true)((z, y) =>
           if(x._1 == y._1) z
           else methodCanBeApplied(y._2.params, x._2.params)
         )
       })
-      
+
 
     // This method addresses Issue #1
-    def typeApplyFunIdent(fun: Ident, 
+    def typeApplyFunIdent(fun: Ident,
       tpes: List[Type]): TypeChecker[Ident] = for {
       ctx        <- get
       owner      =  fun.owner           // Owner and enclId are the same
       enclId     =  fun.enclosingId     // if the call is not qualified
       mthdClass  =  ctx.enclosingClass(owner)
-      enclClass  =  if(owner == enclId) mthdClass 
+      enclClass  =  if(owner == enclId) mthdClass
                     else ctx.enclosingClass(enclId)
       name       =  fun.nameAtParser.map(Name(_)).getOrElse(ERROR_NAME)
       methods    =  { // a list of method ids and their types
         ctx.getContext(mthdClass) match {
           case None                        => Nil
           case Some(mctx)                  =>
-            val ids       = 
-              mctx.findAllInThisContextAndInherited(name, 
+            val ids       =
+              mctx.findAllInThisContextAndInherited(name,
                       _.kind == MethodKind)
-            qualifiedMethods(ids, enclClass, ctx, tpes) 
+            qualifiedMethods(ids, enclClass, ctx, tpes)
         }
       }
       specficis  = mostSpecificMethods(methods)
@@ -489,11 +489,11 @@ trait Typers extends brokenj.typechecker.Typers {
 
       }
       mid        =  methods.headOption.map(_._1).getOrElse(NoId)
-      
+
       _          <- put(ctx)
     } yield Ident(mid, fun.pos, owner, enclClass)
-    
-        
+
+
     override def typeApply(apply: Apply): TypeChecker[Apply] = for {
       args      <- apply.args.map(typeExpr(_)).sequenceU
       ctx       <- get
@@ -510,7 +510,7 @@ trait Typers extends brokenj.typechecker.Typers {
               case c: ClassType             => c.id
               case _                        => NoId
             }
-            tree <- typeApplyFunIdent(Ident(tree.uses, qual.pos, 
+            tree <- typeApplyFunIdent(Ident(tree.uses, qual.pos,
                                           qid, tree.enclosingId), tpes)
           } yield Select(qual, tree, s.pos, s.owner)
         case _                            =>
@@ -518,7 +518,7 @@ trait Typers extends brokenj.typechecker.Typers {
       }
       _           <- fun match {
         // A type is selected? then the call should be of a static method
-        case s@Select(q, _) if pointsToUse(q, 
+        case s@Select(q, _) if pointsToUse(q,
             _.isInstanceOf[TypeUse]) && ! ctx.isStatic(s.uses)     =>
 
           toTypeChecker(error(INSTANCE_METHOD_IN_STATIC_CONTEXT_INVOK,
@@ -534,7 +534,7 @@ trait Typers extends brokenj.typechecker.Typers {
             case _                           => false
           }
           (isStatic, isMStatic) match {
-            case (true, false)               => 
+            case (true, false)               =>
               toTypeChecker(error(INSTANCE_METHOD_IN_STATIC_CONTEXT_INVOK,
                 fun.toString, "a method name", fun.pos, fun))
             case (_, _)                      => point(())

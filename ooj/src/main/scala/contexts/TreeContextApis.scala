@@ -16,14 +16,14 @@ import ooj.modifiers.Ops._
 trait TreeContextApis extends primj.contexts.TreeContextApis {
   self: TreeContexts with TreeInfos =>
 
-  
-  implicit class ImplicitContextApi(override val ctx: Context) extends 
+
+  implicit class ImplicitContextApi(override val ctx: Context) extends
       super.ImplicitContextApi(ctx) with ContextApi {
 
-    def isStatic(id: TreeId): Boolean = 
+    def isStatic(id: TreeId): Boolean =
       ctx.getTree(id).map(_.mods.isStatic).getOrElse(false)
 
-    def enclosingClass(id: TreeId): TreeId = 
+    def enclosingClass(id: TreeId): TreeId =
       ctx.getContext(id) match {
         case Some(ctx: NamedContext) if ctx.tree.kind == ClassKind   =>
           id
@@ -34,9 +34,9 @@ trait TreeContextApis extends primj.contexts.TreeContextApis {
         case None                                                    =>
           NoId
       }
-      
 
-    def enclosingPackage(id: TreeId): TreeId = 
+
+    def enclosingPackage(id: TreeId): TreeId =
       ctx.getContext(id) match {
         case Some(ctx: NamedContext) if ctx.tree.kind == PackageKind =>
           id
@@ -48,7 +48,7 @@ trait TreeContextApis extends primj.contexts.TreeContextApis {
 
     def enclosingNonLocal(id: TreeId): TreeId =
       ctx.getContext(id) match {
-        case Some(ctx: NamedContext) 
+        case Some(ctx: NamedContext)
             if ctx.tree.kind == VariableKind && ctx.tree.mods.isField =>
           id
         case Some(ctx: NamedContext)                                  =>
@@ -64,10 +64,10 @@ trait TreeContextApis extends primj.contexts.TreeContextApis {
   trait ContextApi extends super.ContextApi {
     /**
      * Get all enclosing package ids until it gets to the root,
-     * 
+     *
      * The inner-most package is the head, and the outer most one
      * is the last.
-     * 
+     *
      * For this hierarchy:
      * ch.usi.inf.l3.sana
      *
@@ -84,7 +84,7 @@ trait TreeContextApis extends primj.contexts.TreeContextApis {
 
     /**
      * Get all enclosing class ids until it gets to the first package,
-     * 
+     *
      * The inner-most package is the head, and the outer most one
      * is the last.
      */
@@ -95,13 +95,13 @@ trait TreeContextApis extends primj.contexts.TreeContextApis {
       }
     }
 
-    def enclosingNonLocal(id: TreeId): TreeId 
+    def enclosingNonLocal(id: TreeId): TreeId
 
     def topLevelClass(id: TreeId): TreeId = enclosingClasses(id) match {
       case Nil                  => NoId
       case classes              => classes.last
     }
-      
+
 
     def enclosingPackageNames(id: TreeId): List[Name] = {
       enclosingPackages(id).flatMap {
@@ -111,7 +111,7 @@ trait TreeContextApis extends primj.contexts.TreeContextApis {
     }
 
     def enclosingPackage(id: TreeId): TreeId
-    def enclosingPackageName(id: TreeId): Option[Name] = 
+    def enclosingPackageName(id: TreeId): Option[Name] =
       ctx.getTree(enclosingPackage(id)) match {
         case Some(c: NamedContext)      => Some(c.tree.name)
         case _                          => None

@@ -26,16 +26,16 @@ import scalaz.{Name => _, _}
 import Scalaz._
 
 trait Trees extends ast.Trees {
-  self: types.Types with Constants with TreeContexts with MonadUtils 
+  self: types.Types with Constants with TreeContexts with MonadUtils
         with ooj.util.Definitions with ooj.contexts.TreeContextApis =>
 
   /********************* AST Nodes *********************************/
 
   trait PackageDef extends NamedTree with IdentifiedTree {
     def members: List[DefTree]
-    
+
     def tpe: TypeState[Type] = toTypeState(notype)
-    def show(ctx: Context): String = 
+    def show(ctx: Context): String =
       s"""|PackageDef{
           |name=${name.asString},
           |members=${showList(members, ctx)},
@@ -44,7 +44,7 @@ trait Trees extends ast.Trees {
           |}""".stripMargin
 
     def asString(ctx: Context): String =
-      s"""|package ${name.asString} 
+      s"""|package ${name.asString}
           |${asStringList(members, ctx, "\n")}
           |""".stripMargin
 
@@ -77,7 +77,7 @@ trait Trees extends ast.Trees {
       }
     } yield ty
 
-    def show(ctx: Context): String = 
+    def show(ctx: Context): String =
       s"""|ClassDef{
           |mods=${mods.asString},
           |name=${name.asString},
@@ -92,7 +92,7 @@ trait Trees extends ast.Trees {
           |class ${name.asString} extends ${asStringList(parents, ctx)}
           |${body.asString(ctx)}
           |}""".stripMargin
-  } 
+  }
 
   trait New extends Expr {
     def tpt: UseTree
@@ -100,7 +100,7 @@ trait Trees extends ast.Trees {
 
     def asString(ctx: Context): String =
       s"new ${tpt.asString(ctx)}"
-    def show(ctx: Context): String = 
+    def show(ctx: Context): String =
       s"""|New{
           |tpt=${tpt.show(ctx)}
           |owner=${owner},
@@ -119,7 +119,7 @@ trait Trees extends ast.Trees {
     def asString(ctx: Context): String =
       s"${qual.asString(ctx)}.${name(ctx)._2}"
 
-    def show(ctx: Context): String = 
+    def show(ctx: Context): String =
       s"""|Select{
           |uses=$uses,
           |qual=${qual.show(ctx)},
@@ -135,7 +135,7 @@ trait Trees extends ast.Trees {
 
     def asString(ctx: Context): String = "this"
 
-    def show(ctx: Context): String = 
+    def show(ctx: Context): String =
       s"""|This{
           |owner=$owner,
           |enclosingClass=$enclosingClass,
@@ -162,14 +162,14 @@ trait Trees extends ast.Trees {
         ctx.getTpe(enclosingClass).run(ctx)
     }
 
-    def show(ctx: Context): String = 
+    def show(ctx: Context): String =
       s"""|Super{
           |owner=$owner,
           |enclosingClass=$enclosingClass,
           |pos=$pos,
           |}""".stripMargin
   }
-  
+
   /***************************** Extractors **************************/
 
   trait PackageDefExctractor {
@@ -181,13 +181,13 @@ trait Trees extends ast.Trees {
   }
 
   trait ClassDefExtractor {
-    def unapply(cd: ClassDef): Option[(Flags, Name, 
+    def unapply(cd: ClassDef): Option[(Flags, Name,
                   List[UseTree], Template)] = cd match {
       case null     => None
       case _        => Some((cd.mods, cd.name, cd.parents, cd.body))
     }
   }
-  
+
 
   trait NewExtractor {
     def unapply(nw: New): Option[UseTree] = nw match {
@@ -206,8 +206,8 @@ trait Trees extends ast.Trees {
   /***************************** Factories **************************/
 
   trait PackageDefFactory {
-    private class PackageDefImpl(val id: TreeId, 
-      val name: Name, val members: List[DefTree], 
+    private class PackageDefImpl(val id: TreeId,
+      val name: Name, val members: List[DefTree],
       val pos: Option[Position], val owner: TreeId) extends PackageDef
 
     def apply(id: TreeId, name: Name, members: List[DefTree],
@@ -217,7 +217,7 @@ trait Trees extends ast.Trees {
   }
 
   trait ClassDefFactory {
-    private class ClassDefImpl(val mods: Flags, val id: TreeId, 
+    private class ClassDefImpl(val mods: Flags, val id: TreeId,
       val name: Name, val parents: List[UseTree], val body: Template,
       val pos: Option[Position], val owner: TreeId) extends ClassDef
 
@@ -249,7 +249,7 @@ trait Trees extends ast.Trees {
     private class ThisImpl(val enclosingClass: TreeId,
       val pos: Option[Position], val owner: TreeId) extends This
 
-    def apply(enclosingClass: TreeId, pos: Option[Position], 
+    def apply(enclosingClass: TreeId, pos: Option[Position],
       owner: TreeId): This = new ThisImpl(enclosingClass, pos, owner)
   }
 
@@ -257,7 +257,7 @@ trait Trees extends ast.Trees {
     private class SuperImpl(val enclosingClass: TreeId,
       val pos: Option[Position], val owner: TreeId) extends Super
 
-    def apply(enclosingClass: TreeId, pos: Option[Position], 
+    def apply(enclosingClass: TreeId, pos: Option[Position],
       owner: TreeId): Super = new SuperImpl(enclosingClass, pos, owner)
   }
 
