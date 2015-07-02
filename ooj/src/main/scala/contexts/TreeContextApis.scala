@@ -23,6 +23,9 @@ trait TreeContextApis extends primj.contexts.TreeContextApis {
     def isStatic(id: TreeId): Boolean =
       ctx.getTree(id).map(_.mods.isStatic).getOrElse(false)
 
+    def isInterface(id: TreeId): Boolean =
+      ctx.getTree(id).map(_.mods.isInterface).getOrElse(false)
+
     def enclosingClass(id: TreeId): TreeId =
       ctx.getContext(id) match {
         case Some(ctx: NamedContext) if ctx.tree.kind == ClassKind   =>
@@ -125,6 +128,7 @@ trait TreeContextApis extends primj.contexts.TreeContextApis {
     def enclosingClass(id: TreeId): TreeId
 
     def isStatic(id: TreeId): Boolean
+    def isInterface(id: TreeId): Boolean
 
     def enclosingClassName(id: TreeId): Option[Name] =
       ctx.getTree(enclosingClass(id)) match {
