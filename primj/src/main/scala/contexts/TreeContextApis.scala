@@ -15,15 +15,13 @@ import primj.modifiers.Ops._
 trait TreeContextApis {
   self: TreeContexts with TreeInfos =>
 
-  
+
   implicit class ImplicitContextApi(val ctx: Context) extends ContextApi {
-    def isBlock(id: TreeId): Boolean = true
-    def isFor(id: TreeId): Boolean = true
-    def isMethodDef(id: TreeId): Boolean = 
+    def isMethodDef(id: TreeId): Boolean =
       ctx.getTree(id).map(_.kind == MethodKind).getOrElse(false)
-    def isVariable(id: TreeId): Boolean = 
+    def isVariable(id: TreeId): Boolean =
       ctx.getTree(id).map(_.kind == VariableKind).getOrElse(false)
-    def isFinal(id: TreeId): Boolean = 
+    def isFinal(id: TreeId): Boolean =
       ctx.getTree(id).map(_.mods.isFinal).getOrElse(false)
 
     def enclosingMethod(id: TreeId): TreeId = {
@@ -45,8 +43,6 @@ trait TreeContextApis {
       ctx.lookup(name, (x) => x.kind == VariableKind, owner)
     }
 
-    def isBlock(id: TreeId): Boolean
-    def isFor(id: TreeId): Boolean
     def isMethodDef(id: TreeId): Boolean
     def isVariable(id: TreeId): Boolean
 
