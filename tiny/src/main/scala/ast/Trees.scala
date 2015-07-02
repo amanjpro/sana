@@ -25,7 +25,7 @@ import scalaz.{Name => _, _}
   *  - [[NamedTree]]: Trees that have a name, like variables.
   *  - [[DefTree]]: All the trees that define a new name.
   *  - [[Empty]]: An AST node that represents absent of expressions.
-  *  - [[Expr]]: An AST node that represents an expression, in tiny 
+  *  - [[Expr]]: An AST node that represents an expression, in tiny
   *              there is no Statement.
   *  - [[UseTree]]: Trees that use a [[DefTree]]
   *  - [[TypeUse]]: Trees that use a defined type.
@@ -47,7 +47,7 @@ trait Trees {
   type TypeState[T <: Type] = State[Context, T]
   def toTypeState[A <: Type](t: A): TypeState[A] = t.point[ContextState]
 
- 
+
   //////////////////////////////////////////////////////////////////
   // Api
   //////////////////////////////////////////////////////////////////
@@ -67,9 +67,9 @@ trait Trees {
     def tpe: TypeState[Type]
 
     /**
-      * Returns the owner of this AST node. Owner of a tree is the DefTree that 
+      * Returns the owner of this AST node. Owner of a tree is the DefTree that
       * syntactically encloses this tree.
-      * 
+      *
       *
       * @see [[tiny.contexts.TreeId]]
       * @return The owner of this AST node, or returns NoId if not found.
@@ -82,7 +82,7 @@ trait Trees {
       * @see [[tiny.source.Position]]
       * @return Optionally the position of this AST node.
       */
-    def pos: Option[Position] 
+    def pos: Option[Position]
 
 
     /**
@@ -112,9 +112,9 @@ trait Trees {
     */
   trait IdentifiedTree extends Tree {
     /**
-      * The ''unique id'' of this AST node. 
+      * The ''unique id'' of this AST node.
       *
-      * This ''id'' is used in `owner` computing, and also later in name 
+      * This ''id'' is used in `owner` computing, and also later in name
       * resolution.
       *
       * @see [[tiny.contexts.TreeId]]
@@ -163,7 +163,7 @@ trait Trees {
    * @group Api
    */
   trait TypeTree extends DefTree
-      
+
   /**
     * The base trait for all trees that introduce a new term.
     *
@@ -176,7 +176,7 @@ trait Trees {
     *
     * @group Api
     */
-  trait Expr extends Tree 
+  trait Expr extends Tree
 
   /**
     * A trait to represent empty statements.
@@ -268,7 +268,7 @@ trait Trees {
   trait TypeUse extends SimpleUseTree {
     def asString(ctx: Context): String = name(ctx)._2.asString
 
-    def show(ctx: Context): String = 
+    def show(ctx: Context): String =
       s"""|TypeUse{
           |uses=$uses,
           |nameAtParser=$nameAtParser,
@@ -283,17 +283,17 @@ trait Trees {
     // def apply(f: Tree => Tree): Tree = f(this)
     // def filter(p: Tree => Boolean): List[Tree] = if(p(this)) List(this) else Nil
   }
-  
+
   /**
     * A trait that represents identifiers that point to a [[TermTree]]
     *
     * @group Api
     */
   trait Ident extends Expr with SimpleUseTree {
-    
+
 
     def asString(ctx: Context): String = name(ctx)._2.asString
-    def show(ctx: Context): String = 
+    def show(ctx: Context): String =
       s"""|Ident{
           |uses=$uses,
           |nameAtParser=$nameAtParser,
@@ -311,7 +311,7 @@ trait Trees {
     // def filter(p: Tree => Boolean): List[Tree] = if(p(this)) List(this) else Nil
   }
 
-  
+
 
   //////////////////////////////////////////////////////////////////
   // Factories
@@ -322,7 +322,7 @@ trait Trees {
     * @group Factories
     */
   trait TypeUseFactory {
-    private class TypeUseImpl(val uses: TreeId, 
+    private class TypeUseImpl(val uses: TreeId,
       val nameAtParser: Option[String], val pos: Option[Position],
       val owner: TreeId, val enclosingId: TreeId) extends TypeUse
 
@@ -337,8 +337,8 @@ trait Trees {
       * @param owner the owner of this tree
       * @return a new [[TypeUse]] instance.
       */
-    def apply(uses: TreeId, nameAtParser: Option[String], 
-      pos: Option[Position], owner: TreeId): TypeUse = 
+    def apply(uses: TreeId, nameAtParser: Option[String],
+      pos: Option[Position], owner: TreeId): TypeUse =
         new TypeUseImpl(uses, nameAtParser, pos, owner, owner)
 
     /**
@@ -352,7 +352,7 @@ trait Trees {
       * @param owner the owner of this tree
       * @return a new [[TypeUse]] instance.
       */
-    def apply(uses: TreeId, pos: Option[Position], owner: TreeId): TypeUse = 
+    def apply(uses: TreeId, pos: Option[Position], owner: TreeId): TypeUse =
         new TypeUseImpl(uses, None, pos, owner, owner)
 
     /**
@@ -367,8 +367,8 @@ trait Trees {
       * @param enclosingId the id of the enclosing tree or its owner
       * @return a new [[TypeUse]] instance.
       */
-    def apply(uses: TreeId, 
-      pos: Option[Position], owner: TreeId, enclosingId: TreeId): TypeUse = 
+    def apply(uses: TreeId,
+      pos: Option[Position], owner: TreeId, enclosingId: TreeId): TypeUse =
         new TypeUseImpl(uses, None, pos, owner, enclosingId)
 
 
@@ -385,8 +385,8 @@ trait Trees {
       * @param enclosingId the id of the enclosing tree or its owner
       * @return a new [[TypeUse]] instance.
       */
-    def apply(uses: TreeId, nameAtParser: Option[String], 
-      pos: Option[Position], owner: TreeId, enclosingId: TreeId): TypeUse = 
+    def apply(uses: TreeId, nameAtParser: Option[String],
+      pos: Option[Position], owner: TreeId, enclosingId: TreeId): TypeUse =
         new TypeUseImpl(uses, nameAtParser, pos, owner, enclosingId)
 
 
@@ -398,9 +398,9 @@ trait Trees {
     * @group Factories
     */
   trait IdentFactory {
-    private class IdentImpl(val uses: TreeId, 
+    private class IdentImpl(val uses: TreeId,
       val nameAtParser: Option[String], val pos: Option[Position],
-      val owner: TreeId, val enclosingId: TreeId) extends Ident 
+      val owner: TreeId, val enclosingId: TreeId) extends Ident
 
     /**
       * Creates a [[Ident]] instance.
@@ -415,7 +415,7 @@ trait Trees {
       * @return a new [[Ident]] instance.
       */
     def apply(uses: TreeId, nameAtParser: Option[String], pos: Option[Position],
-      owner: TreeId, enclosingId: TreeId): Ident = 
+      owner: TreeId, enclosingId: TreeId): Ident =
         new IdentImpl(uses, nameAtParser, pos, owner, enclosingId)
 
     /**
@@ -431,7 +431,7 @@ trait Trees {
       * @return a new [[Ident]] instance.
       */
     def apply(uses: TreeId, pos: Option[Position],
-      owner: TreeId, enclosingId: TreeId): Ident = 
+      owner: TreeId, enclosingId: TreeId): Ident =
         new IdentImpl(uses, None, pos, owner, enclosingId)
 
 
@@ -448,12 +448,12 @@ trait Trees {
       * @return a new [[Ident]] instance.
       */
     def apply(uses: TreeId, nameAtParser: Option[String], pos: Option[Position],
-      owner: TreeId): Ident = 
+      owner: TreeId): Ident =
         new IdentImpl(uses, nameAtParser, pos, owner, owner)
 
 
     /**
-      * Creates a [[Ident]] instance. 
+      * Creates a [[Ident]] instance.
       *
       * Please be reminded, you almost always need this this constructor
       * after parser phase.
@@ -463,7 +463,7 @@ trait Trees {
       * @param owner the owner of this tree
       * @return a new [[Ident]] instance.
       */
-    def apply(uses: TreeId, pos: Option[Position], owner: TreeId): Ident = 
+    def apply(uses: TreeId, pos: Option[Position], owner: TreeId): Ident =
         new IdentImpl(uses, None, pos, owner, owner)
 
   }
@@ -478,7 +478,7 @@ trait Trees {
   // }
   //
   // trait IdentExtractor {
-  //   def unapply(i: Ident): Option[Symbol] = 
+  //   def unapply(i: Ident): Option[Symbol] =
   // }
 
   //////////////////////////////////////////////////////////////////
@@ -486,13 +486,13 @@ trait Trees {
   //////////////////////////////////////////////////////////////////
   /**
    * AST tree for identifiers that point to terms
-   * 
+   *
    * @group Trees
    */
   val Ident   = new IdentFactory {}
   /**
    * AST tree for identifiers that point to types
-   * 
+   *
    * @group Trees
    */
   val TypeUse = new TypeUseFactory {}
@@ -518,7 +518,7 @@ trait Trees {
     def show(ctx: Context): String = "<bad-tree>"
   }
 
-  
+
 
   //////////////////////////////////////////////////////////////////
   // Tree Traverses
@@ -537,7 +537,7 @@ trait Trees {
     //     f(x)
     //     ()
     //   })
-    // } 
+    // }
   }
 
 
