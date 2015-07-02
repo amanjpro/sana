@@ -76,56 +76,36 @@ trait Typers extends brokenj.typechecker.Typers {
         super.binaryTyper(ltpe, rtpe, bin)
     }
 
-    // override def typeIdent(id: Ident): TypeChecker[UseTree] = for {
-    //   env   <- get
-    //   lvars <- ask
-    //   name  <- point(id.nameAtParser.map(Name(_)).getOrElse(ERROR_NAME))
-    //   res   <- {
-    //              val enclosingMethod = env.enclosingMethod(id.owner)
-    //              val variable        = env.lookup(name,
-    //                  alreadyDefinedVariablePredicate(_, lvars),
-    //                  id.owner)
-    //              // Is there any local variables with the same name?
-    //              if(variable != NoId) {
-    //                point(Ident(variable, id.owner, id.pos))
-    //              } else {
-    //                // OK, this seems to be ugly, but we don't want to
-    //                // re-compute operations
-    //                val tuse = env.lookup(name, _.isInstanceOf[TypeKind],
-    //                  id.owner)
-    //                // compilation unit defines this name? bind it to that
-    //                // The way Context works, makes sure that it first searches
-    //                // for this compilation unit, then to this package and then
-    //                // falls back to other options.
-    //                // another compilation unit with the same package name as
-    //                // this compilation unit defines this name? bind it to that
-    //                // it is type name
-    //                if(tuse != NoId) {
-    //                  point(TypeUse(tuse, id.owner, id.pos))
-    //                } else {
-    //                  // When we introduce import statements, we need to
-    //                  // implement the following resolution steps
-    //                  // - an exactly one import statement, imports this name?
-    //                  //   bind it to that, it is a type name
-    //                  // - A wild-card import and a one-type import import this?
-    //                  //   resolve to the one-type, and report a warning
-    //                  //   and it is a type name
-    //                  // - more than two import statements of the same kind import
-    //                  //   this name? report an error
-    //
-    //
-    //                  // The fall back is: resolve it to a package name!
-    //                  // XXX: For now I just add NoId to it
-    //                  // FIXME: Don't we need to report an error now?
-    //                  point(Ident(NoId, id.owner, id.pos))
-    //                }
-    //              }
-    //            }
-    // } yield res
-    //
-    //
-    //
-    //
+    def typeSuper(spr: Super): TypeChecker[Super] = for {
+      ctx        <- get
+      enclClass  =  ctx.enclosingClass(spr.enclosingId)
+      encl       =  ctx.enclosingNonLocal(spr.enclosingId)
+      _          <- ctx.getTpe(enclClass) match {
+        case ot: ObjectType             =>
+          toTypeChecker(error(ACCESSING_SUPER_IN_OBJECT,
+              spr.toString, "", spr.pos, spr))
+        case _                          =>
+          point(())
+      }
+      _          <- ctx.isStatic(encl) match {
+        case true                   =>
+          toTypeChecker(error(ACCESSING_SUPER_IN_STATIC,
+              spr.toString, "", spr.pos, spr))
+        case _                      => point(())
+      }
+    } yield Super(spr.enclosingId, spr.pos, enclClass)
+
+    def typeThis(ths: This): TypeChecker[This] = for {
+      ctx        <- get
+      enclClass  =  ctx.enclosingClass(ths.enclosingId)
+      encl       =  ctx.enclosingNonLocal(ths.enclosingId)
+      _          <- ctx.isStatic(encl) match {
+        case true                   =>
+          toTypeChecker(error(ACCESSING_THIS_IN_STATIC,
+              ths.toString, "", ths.pos, ths))
+        case _                      => point(())
+      }
+    } yield This(ths.enclosingId, ths.pos, enclClass)
 
     // INFO
     // The following methods (typeTypeUse, typeIdent, typeSelect, typeUseTree),
