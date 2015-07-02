@@ -48,7 +48,7 @@ trait Typers extends typechecker.Typers {
       case s: Expr         => for {
         ts <- typeExpr(s)
       } yield ts
-      case _               => 
+      case _               =>
         super.typeTree(tree)
     }
 
@@ -89,7 +89,7 @@ trait Typers extends typechecker.Typers {
                       body.toString, body.toString, body.pos, mdef))
                   else
                     point(())
-      tree     <- point(MethodDef(mdef.mods, mdef.id, mdef.ret, mdef.name, 
+      tree     <- point(MethodDef(mdef.mods, mdef.id, mdef.ret, mdef.name,
                                   params, body, mdef.pos, mdef.owner))
     } yield tree
 
@@ -118,7 +118,7 @@ trait Typers extends typechecker.Typers {
           case _                           =>
             point(())
         }
-      tree       <- point(ValDef(vdef.mods, vdef.id, tpt, vdef.name, 
+      tree       <- point(ValDef(vdef.mods, vdef.id, tpt, vdef.name,
                     rhs, vdef.pos, vdef.owner))
     } yield tree
 
@@ -138,7 +138,7 @@ trait Typers extends typechecker.Typers {
       rtpe <- toTypeChecker(rhs.tpe)
       _    <- if (rtpe <:< ltpe)
                 point(())
-              else 
+              else
                 toTypeChecker(error(TYPE_MISMATCH,
                   ltpe.toString, rtpe.toString, rhs.pos, assign))
     } yield Assign(lhs, rhs, assign.pos, assign.owner)
@@ -173,7 +173,7 @@ trait Typers extends typechecker.Typers {
         case id: Expr   => id
         case _          => id
       }
-      case _                      => 
+      case _                      =>
         super.typeExpr(e)
     }
 
@@ -227,9 +227,9 @@ trait Typers extends typechecker.Typers {
                 } else point(())
       res    <- super.typeUnary(unary)
     } yield res
-      
-      
-      
+
+
+
     def typeBlock(block: Block): TypeChecker[Block] = for {
       locals <- ask
       zero   =  (Nil: List[TypeChecker[Tree]], locals)
@@ -238,7 +238,7 @@ trait Typers extends typechecker.Typers {
                     case v: ValDef => z._2 + v
                     case _         => z._2
                   }
-                  val r = local((s: Set[NamedTree]) => 
+                  val r = local((s: Set[NamedTree]) =>
                                 locals)(typeTree(y))
                   (r::z._1, locals)
                 })._1.reverse
@@ -252,14 +252,14 @@ trait Typers extends typechecker.Typers {
       body <- typeExpr(wile.body)
       tpe  <- toTypeChecker(cond.tpe)
       _    <- (tpe =/= BooleanType) match {
-        case true => 
+        case true =>
           toTypeChecker(error(TYPE_MISMATCH,
             tpe.toString, "boolean", wile.cond.pos, wile.cond))
         case _    => point(())
       }
       tree <- point(While(wile.mods, cond, body, wile.pos))
     } yield tree
-    
+
     def typeFor(forloop: For): TypeChecker[For] = for {
       inits <- forloop.inits.map(typeTree(_)).sequenceU
       ctx   <- get
@@ -331,23 +331,23 @@ trait Typers extends typechecker.Typers {
 
 
     // Type-checking (and name resolving) UseTrees
-    protected def alreadyDefinedVariablePredicate(x: TreeInfo, 
+    protected def alreadyDefinedVariablePredicate(x: TreeInfo,
           locals: Set[NamedTree]): Boolean = {
       // points to a local var? then it should be defined already
       val localPred = ((x.mods.isLocalVariable ||
-        x.mods.isParam) && 
+        x.mods.isParam) &&
         !locals.filter(_.name == x.name).isEmpty)
-      // it is global? Then, there should be no locals a long 
+      // it is global? Then, there should be no locals a long
       // the way to the global
       val globalPred = x.mods.isField
       (x.kind == VariableKind) && (localPred || globalPred)
     }
-    
+
     def typeIdent(id: Ident): TypeChecker[UseTree] = for {
       env    <- get
       name   <- point(id.nameAtParser.map(Name(_)).getOrElse(ERROR_NAME))
       locals <- ask
-      tid    <- point(env.lookup(name, 
+      tid    <- point(env.lookup(name,
         alreadyDefinedVariablePredicate(_, locals), id.owner))
       _      <- tid match {
                 case NoId    =>
@@ -359,34 +359,6 @@ trait Typers extends typechecker.Typers {
      } yield Ident(tid, id.pos, id.owner)
 
 
-    // def nameMethodTreeUses(fun: UseTree): TypeChecker[UseTree] = fun match {
-    //   case id: Ident                                => for {
-    //     env    <- get
-    //     name   <- point(id.nameAtParser.map(Name(_)).getOrElse(ERROR_NAME))
-    //     tid    <- point(env.lookup(name, 
-    //       _.kind == MethodKind, id.owner))
-    //     // _      <- tid match {
-    //     //           case NoId    =>
-    //     //             toTypeChecker(error(NAME_NOT_FOUND,
-    //     //               id.toString, "a method name", id.pos, id))
-    //     //           case _     =>
-    //     //             point(())
-    //     //           }
-    //    } yield Ident(tid, id.owner, id.pos)
-    // }
-    //
-    // def nameMethodUses(fun: Expr): TypeChecker[Expr] = fun match {
-    //   case use: UseTree                   => for {
-    //     r <- nameMethodTreeUses(use)
-    //   } yield r match {
-    //     case e: Expr  => e
-    //     case _        => use
-    //   }
-    //   case _                              =>
-    //     nameExprs(fun)
-    // }
-
-    
     def typeUseTree(use: UseTree): TypeChecker[UseTree] = use match {
       case tuse: TypeUse                                => for {
         r <- typeTypeUse(tuse)
@@ -400,7 +372,7 @@ trait Typers extends typechecker.Typers {
     def typeTypeUse(tuse: TypeUse): TypeChecker[TypeUse] = for {
       env  <- get
       name <- point(tuse.nameAtParser.map(Name(_)).getOrElse(ERROR_NAME))
-      tid  <- point(env.lookup(name, _.kind.isInstanceOf[TypeKind], 
+      tid  <- point(env.lookup(name, _.kind.isInstanceOf[TypeKind],
               tuse.owner))
       _    <- tid match {
                 case NoId    =>
