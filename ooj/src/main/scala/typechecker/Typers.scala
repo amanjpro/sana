@@ -380,20 +380,20 @@ trait Typers extends brokenj.typechecker.Typers {
         })
     }
 
-
     /**
-     * A method to filter out methods that cannot be applied within a scope
-     * with a list of parameters.
+     * A method to filter out methods or constructors that cannot be
+     * applied within a scope with a list of parameters.
      *
      * @param ids list of method id's that needs to be filtered out
      * @param enclClass the enclosing class of this method application
      * @param ctx the compilation context (the state of the whole program)
      * @param tpes the list of applied arguments
      */
-    protected def qualifiedMethods(ids: List[TreeId],
+    protected def qualifiedDefs(ids: List[TreeId],
       enclClass: TreeId, ctx: Context,
       tpes: List[Type]): List[(TreeId, MethodType)] = {
-        val selectedIds = ids match {
+
+      ids match {
           case Nil                                                           =>
             Nil
           case (id::rest)                                                    =>
@@ -416,16 +416,32 @@ trait Typers extends brokenj.typechecker.Typers {
                 qualifiedMethods(rest, enclClass, ctx, tpes)
         }
       }
+    }
+
+    /**
+     * A method to filter out methods that cannot be applied within a scope
+     * with a list of parameters.
+     *
+     * @param ids list of method id's that needs to be filtered out
+     * @param enclClass the enclosing class of this method application
+     * @param ctx the compilation context (the state of the whole program)
+     * @param tpes the list of applied arguments
+     */
+    protected def qualifiedMethods(ids: List[TreeId],
+      enclClass: TreeId, ctx: Context,
+      tpes: List[Type]): List[(TreeId, MethodType)] = {
+
+      val selectedIds = qualifiedDefs(ids, enclClass, ctx,
+        tpes)
 
       // eliminate overridden methods
-
-
       // Group methods by their types
       selectedIds.groupBy(_._2).values.flatMap(((group) =>
         // For each group, see is there any method in the current
         // class
         group.filter(x => enclClass.contains(x._1)) match {
-          // if there is return it
+          // if there is return it, this is not all that important,
+          // but still
           case List(x)         => List(x)
           // otherwise randomly pick the first one
           case _               => group.headOption.toList
@@ -489,6 +505,90 @@ trait Typers extends brokenj.typechecker.Typers {
 
       _          <- put(ctx)
     } yield Ident(mid, fun.pos, owner, enclClass)
+
+    def typeNewFunIdent(fun: Ident,
+      tpes: List[Type]): TypeChecker[Ident] = for {
+      ctx        <- get
+      owner      =  fun.owner           // Owner and enclId are the same
+      enclId     =  fun.enclosingId     // if the call is not qualified
+      mthdClass  =  ctx.enclosingClass(owner)
+      enclClass  =  if(owner == enclId) mthdClass
+                    else ctx.enclosingClass(enclId)
+      name       =  CONSTRUCTOR_NAME
+      methods    =  { // a list of method ids and their types
+        ctx.getContext(mthdClass) match {
+          case None                        => Nil
+          case Some(mctx)                  =>
+            val ids       =
+              mctx.findAllInThisContext(name, (x) =>
+                      x.mods.isConstructor && x.kind == MethodKind)
+            qualifiedDefs(ids, enclClass, ctx, tpes)
+        }
+      }
+      specficis  = mostSpecificMethods(methods)
+      _          <- specficis match {
+        case List(id)                 => point(())
+        case Nil                      =>
+          toTypeChecker(error(CONSTRUCTOR_NOT_FOUND,
+              fun.toString, "a constructor", fun.pos, fun))
+      }
+      _          <- specficis match {
+        case List(id)                 => point(())
+        case _                        =>
+          toTypeChecker(error(AMBIGUOUS_METHOD_INVOCATION,
+              fun.toString, "a method name", fun.pos, fun))
+
+      }
+      mid        =  methods.headOption.map(_._1).getOrElse(NoId)
+      _          <- put(ctx)
+    } yield Ident(mid, fun.pos, owner, enclClass)
+
+
+
+    def typeNewTpt(use: UseTree): TypeChecker[Select] = for {
+      ctx       <- get
+      qual      <- use match {
+        case s@Select(qual, id: Ident) if id.name(ctx) == CONSTRUCTOR_NAME =>
+          typeTree(qual)
+        case _                                                             =>
+          point(use)
+      }
+      id        =  use match {
+        case s@Select(qual, id: Ident) if id.name(ctx) == CONSTRUCTOR_NAME =>
+          id
+        case _                                                             =>
+          Ident(NoId, Some(ERROR_NAME.asString), None, NoId)
+      }
+      use2      =  Select(qual, id, use.pos, use.owner)
+      _         <- use2 match {
+        case Select(qual, id) if id.name(ctx) == ERROR_NAME       =>
+          toTypeChecker(error(BAD_CONSTRUCTOR_NAME,
+              id.toString, "a method name", id.pos, id))
+        case Select(qual: UseTree, id)                            =>
+          ctx.getTree(qual.uses) match {
+            case Some(t) if t.kind == ClassKind &&
+              !(t.mods.isInterface && t.mods.isAbstract) =>
+              point(())
+            case _                                       =>
+              toTypeChecker(error(NONE_CONCRETE_CLASS_NEW,
+                qual.toString, "a method name", qual.pos, qual))
+          }
+      }
+    } yield use2
+
+    def typeNew(nw: New): TypeChecker[New] = for {
+      args      <- nw.args.map(typeExpr(_)).sequenceU
+      ctx       <- get
+      tpes      <- args.map(x => toTypeChecker(x.tpe)).sequenceU
+      tpt       <- typeNewTpt(nw.tpt)
+      uid       =  tpt.qual match {
+        case u: UseTree       => u.uses
+        case _                => NoId
+      }
+      id        <- typeNewFunIdent(Ident(NoId, tpt.tree.pos,
+                            uid, tpt.tree.enclosingId), tpes)
+      tpt2      = Select(tpt.qual, id, tpt.pos, tpt.owner)
+    } yield New(tpt2, args, nw.pos, nw.owner)
 
 
     override def typeApply(apply: Apply): TypeChecker[Apply] = for {
