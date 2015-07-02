@@ -27,7 +27,8 @@ import Scalaz._
 
 trait Trees extends ast.Trees {
   self: types.Types with Constants with TreeContexts with MonadUtils
-        with ooj.util.Definitions with ooj.contexts.TreeContextApis =>
+        with ooj.util.Definitions with ooj.contexts.TreeContextApis
+        with ooj.contexts.TreeInfos =>
 
   /********************* AST Nodes *********************************/
 
@@ -131,41 +132,57 @@ trait Trees extends ast.Trees {
   }
 
   trait This extends Expr {
-    def enclosingClass: TreeId
+    def enclosingId: TreeId
 
     def asString(ctx: Context): String = "this"
 
     def show(ctx: Context): String =
       s"""|This{
           |owner=$owner,
-          |enclosingClass=$enclosingClass,
+          |enclosingId=$enclosingId,
           |pos=$pos,
           |}""".stripMargin
 
 
     def tpe: TypeState[Type] = StateT {
       case ctx  =>
-        ctx.getTpe(enclosingClass).run(ctx)
+        ctx.getTpe(owner).run(ctx)
     }
   }
 
   trait Super extends Expr {
-    def enclosingClass: TreeId
+    def enclosingId: TreeId
 
 
     def asString(ctx: Context): String = "super"
-    // TODO:
-    // Get parent's type, not this
-    // XXX: BUT WHICH ONE?
-    def tpe: TypeState[Type] = StateT {
-      case ctx  =>
-        ctx.getTpe(enclosingClass).run(ctx)
-    }
+
+    def tpe: TypeState[Type] = for {
+      ctx       <- get
+      ptpe      <- ctx.getTree(owner) match {
+        case Some(t)          =>
+          val ty = t.tpe.eval(ctx)
+          ty match {
+            case ct: ClassType     =>
+              val pids = ct.parents.foldLeft(Nil: List[TreeId])((z, y) => {
+                y match {
+                  case ct: ClassType       => (ct.id)::z
+                  case _                   => z
+                }
+              })
+              pids.filter(ctx.isInterface(_)) match {
+                case List(x)       => ctx.getTpe(x)
+                case _             => toTypeState(notype)
+              }
+            case _                 => toTypeState(notype)
+          }
+        case None             => toTypeState(notype)
+      }
+    } yield ptpe
 
     def show(ctx: Context): String =
       s"""|Super{
           |owner=$owner,
-          |enclosingClass=$enclosingClass,
+          |enclosingId=$enclosingId,
           |pos=$pos,
           |}""".stripMargin
   }
@@ -246,19 +263,19 @@ trait Trees extends ast.Trees {
   }
 
   trait ThisFactory {
-    private class ThisImpl(val enclosingClass: TreeId,
+    private class ThisImpl(val enclosingId: TreeId,
       val pos: Option[Position], val owner: TreeId) extends This
 
-    def apply(enclosingClass: TreeId, pos: Option[Position],
-      owner: TreeId): This = new ThisImpl(enclosingClass, pos, owner)
+    def apply(enclosingId: TreeId, pos: Option[Position],
+      owner: TreeId): This = new ThisImpl(enclosingId, pos, owner)
   }
 
   trait SuperFactory {
-    private class SuperImpl(val enclosingClass: TreeId,
+    private class SuperImpl(val enclosingId: TreeId,
       val pos: Option[Position], val owner: TreeId) extends Super
 
-    def apply(enclosingClass: TreeId, pos: Option[Position],
-      owner: TreeId): Super = new SuperImpl(enclosingClass, pos, owner)
+    def apply(enclosingId: TreeId, pos: Option[Position],
+      owner: TreeId): Super = new SuperImpl(enclosingId, pos, owner)
   }
 
 
