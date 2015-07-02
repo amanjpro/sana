@@ -21,21 +21,22 @@ trait TreeUtils extends ast.TreeUtils {
       super.isSimpleExpression(tree)
   }
 
-  override def allPathsReturn(tree: Tree): Boolean = tree match {
+  override def allPathsReturn(tree: Tree,
+          ctx: Context): Boolean = tree match {
     // brokenj
     case _: Continue | _: Break                        =>
       false
     case label: Label                                  =>
-      allPathsReturn(label.stmt)
+      allPathsReturn(label.stmt, ctx)
     case cse: Case                                     =>
-      allPathsReturn(cse.body)
+      allPathsReturn(cse.body, ctx)
     case switch: Switch                                =>
       lazy val cases = switch.cases.foldLeft(true)((z, y) =>
-        z || allPathsReturn(y)
+        z || allPathsReturn(y, ctx)
       )
-      allPathsReturn(switch.default) && cases
+      allPathsReturn(switch.default, ctx) && cases
     case e                                              =>
-      super.allPathsReturn(e)
+      super.allPathsReturn(e, ctx)
   }
 
   def canHaveLabel(tree: Tree): Boolean = tree match {
