@@ -13,9 +13,9 @@ object Ops {
   val noflags = tiny.modifiers.Ops.noflags
 
 
-  implicit class FlagOps(mask: Flags) 
+  implicit class FlagOps(mask: Flags)
       extends primj.modifiers.Ops.FlagOps(mask) {
-    
+
     val isPublicAcc: Boolean     = mask.hasFlag(ACC_PUBLIC)
     val isPrivateAcc: Boolean    = mask.hasFlag(ACC_PRIVATE)
     val isProtectedAcc: Boolean  = mask.hasFlag(ACC_PROTECTED)
