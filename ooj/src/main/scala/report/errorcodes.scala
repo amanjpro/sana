@@ -23,3 +23,18 @@ case object ACCESSING_SUPER_IN_STATIC extends ErrorCode {
 case object ACCESSING_SUPER_IN_OBJECT extends ErrorCode {
   val message: String = "Accessing super in a Object class"
 }
+
+
+case object BAD_CONSTRUCTOR_NAME extends ErrorCode {
+  val message: String = "Bad constructor name"
+}
+
+
+case object NONE_CONCRETE_CLASS_NEW extends ErrorCode {
+  val message: String = "Instanciating a none concrete class"
+}
+
+
+case object CONSTRUCTOR_NOT_FOUND extends ErrorCode {
+  val message: String = "No such constructor is found"
+}
