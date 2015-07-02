@@ -12,7 +12,7 @@ trait TreeUtils extends ast.TreeUtils {
             p: UseTree => Boolean): Boolean = tree match {
     case id: Ident         => p(id)
     case tuse: TypeUse     => p(tuse)
-    case slct: Select      => p(slct)
+    case slct: Select      => pointsToUse(slct.tree, p)
     case _                 =>
       false
   }
