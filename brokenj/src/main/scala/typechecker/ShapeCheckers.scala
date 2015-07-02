@@ -30,9 +30,9 @@ trait ShapeCheckers extends primj.typechecker.ShapeCheckers {
   import global._
 
   trait Checker extends super.Checker {
-  
 
-    def checkLabel(lbl: Label): ShapeChecker = 
+
+    def checkLabel(lbl: Label): ShapeChecker =
       if(canHaveLabel(lbl.stmt))
         checkTree(lbl.stmt)
       else

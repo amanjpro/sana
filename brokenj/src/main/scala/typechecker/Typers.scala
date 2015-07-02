@@ -24,7 +24,7 @@ trait Typers extends typechecker.Typers {
   import rwst.{local => _, _}
   trait Typer extends super.Typer {
 
-    
+
     override def typeExpr(e: Expr): TypeChecker[Expr] = e match {
       case iff: If                => for {
         ti <- typeIf(iff)
@@ -42,13 +42,13 @@ trait Typers extends typechecker.Typers {
       case block: Block           => for {
         tblock <- typeBlock(block)
       } yield tblock
-      case _                      => 
+      case _                      =>
         super.typeExpr(e)
     }
 
 
     def typeCase(cse: Case): TypeChecker[Case] = for {
-      // TODO: 
+      // TODO:
       // make sure that the guards are constant expressions Section 15.27
       guards  <- cse.guards.map(typeExpr(_)).sequenceU
       body    <- typeTree(cse.body)
@@ -66,16 +66,16 @@ trait Typers extends typechecker.Typers {
                     point(())
                  else
                     toTypeChecker(error(TYPE_MISMATCH,
-                      cond.toString, "char, byte, short or int", 
+                      cond.toString, "char, byte, short or int",
                       cond.pos, cond))
       cases   <- switch.cases.map(typeCase(_)).sequenceU
       ctx     <- get
       // _       <- cases.map {
       //   case cse  =>
       //     cse.guards.map {
-      //       case guard => 
+      //       case guard =>
       //         val gtpe = guard.tpe.eval(ctx)
-      //         if(gtpe <:< ctpe) 
+      //         if(gtpe <:< ctpe)
       //           point(())
       //         else
       //           toTypeChecker(error(TYPE_MISMATCH,
