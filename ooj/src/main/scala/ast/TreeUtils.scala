@@ -8,7 +8,7 @@ import brokenj.ast
 trait TreeUtils extends ast.TreeUtils {
   self: Trees =>
 
-  override def pointsToUse(tree: Tree, 
+  override def pointsToUse(tree: Tree,
             p: UseTree => Boolean): Boolean = tree match {
     case id: Ident         => p(id)
     case tuse: TypeUse     => p(tuse)
@@ -16,6 +16,6 @@ trait TreeUtils extends ast.TreeUtils {
     case _                 =>
       false
   }
-  
+
 }
 
