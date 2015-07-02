@@ -7,6 +7,7 @@ import sana.primj
 import tiny.util.{CompilationUnits, MonadUtils}
 import tiny.passes
 import tiny.report._
+import tiny.contexts.NoId
 // import tiny.contexts.TreeContexts
 import calcj.typechecker
 import calcj.ast.JavaOps._
@@ -114,13 +115,14 @@ trait ShapeCheckers extends passes.Phases {
                 toShapeChecker(error(TYPE_NAME_EXPECTED,
                   valdef.tpt.toString, "a type", valdef.tpt.pos, valdef.tpt))
               } else pointSW(())
-      _    <- if((ctx.isBlock(valdef.owner) || ctx.isFor(valdef.owner)) &&
-                  !(valdef.mods.isLocalVariable)) {
+      _    <- if(ctx.isMethodDef(valdef.owner) &&
+                    !(valdef.mods.isParam)) {
                 // TODO: Better error message
                 toShapeChecker(error(UNEXPETED_TREE,
                   valdef.toString, "an expression", valdef.pos, valdef))
-              } else if(ctx.isMethodDef(valdef.owner) &&
-                    !(valdef.mods.isParam)) {
+
+              } else if(ctx.enclosingMethod(valdef.owner) != NoId &&
+                  !(valdef.mods.isLocalVariable)) {
                 // TODO: Better error message
                 toShapeChecker(error(UNEXPETED_TREE,
                   valdef.toString, "an expression", valdef.pos, valdef))
