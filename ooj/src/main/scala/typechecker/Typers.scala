@@ -392,28 +392,45 @@ trait Typers extends brokenj.typechecker.Typers {
      */
     protected def qualifiedMethods(ids: List[TreeId],
       enclClass: TreeId, ctx: Context,
-      tpes: List[Type]): List[(TreeId, MethodType)] = ids match {
-      case Nil                                                           =>
-        Nil
-      case (id::rest)                                                    =>
-        ctx.getTree(id) match {
-          case Some(t)                if enclClass.contains(id)          =>
-            t.tpe.eval(ctx) match {
-              case mt: MethodType if methodCanBeApplied(mt.params, tpes) =>
-                (id, mt)::qualifiedMethods(rest, enclClass, ctx, tpes)
-              case _                                                     =>
+      tpes: List[Type]): List[(TreeId, MethodType)] = {
+        val selectedIds = ids match {
+          case Nil                                                           =>
+            Nil
+          case (id::rest)                                                    =>
+            ctx.getTree(id) match {
+              case Some(t)                if enclClass.contains(id)          =>
+                t.tpe.eval(ctx) match {
+                  case mt: MethodType if methodCanBeApplied(mt.params, tpes) =>
+                    (id, mt)::qualifiedMethods(rest, enclClass, ctx, tpes)
+                  case _                                                     =>
+                    qualifiedMethods(rest, enclClass, ctx, tpes)
+                }
+              case Some(t)      if ! t.mods.isPrivateAcc                     =>
+                t.tpe.eval(ctx) match {
+                  case mt: MethodType if methodCanBeApplied(mt.params, tpes) =>
+                    (id, mt)::qualifiedMethods(rest, enclClass, ctx, tpes)
+                  case _                                                     =>
+                    qualifiedMethods(rest, enclClass, ctx, tpes)
+                }
+              case _                                                         =>
                 qualifiedMethods(rest, enclClass, ctx, tpes)
-            }
-          case Some(t)      if ! t.mods.isPrivateAcc                     =>
-            t.tpe.eval(ctx) match {
-              case mt: MethodType if methodCanBeApplied(mt.params, tpes) =>
-                (id, mt)::qualifiedMethods(rest, enclClass, ctx, tpes)
-              case _                                                     =>
-                qualifiedMethods(rest, enclClass, ctx, tpes)
-            }
-          case _                                                         =>
-            qualifiedMethods(rest, enclClass, ctx, tpes)
+        }
       }
+
+      // eliminate overridden methods
+
+
+      // Group methods by their types
+      selectedIds.groupBy(_._2).values.flatMap(((group) =>
+        // For each group, see is there any method in the current
+        // class
+        group.filter(x => enclClass.contains(x._1)) match {
+          // if there is return it
+          case List(x)         => List(x)
+          // otherwise randomly pick the first one
+          case _               => group.headOption.toList
+        }
+      )).toList
     }
 
 
