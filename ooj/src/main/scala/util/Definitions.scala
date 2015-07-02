@@ -27,9 +27,11 @@ trait Definitions extends primj.util.Definitions {
 
 
   val NO_PACKAGE_NAME: Name        = Name("")
-  val JAVA_LANG_PACKAGE_NAME: Name = Name("java.lang")
-  val STRING_TYPE_NAME: Name       = Name("java.lang.String")
-  val OBJECT_TYPE_NAME: Name       = Name("java.lang.Object")
+  val JAVA_PACKAGE_NAME: Name      = Name("java")
+  val LANG_PACKAGE_NAME: Name      = Name("java")
+  val JAVA_LANG_PACKAGE_NAME: Name = Name("lang")
+  val STRING_TYPE_NAME: Name       = Name("String")
+  val OBJECT_TYPE_NAME: Name       = Name("Object")
   val ARRAY_TYPE_NAME: Name        = Name("<array>")
 
   val CONSTRUCTOR_NAME: Name       = Name("<init>")
