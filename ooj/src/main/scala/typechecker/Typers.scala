@@ -179,7 +179,17 @@ trait Typers extends brokenj.typechecker.Typers {
                  val enclosingMethod = env.enclosingMethod(id.owner)
                  val variable        = env.lookup(name,
                      alreadyDefinedVariablePredicate(_, lvars),
-                     id.owner)
+                     id.owner) match {
+                    case NoId                =>
+                      env.getContext(owner) match {
+                        case None                => NoId
+                        case Some(ctx)           =>
+                          ctx.findAllInThisContextAndInherited(name,
+                            alreadyDefinedVariablePredicate(_, lvars))
+                            .headOption.getOrElse(NoId)
+                      }
+                    case id                  => id
+                 }
                  val visible         = env.getTree(variable) match {
                    case Some(t)          =>
                      !t.mods.isField ||
@@ -305,8 +315,13 @@ trait Typers extends brokenj.typechecker.Typers {
                       (Ident(tuse, id.pos, id.owner, encl), env)
                     }
                   } else if(qkind != None){
-                    val variable = env.lookup(name,
-                      _.kind == VariableKind, id.owner)
+                    val variable        = env.getContext(owner) match {
+                        case None                => NoId
+                        case Some(ctx)           =>
+                          ctx.findAllInThisContextAndInherited(name,
+                            alreadyDefinedVariablePredicate(_, lvars))
+                            .headOption.getOrElse(NoId)
+                      }
                     val visible         = env.getTree(variable) match {
                       case Some(t)          =>
                         !t.mods.isField ||
