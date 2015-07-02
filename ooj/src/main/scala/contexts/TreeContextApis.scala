@@ -8,23 +8,45 @@ import tiny.contexts.{TreeId, NoId}
 import tiny.names.Name
 import ooj.Global
 import ooj.modifiers.Ops._
+import ooj.util.Definitions
 
 
 
 
 
 trait TreeContextApis extends primj.contexts.TreeContextApis {
-  self: TreeContexts with TreeInfos =>
+  self: TreeContexts with TreeInfos with Definitions =>
 
 
   implicit class ImplicitContextApi(override val ctx: Context) extends
       super.ImplicitContextApi(ctx) with ContextApi {
 
+    def javaLangClass(name: Name): TreeId = {
+      ctx.lookup(STRING_TYPE_NAME,
+        _.kind.isInstanceOf[TypeKind], javaLangContext)
+    }
+
+    def javaLangContext: TreeId = {
+      val javaPackage = ctx.lookup(JAVA_PACKAGE_NAME,
+            _.kind == PackageKind, NoId)
+      ctx.lookup(LANG_PACKAGE_NAME,
+            _.kind == PackageKind, javaPackage)
+    }
+
     def isStatic(id: TreeId): Boolean =
       ctx.getTree(id).map(_.mods.isStatic).getOrElse(false)
 
+
     def isInterface(id: TreeId): Boolean =
-      ctx.getTree(id).map(_.mods.isInterface).getOrElse(false)
+      ctx.getTree(id).map((x) => x.kind == ClassKind &&
+                    x.mods.isInterface).getOrElse(false)
+
+    def isClass(id: TreeId): Boolean =
+      ctx.getTree(id).map((x) => x.kind == ClassKind &&
+                    ! x.mods.isInterface).getOrElse(false)
+
+    def isClassOrInterface(id: TreeId): Boolean =
+      ctx.getTree(id).map((x) => x.kind == ClassKind).getOrElse(false)
 
     def enclosingClass(id: TreeId): TreeId =
       ctx.getContext(id) match {
@@ -120,6 +142,10 @@ trait TreeContextApis extends primj.contexts.TreeContextApis {
         case _                          => None
       }
 
+
+    def javaLangContext: TreeId
+    def javaLangClass(name: Name): TreeId
+
     /**
      * Get the enclosing class of this id, in case it reached
      * a package before reaching a class, then stop searching
@@ -129,6 +155,8 @@ trait TreeContextApis extends primj.contexts.TreeContextApis {
 
     def isStatic(id: TreeId): Boolean
     def isInterface(id: TreeId): Boolean
+    def isClass(id: TreeId): Boolean
+    def isClassOrInterface(id: TreeId): Boolean
 
     def enclosingClassName(id: TreeId): Option[Name] =
       ctx.getTree(enclosingClass(id)) match {
