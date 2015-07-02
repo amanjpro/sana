@@ -3,6 +3,9 @@ package ch.usi.inf.l3.sana.ooj.report
 import ch.usi.inf.l3.sana.tiny
 import tiny.report.ErrorCode
 
+case object FIELD_ACCESS_IN_STATIC_CONTEXT extends ErrorCode {
+  val message: String = "Accessing non-static field in static context"
+}
 case object AMBIGUOUS_METHOD_INVOCATION extends ErrorCode {
   val message: String = "Method invocation is ambigouus"
 }

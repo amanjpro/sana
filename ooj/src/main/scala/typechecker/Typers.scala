@@ -263,8 +263,16 @@ trait Typers extends brokenj.typechecker.Typers {
           case NoId             =>
             toTypeChecker(error(NAME_NOT_FOUND,
               id.toString, "a name", id.pos, id))
-          case _                 =>
-            point(())
+          case id               =>
+            val isStatic   = env.isStatic(encl)
+            val isIdStatic = env.isStatic(id)
+            (isStatic, isIdStatic) match {
+              case (true, false)         =>
+                toTypeChecker(error(FIELD_ACCESS_IN_STATIC_CONTEXT,
+                  tid.toString, "a static field", tid.pos, tid))
+              case _                     =>
+                point(())
+            }
         }
         _    <- put(env2)
       } yield tid
@@ -280,7 +288,6 @@ trait Typers extends brokenj.typechecker.Typers {
       name  =  id.nameAtParser.map(Name(_)).getOrElse(ERROR_NAME)
       res   =  {
                   val qkind = env.getTree(owner).map(_.kind)
-                  // At this point, we don't have
                   if(qkind == Some(PackageKind)) {
                     val tuse = env.lookup(name, _.kind.isInstanceOf[TypeKind],
                               id.owner)
@@ -320,8 +327,16 @@ trait Typers extends brokenj.typechecker.Typers {
           case NoId             =>
             toTypeChecker(error(NAME_NOT_FOUND,
               id.toString, "a name", id.pos, id))
-          case _                 =>
-            point(())
+          case id               =>
+            val isStatic   = env.isStatic(owner)
+            val isIdStatic = env.isStatic(id)
+            (isStatic, isIdStatic) match {
+              case (true, false)         =>
+                toTypeChecker(error(FIELD_ACCESS_IN_STATIC_CONTEXT,
+                  tid.toString, "a static field", tid.pos, tid))
+              case _                     =>
+                point(())
+            }
         }
         _    <- put(env2)
       } yield tid
@@ -617,7 +632,6 @@ trait Typers extends brokenj.typechecker.Typers {
         // A type is selected? then the call should be of a static method
         case s@Select(q, _) if pointsToUse(q,
             _.isInstanceOf[TypeUse]) && ! ctx.isStatic(s.uses)     =>
-
           toTypeChecker(error(INSTANCE_METHOD_IN_STATIC_CONTEXT_INVOK,
               fun.toString, "a method name", fun.pos, fun))
         case id: Ident                                             =>
