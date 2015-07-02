@@ -27,7 +27,7 @@ import ooj.util.Definitions
 import org.objectweb.asm._
 import java.lang.{ClassLoader, Class => JClass}
 import java.net.{URL, URI, URLClassLoader, URLEncoder}
-import java.io.{IOException, ByteArrayOutputStream, 
+import java.io.{IOException, ByteArrayOutputStream,
                 BufferedInputStream, InputStream, File => JFile}
 
 import scala.collection.mutable
@@ -42,25 +42,25 @@ trait ClassFileParsers {
 
 
   def loadClass(name: String): ClassDef = {
-    val classData = 
+    val classData =
       classLoader.getResourceAsStream(name)
     val cr           = new ClassReader(classData)
     val reader       = new ClassFileParser(name)
     cr.accept(reader, 0)
     val innerClasses = reader.innerClasses.map(loadClass(_))
     val body         = Template(innerClasses ++ reader.clazz.body.members, NoId)
-    ClassDef(reader.clazz.mods, NoId, reader.clazz.name, 
+    ClassDef(reader.clazz.mods, NoId, reader.clazz.name,
               reader.clazz.parents, body, None, NoId)
   }
 
 
-  class SanaClassLoader(classpath: Array[URL]) 
+  class SanaClassLoader(classpath: Array[URL])
     extends URLClassLoader(classpath, null) {
 
-    private[this] val classes: mutable.Map[String, JClass[_]] = 
+    private[this] val classes: mutable.Map[String, JClass[_]] =
       mutable.Map.empty
 
-    override protected def findClass(name: String): JClass[_] = 
+    override protected def findClass(name: String): JClass[_] =
       classes.get(name) match {
         case Some(cl)         => cl
         case None             =>
@@ -83,7 +83,7 @@ trait ClassFileParsers {
     }
 
     private def loadClassData(name: String): Array[Byte] = {
-      val in: BufferedInputStream = 
+      val in: BufferedInputStream =
         new BufferedInputStream(getResourceAsStream(name))
 
       val out: ByteArrayOutputStream = new ByteArrayOutputStream()
@@ -99,7 +99,7 @@ trait ClassFileParsers {
       out.close()
       classData
     }
-      
+
     override def loadClass(className: String, resolveIt: Boolean): JClass[_] = {
       // Do not fallback to JVM's ClassLoader
       /* Check our local cache of classes */
@@ -120,7 +120,7 @@ trait ClassFileParsers {
 
     var clazz: ClassDef = _
     var clazzFactory: Template => ClassDef = _
-      
+
     var members: List[DefTree] = Nil
     var innerClasses: List[String] = Nil
 
@@ -146,7 +146,7 @@ trait ClassFileParsers {
         paramString.splitAt(endIndex)
       }
     }
-    protected def chopParams(paramString: String, 
+    protected def chopParams(paramString: String,
       acc: List[String]): List[String] = {
       if(paramString == "") acc
       else {
@@ -165,28 +165,28 @@ trait ClassFileParsers {
       }
     }
 
-    protected def stringToUseTree(sig: String, 
+    protected def stringToUseTree(sig: String,
                   classSig: Boolean): UseTree = {
       sig match {
-        case "B"        => 
+        case "B"        =>
           TypeUse(NoId, Some(BYTE_TYPE_NAME.asString), None, NoId)
-        case "C"        => 
+        case "C"        =>
           TypeUse(NoId, Some(CHAR_TYPE_NAME.asString), None, NoId)
-        case "S"        => 
+        case "S"        =>
           TypeUse(NoId, Some(SHORT_TYPE_NAME.asString), None, NoId)
-        case "I"        => 
+        case "I"        =>
           TypeUse(NoId, Some(INT_TYPE_NAME.asString), None, NoId)
-        case "J"        => 
+        case "J"        =>
           TypeUse(NoId, Some(LONG_TYPE_NAME.asString), None, NoId)
-        case "F"        => 
+        case "F"        =>
           TypeUse(NoId, Some(FLOAT_TYPE_NAME.asString), None, NoId)
-        case "D"        => 
+        case "D"        =>
           TypeUse(NoId, Some(DOUBLE_TYPE_NAME.asString), None, NoId)
-        case "Z"        => 
+        case "Z"        =>
           TypeUse(NoId, Some(BOOLEAN_TYPE_NAME.asString), None, NoId)
-        case "V"        => 
+        case "V"        =>
           TypeUse(NoId, Some(VOID_TYPE_NAME.asString), None, NoId)
-        case "["        => 
+        case "["        =>
           // Array type tree?
           // val elemTye = stringToUse.substring
           // TypeUse(NoId, Some(ARRAY_TYPE_NAME.asString), None, NoId)
@@ -223,7 +223,7 @@ trait ClassFileParsers {
       else                                            Flags(ACC_PACKAGE)
     }
 
-      
+
     protected def parseFinalFlag(access: Int): Flags = {
       if(hasFlag(access, Opcodes.ACC_FINAL))      Flags(FINAL)
       else                                        noflags
@@ -245,7 +245,7 @@ trait ClassFileParsers {
       else                                       noflags
     }
 
-    protected def hasFlag(allFlags: Int, 
+    protected def hasFlag(allFlags: Int,
         flag: Int): Boolean = (allFlags & flag) == flag
 
 
@@ -273,7 +273,7 @@ trait ClassFileParsers {
       clazzFactory = (body: Template) => {
         val tpe = if(name == "java/lang/Object") ObjectType
                   else notype
-        ClassDef(mods, NoId, Name(name), parents, body, 
+        ClassDef(mods, NoId, Name(name), parents, body,
                   None, NoId)
       }
     }
@@ -281,12 +281,12 @@ trait ClassFileParsers {
     override def visitSource(source: String, debug: String): Unit = {
     }
 
-    override def visitOuterClass(owner: String, name: String, 
+    override def visitOuterClass(owner: String, name: String,
             desc: String): Unit = {
 
     }
 
-    override def visitAnnotation(desc: String, 
+    override def visitAnnotation(desc: String,
             visible: Boolean): AnnotationVisitor =  {
       null
     }
@@ -295,7 +295,7 @@ trait ClassFileParsers {
 
     }
 
-    override def visitInnerClass(name: String, outerName: String, 
+    override def visitInnerClass(name: String, outerName: String,
             innerName: String, access: Int): Unit = {
       val acc   = parseAccessFlag(access)
       val sName = name.replace('/', '.')
@@ -330,7 +330,7 @@ trait ClassFileParsers {
       val isConstructor = if(name == CONSTRUCTOR_NAME.asString) {
         Flags(CONSTRUCTOR)
       } else noflags
-      val mods          = 
+      val mods          =
         acc | isFinal | isStatic | isAbstract | isConstructor | COMPILED
 
       val (paramString, retString) = {
@@ -342,7 +342,7 @@ trait ClassFileParsers {
       val ret    = stringToUseTree(retString, false)
       val params = methodParams(paramString)
 
-      val meth = MethodDef(mods, NoId, ret, Name(name), params, 
+      val meth = MethodDef(mods, NoId, ret, Name(name), params,
         Empty, None, NoId)
       members = meth::members
       null

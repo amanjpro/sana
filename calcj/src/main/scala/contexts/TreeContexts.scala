@@ -23,8 +23,7 @@ import calcj.util.Definitions
 trait TreeContexts extends tiny.contexts.TreeContexts {
   self: TreeInfos with Trees with Types with Definitions =>
 
-  
-  def rootContext: RootContext = 
+  def rootContext: RootContext =
     new RootContextImpl(new IDGen, Map.empty, langDefinitions)
 
 }

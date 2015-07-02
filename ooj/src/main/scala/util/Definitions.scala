@@ -17,7 +17,7 @@ trait Definitions extends primj.util.Definitions {
   self: TreeInfos with Types with Trees =>
 
   override def builtInTypes: List[(Name, TypeState[Type])] = {
-    val superTypes: List[(Name, TypeState[Type])] = super.builtInTypes 
+    val superTypes: List[(Name, TypeState[Type])] = super.builtInTypes
     val langTypes:  List[(Name, TypeState[Type])] = List(
       NullType.name      -> toTypeState(NullType)
     )
@@ -37,9 +37,9 @@ trait Definitions extends primj.util.Definitions {
   val CONSTRUCTOR_NAME: Name       = Name("<init>")
 
   // to TypeUtils
-  // def objectClassType(ctx: Context): ClassType = 
+  // def objectClassType(ctx: Context): ClassType =
   //   ctx.getTpe(OBJECT_TYPE_NAME, _ => true).eval(ctx)
   //
-  // def stringClassType(ctx: Context): ClassType = 
+  // def stringClassType(ctx: Context): ClassType =
   //   ctx.getTpe(STRING_TYPE_NAME, _ => true).eval(ctx)
 }
