@@ -97,13 +97,16 @@ trait Trees extends ast.Trees {
 
   trait New extends Expr {
     def tpt: UseTree
+    def args: List[Expr]
     def tpe: TypeState[Type] = tpt.tpe
 
     def asString(ctx: Context): String =
-      s"new ${tpt.asString(ctx)}"
+      s"new ${tpt.asString(ctx)}(${asStringList(args, ctx)})"
+
     def show(ctx: Context): String =
       s"""|New{
           |tpt=${tpt.show(ctx)}
+          |args=${showList(args, ctx)},
           |owner=${owner},
           |pos=${pos}
           |}""".stripMargin
@@ -207,9 +210,9 @@ trait Trees extends ast.Trees {
 
 
   trait NewExtractor {
-    def unapply(nw: New): Option[UseTree] = nw match {
+    def unapply(nw: New): Option[(UseTree, List[Expr])] = nw match {
       case null     => None
-      case _        => Some(nw.tpt)
+      case _        => Some((nw.tpt, nw.args))
     }
   }
 
@@ -246,11 +249,12 @@ trait Trees extends ast.Trees {
 
 
   trait NewFactory {
-    private class NewImpl(val tpt: UseTree, val pos: Option[Position],
-      val owner: TreeId) extends New
+    private class NewImpl(val tpt: UseTree, val args: List[Expr],
+      val pos: Option[Position], val owner: TreeId) extends New
 
-    def apply(tpt: UseTree, pos: Option[Position], owner: TreeId): New =
-      new NewImpl(tpt, pos, owner)
+    def apply(tpt: UseTree, args: List[Expr],
+      pos: Option[Position], owner: TreeId): New =
+      new NewImpl(tpt, args, pos, owner)
   }
 
   trait SelectFactory {
