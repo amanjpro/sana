@@ -78,6 +78,28 @@ trait TreeContexts {
     }
 
     /**
+     * Finds first binding for the given Name directly in this Scope,
+     * or inherited.
+     *
+     * @see [[contexts.TreeId]]
+     * @param name The name that we want to check
+     * @param p The predicate that the resulted tree should satisfy
+     * @return the first id of the tree, and NoId if none found
+     */
+    def findFirstInThisContextAndInherited(name: Name,
+      p: TreeInfo => Boolean): TreeId = findAllInThisContext(name, p) match {
+        case Nil             =>
+          inheritedContexts.flatMap((x) =>
+            getContext(x) match {
+              case None      => Nil
+              case Some(ctx) =>
+                List(ctx.findFirstInThisContextAndInherited(name, p))
+            }
+          ).headOption.getOrElse(NoId)
+        case x::xs           => x
+    }
+
+    /**
      * Finds all bindings for the given Name directly in this Scope,
      * or inherited.
      *
