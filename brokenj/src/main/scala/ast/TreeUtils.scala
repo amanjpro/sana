@@ -5,9 +5,21 @@ import sana.calcj
 import sana.primj
 import primj.ast
 
+import primj.contexts.{TreeContexts, TreeContextApis}
+import primj.types.Types
 
 trait TreeUtils extends ast.TreeUtils {
-  self: Trees =>
+  self: Trees with Types with TreeContexts with TreeContextApis =>
+
+  override def isSimpleExpression(tree: Tree): Boolean = tree match {
+    case _: Continue                                   => false
+    case _: Break                                      => false
+    case _: Case                                       => false
+    case _: Switch                                     => false
+    case _: Label                                      => false
+    case _                                             =>
+      super.isSimpleExpression(tree)
+  }
 
   override def allPathsReturn(tree: Tree): Boolean = tree match {
     // brokenj
