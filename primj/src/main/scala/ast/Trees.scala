@@ -41,7 +41,7 @@ trait Trees extends ast.Trees {
       * List of definitions defined in this template.
       */
     def members: List[DefTree]
-    def tpe: TypeState[Type] = toTypeState(VoidType)
+    val tpe: TypeState[Type] = toTypeState(VoidType)
     def pos: Option[Position] = None
 
     def asString(ctx: Context): String =
@@ -56,7 +56,7 @@ trait Trees extends ast.Trees {
     def ret: UseTree
     def params: List[ValDef]
     def body: Expr
-    def tpe: TypeState[Type] = {
+    val tpe: TypeState[Type] = {
       val tys = params.map(_.tpe).sequenceU
       for {
         r   <- ret.tpe
@@ -89,7 +89,7 @@ trait Trees extends ast.Trees {
   trait ValDef extends TermTree {
     def tpt: UseTree
     def rhs: Expr
-    def tpe: TypeState[Type] = tpt.tpe
+    val tpe: TypeState[Type] = tpt.tpe
 
     def asString(ctx: Context): String =
       s"${mods.asString} ${tpt.asString(ctx)} $name = ${rhs.asString(ctx)}"
@@ -134,7 +134,7 @@ trait Trees extends ast.Trees {
   trait Block extends Expr with IdentifiedTree {
     def stmts: List[Tree]
 
-    def tpe: TypeState[Type] = stmts match {
+    val tpe: TypeState[Type] = stmts match {
       case Nil =>
         toTypeState(VoidType)
       case _   =>
@@ -160,7 +160,7 @@ trait Trees extends ast.Trees {
   trait Assign extends Expr {
     def lhs: Expr
     def rhs: Expr
-    def tpe: TypeState[Type] = lhs.tpe
+    val tpe: TypeState[Type] = lhs.tpe
 
     def asString(ctx: Context): String =
       s"${lhs.asString(ctx)} = ${rhs.asString(ctx)}"
@@ -179,7 +179,7 @@ trait Trees extends ast.Trees {
     def cond: Expr
     def thenp: Expr
     def elsep: Expr
-    def tpe: TypeState[Type] = toTypeState(VoidType)
+    val tpe: TypeState[Type] = toTypeState(VoidType)
 
     def asString(ctx: Context): String =
       s"""|if(${cond.asString(ctx)})
@@ -202,7 +202,7 @@ trait Trees extends ast.Trees {
   trait While extends Expr with Modifiable {
     def cond: Expr
     def body: Expr
-    def tpe: TypeState[Type] = toTypeState(VoidType)
+    val tpe: TypeState[Type] = toTypeState(VoidType)
 
     def asString(ctx: Context): String = mods.isDoWhile match {
       case false                       =>
@@ -230,7 +230,7 @@ trait Trees extends ast.Trees {
     def cond: Expr
     def steps: List[Expr]
     def body: Expr
-    def tpe: TypeState[Type] = toTypeState(VoidType)
+    val tpe: TypeState[Type] = toTypeState(VoidType)
 
     def asString(ctx: Context): String =
       s"""|for(${asStringList(inits, ctx)}; ${cond.asString(ctx)}; ${asStringList(steps, ctx)})
@@ -284,7 +284,7 @@ trait Trees extends ast.Trees {
           |pos=${pos}
           |}""".stripMargin
 
-    def tpe: TypeState[Type] = for {
+    val tpe: TypeState[Type] = for {
       funty <- fun.tpe
     } yield {
       funty match {

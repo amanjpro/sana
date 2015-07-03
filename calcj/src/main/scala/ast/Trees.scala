@@ -32,7 +32,7 @@ trait Trees extends ast.Trees {
     def tpt: UseTree
     def expr: Expr
     val owner: TreeId = expr.owner
-    override def tpe: TypeState[Type] = tpt.tpe
+    override val tpe: TypeState[Type] = tpt.tpe
 
     def asString(ctx: Context): String =
       s"(${tpt.asString(ctx)}) ${expr.asString(ctx)}"
@@ -110,7 +110,7 @@ trait Trees extends ast.Trees {
   trait Lit extends Expr {
     def const: Constant
     val owner: TreeId = NoId
-    override def tpe: TypeState[Type] = const.tpe
+    override val tpe: TypeState[Type] = const.tpe
 
     def asString(ctx: Context): String = const.toString
     def show(ctx: Context): String =

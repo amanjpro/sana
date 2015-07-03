@@ -215,7 +215,7 @@ trait Trees {
 
     def nameAtParser: Option[String]
 
-    def tpe: TypeState[Type] = {
+    val tpe: TypeState[Type] = {
        State {
         (ctx: Context) => {
           ctx.getTpe(uses).run(ctx)
@@ -223,7 +223,7 @@ trait Trees {
       }
     }
 
-    def name: ContextState[Name] = {
+    val name: ContextState[Name] = {
       State {
         (ctx: Context) => {
           val n = for {

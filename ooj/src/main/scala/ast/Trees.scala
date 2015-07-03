@@ -35,7 +35,7 @@ trait Trees extends ast.Trees {
   trait PackageDef extends NamedTree with IdentifiedTree {
     def members: List[DefTree]
 
-    def tpe: TypeState[Type] = toTypeState(notype)
+    val tpe: TypeState[Type] = toTypeState(notype)
     def show(ctx: Context): String =
       s"""|PackageDef{
           |name=${name.asString},
@@ -56,7 +56,7 @@ trait Trees extends ast.Trees {
     def parents: List[UseTree]
     def body: Template
 
-    def tpe: TypeState[Type] = for {
+    val tpe: TypeState[Type] = for {
       ctx     <- get
       ptpes   <- parents.map(_.tpe).sequenceU
       ptpes2  =  ptpes.toSet
@@ -98,7 +98,7 @@ trait Trees extends ast.Trees {
   trait New extends Expr {
     def tpt: UseTree
     def args: List[Expr]
-    def tpe: TypeState[Type] = tpt.tpe
+    val tpe: TypeState[Type] = tpt.tpe
 
     def asString(ctx: Context): String =
       s"new ${tpt.asString(ctx)}(${asStringList(args, ctx)})"
@@ -116,7 +116,7 @@ trait Trees extends ast.Trees {
     def qual: Tree
     def tree: SimpleUseTree
 
-    override def name: ContextState[Name] = tree.name
+    override val name: ContextState[Name] = tree.name
     def uses: TreeId = tree.uses
     def nameAtParser: Option[String] = tree.nameAtParser
 
@@ -147,7 +147,7 @@ trait Trees extends ast.Trees {
           |}""".stripMargin
 
 
-    def tpe: TypeState[Type] = StateT {
+    val tpe: TypeState[Type] = StateT {
       case ctx  =>
         ctx.getTpe(owner).run(ctx)
     }
@@ -159,7 +159,7 @@ trait Trees extends ast.Trees {
 
     def asString(ctx: Context): String = "super"
 
-    def tpe: TypeState[Type] = for {
+    val tpe: TypeState[Type] = for {
       ctx       <- get
       ptpe      <- ctx.getTree(owner) match {
         case Some(t)          =>
