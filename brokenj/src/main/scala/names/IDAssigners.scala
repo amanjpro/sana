@@ -17,7 +17,7 @@ import primj.report._
 import primj.names
 
 import brokenj.Global
- 
+
 import scalaz.{Name => _, Failure => _, _}
 import scala.language.higherKinds
 import Scalaz._
