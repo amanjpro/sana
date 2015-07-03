@@ -131,12 +131,20 @@ trait IDAssigners extends passes.Phases {
       _       <- point(v)
     } yield v
 
-    def assignUseTree(use: UseTree): IDAssignerMonad[UseTree] = use match {
+    def assignSimpleUseTree(use: SimpleUseTree):
+      IDAssignerMonad[SimpleUseTree] = use match {
       case tuse: TypeUse       => for {
         r <- assignTypeUse(tuse)
       } yield r
       case id: Ident           => for {
         r <- assignIdent(id)
+      } yield r
+    }
+
+
+    def assignUseTree(use: UseTree): IDAssignerMonad[UseTree] = use match {
+      case simple: SimpleUseTree     => for {
+        r <- assignSimpleUseTree(simple)
       } yield r
     }
 
