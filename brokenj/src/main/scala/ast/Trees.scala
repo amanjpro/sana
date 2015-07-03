@@ -21,7 +21,7 @@ import scalaz.{Name => _, _}
 import Scalaz._
 
 trait Trees extends ast.Trees {
-  self: types.Types with Constants with TreeContexts with MonadUtils 
+  self: types.Types with Constants with TreeContexts with MonadUtils
         with primj.util.Definitions =>
 
   /********************* AST Nodes *********************************/
@@ -31,7 +31,7 @@ trait Trees extends ast.Trees {
     def stmt: Expr
     def tpe: TypeState[Type] = stmt.tpe
 
-    def show(ctx: Context): String = 
+    def show(ctx: Context): String =
       s"""|Label{
           |name=${name.asString},
           |stmt=${stmt.show(ctx)},
@@ -42,13 +42,13 @@ trait Trees extends ast.Trees {
     def asString(ctx: Context): String =
       s"${name.asString}: ${stmt.asString(ctx)}"
 
-  } 
+  }
 
   trait Break extends Expr {
     def label: Option[Name]
     def tpe: TypeState[Type] = toTypeState(VoidType)
 
-    def show(ctx: Context): String = 
+    def show(ctx: Context): String =
       s"""|Break{
           |label=${label.map(_.asString).getOrElse("<empty>")},
           |owner=${owner},
@@ -70,7 +70,7 @@ trait Trees extends ast.Trees {
       case None            => "continue"
       case Some(n)         => s"continue ${n.asString}"
     }
-    def show(ctx: Context): String = 
+    def show(ctx: Context): String =
       s"""|Continue{
           |label=${label.map(_.asString).getOrElse("<empty>")},
           |owner=${owner},
@@ -89,7 +89,7 @@ trait Trees extends ast.Trees {
     }
 
     def tpe: TypeState[Type] = toTypeState(VoidType)
-    def show(ctx: Context): String = 
+    def show(ctx: Context): String =
       s"""|Case{
           |guards=${guards.map(_.show(ctx))},
           |guards=${body.show(ctx)},
@@ -111,7 +111,7 @@ trait Trees extends ast.Trees {
           |default:
           |${default.asString(ctx)}""".stripMargin
 
-    def show(ctx: Context): String = 
+    def show(ctx: Context): String =
       s"""|Switch{
           |expr=${expr.show(ctx)},
           |cases=${showList(cases, ctx)},
@@ -131,7 +131,7 @@ trait Trees extends ast.Trees {
   }
 
   trait SwitchExtractor {
-    def unapply(switch: Switch): Option[(Expr, List[Case], Tree)] = 
+    def unapply(switch: Switch): Option[(Expr, List[Case], Tree)] =
       switch match {
         case null     => None
         case _        => Some((switch.expr, switch.cases, switch.default))
@@ -158,14 +158,14 @@ trait Trees extends ast.Trees {
       case _        => Some(cnt.label)
     }
   }
-  
+
   /***************************** Factories **************************/
 
   trait LabelFactory {
     private class LabelImpl(val name: Name, val stmt: Expr,
       val pos: Option[Position], val owner: TreeId) extends Label
 
-    def apply(name: Name, stmt: Expr, 
+    def apply(name: Name, stmt: Expr,
       pos: Option[Position], owner: TreeId): Label =
       new LabelImpl(name, stmt, pos, owner)
   }
@@ -181,14 +181,14 @@ trait Trees extends ast.Trees {
         pos: Option[Position], owner: TreeId): Switch =
       new SwitchImpl(expr, cases, default, pos, owner)
   }
-  
+
   trait CaseFactory {
     private class CaseImpl(val guards: List[Expr],
-      val body: Tree, 
+      val body: Tree,
       val pos: Option[Position], val owner: TreeId) extends Case
 
 
-    def apply(guards: List[Expr], body: Tree, 
+    def apply(guards: List[Expr], body: Tree,
         pos: Option[Position], owner: TreeId): Case =
       new CaseImpl(guards, body, pos, owner)
   }
@@ -198,7 +198,7 @@ trait Trees extends ast.Trees {
     private class BreakImpl(val label: Option[Name],
       val pos: Option[Position], val owner: TreeId) extends Break
 
-    def apply(label: Option[Name], 
+    def apply(label: Option[Name],
       pos: Option[Position], owner: TreeId): Break =
       new BreakImpl(label, pos, owner)
   }
@@ -207,7 +207,7 @@ trait Trees extends ast.Trees {
     private class ContinueImpl(val label: Option[Name],
       val pos: Option[Position], val owner: TreeId) extends Continue
 
-    def apply(label: Option[Name], 
+    def apply(label: Option[Name],
       pos: Option[Position], owner: TreeId): Continue =
       new ContinueImpl(label, pos, owner)
   }
