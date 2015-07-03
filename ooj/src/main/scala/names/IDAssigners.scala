@@ -20,7 +20,7 @@ import primj.report._
 import primj.modifiers.Ops.noflags
 
 import ooj.Global
- 
+
 import scalaz.{Name => _, Failure => _, _}
 import Scalaz._
 
@@ -35,9 +35,9 @@ trait IDAssigners extends brokenj.names.IDAssigners {
 
     import rwst.{local => _, _}
 
-    override def startPhase(state: Context, unit: CompilationUnit): 
+    override def startPhase(state: Context, unit: CompilationUnit):
          (Vector[Report], CompilationUnit, Context) = unit.tree match {
-      case pkg: PackageDef => 
+      case pkg: PackageDef =>
         // the owner of a package name is the parent package!!
         val (pid, cid, state2) = {
           val pkgs = pkg.name.asString.split(".").toList
@@ -70,7 +70,20 @@ trait IDAssigners extends brokenj.names.IDAssigners {
         super.assign(tree)
     }
 
-    override def assignUseTree(use: UseTree): IDAssignerMonad[UseTree] = 
+
+    override def assignDef(dtree: DefTree): IDAssignerMonad[DefTree] =
+      dtree match {
+      case clazz: ClassDef                           => for {
+        r       <- {
+          println(clazz.toString)
+          assignClassDef(clazz)
+        }
+      } yield r
+      case _                                         =>
+        super.assignDef(dtree)
+    }
+
+    override def assignUseTree(use: UseTree): IDAssignerMonad[UseTree] =
       use match {
         case s: Select => for {
           r <- assignSelect(s)
@@ -94,7 +107,7 @@ trait IDAssigners extends brokenj.names.IDAssigners {
      */
     def assignPackageDef(pkg: PackageDef): IDAssignerMonad[PackageDef] = for {
       owner        <- ask
-      members      <- pkg.members.map((x) => 
+      members      <- pkg.members.map((x) =>
           local((_: TreeId) => owner)(assignDef(x))).sequenceU
     } yield {
       PackageDef(pkg.id, pkg.name, members, pkg.pos, pkg.owner)
@@ -105,10 +118,10 @@ trait IDAssigners extends brokenj.names.IDAssigners {
      * And returns the `id` for the inner most package, and
      * its compilation unit id, and the resulting context.
      */
-    protected def extendPackages(ctx: Context, prev: TreeId, 
+    protected def extendPackages(ctx: Context, prev: TreeId,
         pkgs: List[String]): (TreeId, TreeId, Context) = pkgs match {
       case Nil              => (prev, NoId, ctx)
-      case (x::xs)          => 
+      case (x::xs)          =>
         val nme = Name(x)
         val id = ctx.getContext(prev) match {
           case None                =>
@@ -141,7 +154,7 @@ trait IDAssigners extends brokenj.names.IDAssigners {
       id      =  id_ctx2._1
       ctx2    =  id_ctx2._2
       body    <- assignTemplate(clazz.body)
-    } yield ClassDef(clazz.mods, id, clazz.name, clazz.parents, body, 
+    } yield ClassDef(clazz.mods, id, clazz.name, clazz.parents, body,
                      clazz.pos, owner)
   }
 }
