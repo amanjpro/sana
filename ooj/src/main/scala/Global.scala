@@ -15,7 +15,7 @@ import contexts.{TreeInfos, TreeContexts}
 
 
 
-trait Global extends brokenj.Global with 
+trait Global extends brokenj.Global with
         Trees with
         Constants with
         Types with

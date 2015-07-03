@@ -8,7 +8,7 @@ import java.io.{File => JFile}
 
 class ClassPathCatalog(classpath: List[JFile]) {
 
-  private def makeCatalog(paths: List[JFile], 
+  private def makeCatalog(paths: List[JFile],
           acc: SortedSet[Path]): SortedSet[Path] =
     paths match {
       case Nil                                      =>
@@ -21,9 +21,9 @@ class ClassPathCatalog(classpath: List[JFile]) {
         makeCatalog(xs, acc + new File(x.getName))
       case  (x::xs)                                 =>
         makeCatalog(xs, acc)
-    } 
+    }
 
-  val catalog: List[Bundle] = 
+  val catalog: List[Bundle] =
     classpath.map((x) => {
       val res = makeCatalog(List(x), SortedSet.empty[Path])
       res.toList.head.toBundle
@@ -86,7 +86,7 @@ class ClassPathCatalog(classpath: List[JFile]) {
     override def toString: String = s"File(name = $name)"
   }
 
-  private class Directory(val name: String, 
+  private class Directory(val name: String,
     val children: SortedSet[Path]) extends Path {
     override def toString: String = {
       val kids = children.mkString(",")

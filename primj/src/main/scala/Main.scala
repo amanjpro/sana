@@ -6,14 +6,15 @@ import sana.primj
 import tiny.settings.{SanaConfig,CommandLineArgumentParser}
 import tiny.passes.Phases
 import tiny.debug.logger
+import tiny.io.ClassPathCatalog
 import parser.Parsers
 import typechecker.Typers
 import names.{Namers, IDAssigners}
 
-object Main { 
+object Main {
   def processOptions(args: Array[String],
-                        ln: String, 
-                        lv: String, 
+                        ln: String,
+                        lv: String,
                         fn: String): Either[String, SanaConfig] = {
         val config = new SanaConfig
         val processor = new CommandLineArgumentParser(config, ln, lv, fn)
@@ -27,10 +28,10 @@ object Main {
   def main(args: Array[String]): Unit = {
 
 
-    val c = processOptions(args, langName, langVersion, 
+    val c = processOptions(args, langName, langVersion,
           tiny.frameworkName) match {
         case Right(config) => config
-        case Left(msg)     => 
+        case Left(msg)     =>
           println(msg)
           System.exit(1)
           ???  // To satisfy the type checker
@@ -50,6 +51,8 @@ object Main {
       }
       val langName: String = ln
       val langVersion: String = lv
+
+
     }
     val (errors, units) = compiler.start
     errors.foreach(println)
