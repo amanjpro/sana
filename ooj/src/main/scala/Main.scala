@@ -59,8 +59,8 @@ object Main {
       val catalog: ClassPathCatalog = new ClassPathCatalog(global.classPaths)
     }
     val (errors, units) = compiler.start
-    errors.foreach(println)
-    println("")
+    errors.foreach(Console.err.println)
+    Console.err.println("")
     // TODO: Here it should go to codegen
     units.foreach(println)
   }

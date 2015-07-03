@@ -6,7 +6,6 @@ import sana.primj
 import tiny.settings.{SanaConfig,CommandLineArgumentParser}
 import tiny.passes.Phases
 import tiny.debug.logger
-import tiny.io.ClassPathCatalog
 import parser.Parsers
 import typechecker.Typers
 import names.{Namers, IDAssigners}
@@ -51,12 +50,10 @@ object Main {
       }
       val langName: String = ln
       val langVersion: String = lv
-
-
     }
     val (errors, units) = compiler.start
-    errors.foreach(println)
-    println("")
+    errors.foreach(Console.err.println)
+    Console.err.println("")
     // TODO: Here it should go to codegen
     units.foreach(println)
   }

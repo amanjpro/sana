@@ -52,8 +52,8 @@ object Main {
       val langVersion: String = lv
     }
     val (errors, units) = compiler.start
-    errors.foreach(println)
-    println("")
+    errors.foreach(Console.err.println)
+    Console.err.println("")
     // TODO: Here it should go to codegen
     units.foreach(println)
   }
