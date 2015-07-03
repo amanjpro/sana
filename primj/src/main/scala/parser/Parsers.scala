@@ -37,7 +37,7 @@ trait Parsers extends parser.Parsers {
 
   type G = Global
   import global._
- 
+
   def parse(source: SourceFile): CompilationUnit = {
     val tree = new PrimjVisitor(source.name).visit(source.content)
     logger.debug(tree.show(emptyContext))
@@ -63,9 +63,9 @@ trait Parsers extends parser.Parsers {
         case "!"     => Not
       }
       (e1, op) match {
-        case (e: Expr, op: POp) if isPostfix => 
+        case (e: Expr, op: POp) if isPostfix =>
           Unary(Flags(POSTFIX), op, e, toTypeState(notype), pos(ctx))
-        case (e: Expr, op: UOp) => 
+        case (e: Expr, op: UOp) =>
           Unary(noflags, op, e, toTypeState(notype), pos(ctx))
         case _                  =>
           // TODO: report an error
@@ -73,7 +73,7 @@ trait Parsers extends parser.Parsers {
       }
     }
 
-    def createBinary[T <: ParserRuleContext](es: java.util.List[T], 
+    def createBinary[T <: ParserRuleContext](es: java.util.List[T],
       trm: String, ctx: ParserRuleContext): Expr = {
       val e1 = visit(es.get(0))
       val op = trm match {
@@ -99,7 +99,7 @@ trait Parsers extends parser.Parsers {
       }
       val e2 = visit(es.get(1))
       (e1, e2) match {
-        case (x: Expr, y: Expr) => 
+        case (x: Expr, y: Expr) =>
           Binary(x, op, y, toTypeState(notype), pos(ctx))
         case _                  =>
           // TODO: report an error
@@ -136,7 +136,7 @@ trait Parsers extends parser.Parsers {
 
 
 
-    def createVarDecls(@NotNull ctx: 
+    def createVarDecls(@NotNull ctx:
       PrimjParser.VariableDeclarationContext,
       mods: Flags): List[ValDef] = {
       val mods1   = if(ctx.mods != null)
@@ -160,7 +160,7 @@ trait Parsers extends parser.Parsers {
       }
     }
 
-    def createVarDefs(@NotNull ctx: 
+    def createVarDefs(@NotNull ctx:
       PrimjParser.VariableDefinitionContext,
       mods: Flags): List[ValDef] = {
 
@@ -185,8 +185,8 @@ trait Parsers extends parser.Parsers {
       }
     }
 
-    override def visitProgram(@NotNull ctx: PrimjParser.ProgramContext): Tree = { 
-      val defs = ctx.defDecleration.asScala.toList.flatMap { (kid) => 
+    override def visitProgram(@NotNull ctx: PrimjParser.ProgramContext): Tree = {
+      val defs = ctx.defDecleration.asScala.toList.flatMap { (kid) =>
         if(kid.methodDeclaration != null)
           List(visit(kid).asInstanceOf[DefTree])
         else //if (kid.variableDeclaration != null)
@@ -195,7 +195,7 @@ trait Parsers extends parser.Parsers {
       Template(defs, NoId)
     }
 
-    override def visitFormalParameter(@NotNull ctx: 
+    override def visitFormalParameter(@NotNull ctx:
       PrimjParser.FormalParameterContext): Tree = {
       val mods    = if(ctx.mods != null)
                       PARAM | FINAL
@@ -206,7 +206,7 @@ trait Parsers extends parser.Parsers {
       ValDef(mods, NoId, tpe, name, Empty, pos(ctx), NoId)
     }
 
-		override def visitMethodDeclaration(@NotNull ctx: 
+		override def visitMethodDeclaration(@NotNull ctx:
       PrimjParser.MethodDeclarationContext): Tree = {
       val tpe    = visit(ctx.`type`)
       val name   = ctx.Identifier.getText
@@ -229,17 +229,17 @@ trait Parsers extends parser.Parsers {
       }
     }
 
-    override def visitVarRHS(@NotNull ctx: PrimjParser.VarRHSContext): Tree = { 
+    override def visitVarRHS(@NotNull ctx: PrimjParser.VarRHSContext): Tree = {
       if(ctx.expression == null) Empty
       else visit(ctx.expression)
     }
 
-	
-		override def visitVoidType(@NotNull ctx: PrimjParser.VoidTypeContext): Tree = { 
+
+		override def visitVoidType(@NotNull ctx: PrimjParser.VoidTypeContext): Tree = {
       TypeUse(NoId, Some(ctx.getText), pos(ctx), NoId)
     }
 
-		override def visitBlock(@NotNull ctx: PrimjParser.BlockContext): Tree = { 
+		override def visitBlock(@NotNull ctx: PrimjParser.BlockContext): Tree = {
       val stmts   = ctx.statement match {
         case null    => Nil
         case stmts   => stmts.asScala.toList.map(visit(_))
@@ -247,7 +247,7 @@ trait Parsers extends parser.Parsers {
       Block(NoId, stmts, pos(ctx), NoId)
     }
 
-		override def visitIf(@NotNull ctx: PrimjParser.IfContext): Tree = { 
+		override def visitIf(@NotNull ctx: PrimjParser.IfContext): Tree = {
       val cond  = visit(ctx.parExpression)
       val thenp = visit(ctx.statement.get(0))
       val elsep = ctx.statement.size match {
@@ -262,15 +262,15 @@ trait Parsers extends parser.Parsers {
           throw new Exception("Bad tree shape")
       }
     }
-		override def visitFor(@NotNull ctx: PrimjParser.ForContext): Tree = { 
+		override def visitFor(@NotNull ctx: PrimjParser.ForContext): Tree = {
       val inits = ctx.forControl.forInit match {
         case null  => Nil
-        case inits => 
+        case inits =>
           if(inits.expressionList != null)
             visit(inits.expressionList)
                 .asInstanceOf[java.util.List[Tree]].asScala.toList
-          else 
-            createVarDefs(inits.variableDefinition, 
+          else
+            createVarDefs(inits.variableDefinition,
               Flags(LOCAL_VARIABLE))
       }
       val cond  = ctx.forControl.expression match {
@@ -318,7 +318,7 @@ trait Parsers extends parser.Parsers {
 
 		override def visitReturn(@NotNull ctx: PrimjParser.ReturnContext): Tree = {
       ctx.expression match {
-        case null                => 
+        case null                =>
           Return(pos(ctx), NoId)
         case expr                =>
           val e = visit(expr)
@@ -332,24 +332,24 @@ trait Parsers extends parser.Parsers {
       }
     }
 
-    override def visitBlockStmt(@NotNull ctx: 
-      PrimjParser.BlockStmtContext): Tree = { 
+    override def visitBlockStmt(@NotNull ctx:
+      PrimjParser.BlockStmtContext): Tree = {
       visit(ctx.block)
     }
 
-    override def visitExprStmt(@NotNull ctx: PrimjParser.ExprStmtContext): Tree = { 
+    override def visitExprStmt(@NotNull ctx: PrimjParser.ExprStmtContext): Tree = {
       visit(ctx.expression)
     }
 
-    override def visitVarStmt(@NotNull ctx: PrimjParser.VarStmtContext): Tree = { 
+    override def visitVarStmt(@NotNull ctx: PrimjParser.VarStmtContext): Tree = {
       visit(ctx.variableDeclaration)
     }
 
-    override def visitAssignStmt(@NotNull ctx: 
-      PrimjParser.AssignStmtContext): Tree = { 
+    override def visitAssignStmt(@NotNull ctx:
+      PrimjParser.AssignStmtContext): Tree = {
       visit(ctx.assign)
     }
-		
+
     override def visitEmpty(@NotNull ctx: PrimjParser.EmptyContext): Tree = {
       Empty
     }
@@ -370,7 +370,7 @@ trait Parsers extends parser.Parsers {
       val id     = Ident(NoId, Some(name), pos(ctx), NoId)
       val args   = ctx.arguments.expressionList match {
         case null           => Nil
-        case args           => 
+        case args           =>
           args.expression.asScala.toList.map {
             case e => visit(e).asInstanceOf[Expr]
           }
@@ -379,16 +379,16 @@ trait Parsers extends parser.Parsers {
     }
 
 
-    override def visitUnaryNum(@NotNull ctx: PrimjParser.UnaryNumContext): Tree = { 
-      createUnaryOrPostfix(false, ctx.expression, ctx.op.getText, ctx) 
+    override def visitUnaryNum(@NotNull ctx: PrimjParser.UnaryNumContext): Tree = {
+      createUnaryOrPostfix(false, ctx.expression, ctx.op.getText, ctx)
     }
 
     override def visitUnaryElse(@NotNull ctx: PrimjParser.UnaryElseContext): Tree = {
-      createUnaryOrPostfix(false, ctx.expression, ctx.op.getText, ctx) 
+      createUnaryOrPostfix(false, ctx.expression, ctx.op.getText, ctx)
     }
 
-    override def visitPostfix(@NotNull ctx: PrimjParser.PostfixContext): Tree = { 
-      createUnaryOrPostfix(true, ctx.expression, ctx.op.getText, ctx) 
+    override def visitPostfix(@NotNull ctx: PrimjParser.PostfixContext): Tree = {
+      createUnaryOrPostfix(true, ctx.expression, ctx.op.getText, ctx)
     }
 
     override def visitId(@NotNull ctx: PrimjParser.IdContext): Tree = {
@@ -396,11 +396,11 @@ trait Parsers extends parser.Parsers {
     }
 
     override def visitPrimitiveType(
-      @NotNull ctx: PrimjParser.PrimitiveTypeContext): Tree = { 
+      @NotNull ctx: PrimjParser.PrimitiveTypeContext): Tree = {
       TypeUse(NoId, Some(ctx.getText), pos(ctx), NoId)
     }
 
-    override def visitCast(@NotNull ctx: PrimjParser.CastContext): Tree = { 
+    override def visitCast(@NotNull ctx: PrimjParser.CastContext): Tree = {
       val e = visit(ctx.expression)
       val tpt = visit(ctx.primitiveType)
       (tpt, e) match {
@@ -411,82 +411,82 @@ trait Parsers extends parser.Parsers {
           throw new Exception("(TypeUse) Expression is expected")
       }
     }
-    
-    
+
+
     // Binary visitors
 
     override def visitMul(@NotNull ctx: PrimjParser.MulContext): Tree = {
-      createBinary(ctx.expression, ctx.op.getText, ctx) 
+      createBinary(ctx.expression, ctx.op.getText, ctx)
     }
-       
+
     override def visitAdd(@NotNull ctx: PrimjParser.AddContext): Tree = {
-      createBinary(ctx.expression, ctx.op.getText, ctx) 
+      createBinary(ctx.expression, ctx.op.getText, ctx)
     }
 
     override def visitShifts(@NotNull ctx: PrimjParser.ShiftsContext): Tree = {
-      createBinary(ctx.expression, ctx.op.getText, ctx) 
+      createBinary(ctx.expression, ctx.op.getText, ctx)
     }
 
     override def visitRel(@NotNull ctx: PrimjParser.RelContext): Tree = {
-      createBinary(ctx.expression, ctx.op.getText, ctx) 
+      createBinary(ctx.expression, ctx.op.getText, ctx)
     }
 
     override def visitEqu(@NotNull ctx: PrimjParser.EquContext): Tree = {
-      createBinary(ctx.expression, ctx.op.getText, ctx) 
+      createBinary(ctx.expression, ctx.op.getText, ctx)
     }
 
     override def visitBAnd(@NotNull ctx: PrimjParser.BAndContext): Tree = {
-      createBinary(ctx.expression, "&", ctx) 
+      createBinary(ctx.expression, "&", ctx)
     }
 
     override def visitBXor(@NotNull ctx: PrimjParser.BXorContext): Tree = {
-      createBinary(ctx.expression, "^", ctx) 
+      createBinary(ctx.expression, "^", ctx)
     }
-    
+
     override def visitBOr(@NotNull ctx: PrimjParser.BOrContext): Tree = {
-      createBinary(ctx.expression, "|", ctx) 
+      createBinary(ctx.expression, "|", ctx)
     }
 
-    override def visitAnd(@NotNull ctx: PrimjParser.AndContext): Tree =  { 
-      createBinary(ctx.expression, "&&", ctx) 
+    override def visitAnd(@NotNull ctx: PrimjParser.AndContext): Tree =  {
+      createBinary(ctx.expression, "&&", ctx)
     }
 
-    override def visitOr(@NotNull ctx: PrimjParser.OrContext): Tree =  { 
-      createBinary(ctx.expression, "||", ctx) 
+    override def visitOr(@NotNull ctx: PrimjParser.OrContext): Tree =  {
+      createBinary(ctx.expression, "||", ctx)
     }
 
 
 
-    
+
     // Literal visitors
 
-    override def visitIntLit(@NotNull ctx: PrimjParser.IntLitContext): Tree = { 
+    override def visitIntLit(@NotNull ctx: PrimjParser.IntLitContext): Tree = {
       val txt = ctx.getText
       (txt.endsWith("l") || txt.endsWith("L")) match {
-        case true  => Lit(LongConstant(ctx.getText.toInt), pos(ctx)) 
-        case false => Lit(IntConstant(ctx.getText.toInt), pos(ctx)) 
+        case true  => Lit(LongConstant(ctx.getText.toInt), pos(ctx))
+        case false => Lit(IntConstant(ctx.getText.toInt), pos(ctx))
       }
     }
-    
-    override def visitFloatLit(@NotNull ctx: PrimjParser.FloatLitContext): Tree = { 
+
+    override def visitFloatLit(@NotNull ctx: PrimjParser.FloatLitContext): Tree = {
       val txt = ctx.getText
       (txt.endsWith("f") || txt.endsWith("F")) match {
-        case true  => Lit(FloatConstant(ctx.getText.toInt), pos(ctx)) 
-        case false => Lit(DoubleConstant(ctx.getText.toInt), pos(ctx)) 
+        case true  => Lit(FloatConstant(ctx.getText.toInt), pos(ctx))
+        case false => Lit(DoubleConstant(ctx.getText.toInt), pos(ctx))
       }
     }
-   
-    override def visitCharLit(@NotNull ctx: PrimjParser.CharLitContext): Tree = { 
-      Lit(CharConstant(ctx.getText.head), pos(ctx)) 
+
+    override def visitCharLit(@NotNull ctx: PrimjParser.CharLitContext): Tree = {
+      Lit(CharConstant(ctx.getText.head), pos(ctx))
     }
 
-    // override def visitStrLit(@NotNull ctx: PrimjParser.StrLitContext): Tree = { 
-    //   Lit(StringConstant(ctx.getText), pos(ctx)) 
+    // override def visitStrLit(@NotNull ctx: PrimjParser.StrLitContext): Tree = {
+    //   Lit(StringConstant(ctx.getText), pos(ctx))
     // }
 
-  
-    override def visitBoolLit(@NotNull ctx: PrimjParser.BoolLitContext): Tree = { 
-      Lit(BooleanConstant(ctx.getText.toBoolean), pos(ctx)) 
+
+    override def visitBoolLit(@NotNull ctx: PrimjParser.BoolLitContext): Tree = {
+      Lit(BooleanConstant(ctx.getText.toBoolean), pos(ctx))
     }
   }
 }
