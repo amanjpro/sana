@@ -56,6 +56,26 @@ trait IDAssigners extends brokenj.names.IDAssigners {
         super.startPhase(state, unit)
     }
 
+
+    def assignNew(nw: New): IDAssignerMonad[New] = for {
+      owner       <- ask
+      tpt         <- assignUseTree(nw.tpt)
+      args        <- nw.args.map(assignExpr(_)).sequenceU
+    } yield New(tpt, args, nw.pos, owner)
+
+
+    override def assignExpr(expr: Expr): IDAssignerMonad[Expr] = expr match {
+      case nw: New                                             => for {
+        r     <- assignNew(nw)
+      } yield r
+      case slct: Select                                        => for {
+        r     <- assignSelect(slct)
+      } yield r
+
+      case _                                                   =>
+        super.assignExpr(expr)
+    }
+
     override def assign(tree: Tree): IDAssignerMonad[Tree] = tree match {
       case pkg: PackageDef                           => for {
         r       <- assignPackageDef(pkg)
