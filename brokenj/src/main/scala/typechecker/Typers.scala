@@ -48,17 +48,25 @@ trait Typers extends typechecker.Typers {
     }
 
 
-    def typeCase(cse: Case): TypeChecker[Case] = cse match {
-      case dflt: DefaultCase                   => for {
-        body    <- typeTree(dflt.body)
-      } yield DefaultCase(body, dflt.pos, dflt.owner)
-      case _                                   => for {
-        // TODO:
-        // make sure that the guards are constant expressions Section 15.27
-        guards  <- cse.guards.map(typeExpr(_)).sequenceU
-        body    <- typeTree(cse.body)
-      } yield Case(guards, body, cse.pos, cse.owner)
-    }
+    def typeCase(cse: Case, tpe: Type): TypeChecker[Case] = for {
+      // TODO:
+      // make sure that the guards are constant expressions Section 15.27
+      guards  <- cse.guards.map(typeExpr(_)).sequenceU
+      ctx     <- get
+      _       <- {
+        val chks: List[TypeChecker[Unit]] = guards.map((guard) => {
+          val gtpe = guard.tpe.eval(ctx)
+          if(guard == Default || gtpe <:< tpe)
+            point(())
+          else
+            toTypeChecker(error(TYPE_MISMATCH,
+              gtpe.toString, tpe.toString,
+                    guard.pos, guard))
+        })
+        chks.sequenceU
+      }
+      body    <- typeTree(cse.body)
+    } yield Case(guards, body, cse.pos, cse.owner)
 
     // TODO
     // rule-out duplicate constant guards Section 14.9
@@ -74,29 +82,15 @@ trait Typers extends typechecker.Typers {
                     toTypeChecker(error(TYPE_MISMATCH,
                       cond.toString, "char, byte, short or int",
                       cond.pos, cond))
-      cases   <- switch.cases.map(typeCase(_)).sequenceU
-      _       <- switch.cases.filter(_.isInstanceOf[DefaultCase]).size match {
-        case 0 | 1                            => point(())
-        case n                                =>
-          toTypeChecker(error(TOO_MANY_DEFAULT_CASES,
-            n.toString, "expected one or zero",
-            switch.pos, cond))
-
-      }
-      ctx     <- get
-      // _       <- cases.map {
-      //   case cse  =>
-      //     cse.guards.map {
-      //       case guard =>
-      //         val gtpe = guard.tpe.eval(ctx)
-      //         if(gtpe <:< ctpe)
-      //           point(())
-      //         else
-      //           toTypeChecker(error(TYPE_MISMATCH,
-      //             gtpe.toString, ctpe.toString,
-      //             guard.pos, guard))
-      //     }
-      // }
+      cases   <- switch.cases.map(typeCase(_, ctpe)).sequenceU
+      _       <- switch.cases.flatMap((cse) =>
+        cse.guards.filter(_ == Default)).size match {
+          case 0 | 1                            => point(())
+          case n                                =>
+            toTypeChecker(error(TOO_MANY_DEFAULT_CASES,
+              n.toString, "expected one or zero",
+              switch.pos, cond))
+        }
     } yield Switch(cond, cases, switch.pos, switch.owner)
   }
 }

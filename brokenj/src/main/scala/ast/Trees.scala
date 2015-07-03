@@ -79,22 +79,6 @@ trait Trees extends ast.Trees {
 
   }
 
-  trait DefaultCase extends Case {
-    val guards: List[Expr] = Nil
-    override def asString(ctx: Context): String = {
-      s"default:\n${body.asString(ctx)}"
-    }
-
-    override def show(ctx: Context): String =
-      s"""|DefaultCase{
-          |body=${body.show(ctx)},
-          |owner=${owner},
-          |pos=${pos}
-          |}""".stripMargin
-
-
-  }
-
   trait Case extends Tree {
     def guards: List[Expr]
     def body: Tree
@@ -113,6 +97,14 @@ trait Trees extends ast.Trees {
           |pos=${pos}
           |}""".stripMargin
 
+  }
+
+  object Default extends Expr {
+    def asString(ctx: Trees.this.Context): String = "default:"
+    def owner: TreeId = NoId
+    def pos: Option[Position] = None
+    def show(ctx: Context): String = "Default"
+    def tpe: TypeState[Type] = toTypeState(notype)
   }
 
   trait Switch extends Expr {
@@ -150,12 +142,6 @@ trait Trees extends ast.Trees {
       }
   }
 
-  trait DefaultCaseExtractor {
-    def unapply(cse: DefaultCase): Option[(Tree)] = cse match {
-      case null     => None
-      case _        => Some(cse.body)
-    }
-  }
 
   trait CaseExtractor {
     def unapply(cse: Case): Option[(List[Expr], Tree)] = cse match {
@@ -212,16 +198,6 @@ trait Trees extends ast.Trees {
       new CaseImpl(guards, body, pos, owner)
   }
 
-  trait DefaultCaseFactory {
-    protected class DefaultCaseImpl(val body: Tree,
-      val pos: Option[Position], val owner: TreeId) extends DefaultCase
-
-
-    def apply(body: Tree, pos: Option[Position],
-      owner: TreeId): DefaultCase =
-      new DefaultCaseImpl(body, pos, owner)
-  }
-
 
   trait BreakFactory {
     private class BreakImpl(val label: Option[Name],
@@ -250,7 +226,6 @@ trait Trees extends ast.Trees {
   val Label       = new LabelExtractor with LabelFactory {}
   val Switch      = new SwitchExtractor with SwitchFactory {}
   val Case        = new CaseExtractor with CaseFactory {}
-  val DefaultCase = new DefaultCaseExtractor with DefaultCaseFactory {}
   val Break       = new BreakExtractor with BreakFactory {}
   val Continue    = new ContinueExtractor with ContinueFactory {}
 }
