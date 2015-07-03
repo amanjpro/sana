@@ -94,10 +94,7 @@ trait IDAssigners extends brokenj.names.IDAssigners {
     override def assignDef(dtree: DefTree): IDAssignerMonad[DefTree] =
       dtree match {
       case clazz: ClassDef                           => for {
-        r       <- {
-          println(clazz.toString)
-          assignClassDef(clazz)
-        }
+        r       <- assignClassDef(clazz)
       } yield r
       case _                                         =>
         super.assignDef(dtree)
