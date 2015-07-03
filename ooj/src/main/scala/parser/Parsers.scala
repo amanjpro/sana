@@ -220,7 +220,20 @@ trait Parsers extends parser.Parsers {
 
     override def visitCompilationUnit(ctx:
         Java1Parser.CompilationUnitContext): Tree = {
-      visitChildren(ctx)
+      val pkgName = if(ctx.packageDeclaration == null) NO_PACKAGE_NAME
+        else Name(ctx.packageDeclaration.Identifier.asScala.mkString("."))
+      val imports = ctx.importDeclaration match {
+        case null                           => Nil
+        case imports                        =>
+          // TODO: Implement this when you have imports
+          Nil
+      }
+      val members = ctx.typeDeclaration match {
+        case null                           => Nil
+        case types                          =>
+          types.asScala.toList.map((x) => visit(x).asInstanceOf[DefTree])
+      }
+      PackageDef(NoId, pkgName, members, pos(ctx), NoId)
     }
 
     override def visitIntLit(ctx: Java1Parser.IntLitContext): Tree = {
@@ -255,8 +268,9 @@ trait Parsers extends parser.Parsers {
 
 
     override def visitType(ctx: Java1Parser.TypeContext): Tree = {
-      // INFO: Do not use this method
-      visitChildren(ctx)
+      if(ctx.referenceType == null)
+        visit(ctx.primitiveType)
+      else visit(ctx.referenceType)
     }
 
     override def visitPrimitiveType(ctx:
@@ -281,8 +295,9 @@ trait Parsers extends parser.Parsers {
 
     override def visitReferenceType(ctx:
       Java1Parser.ReferenceTypeContext): Tree = {
-      // INFO: Do not use this method
-      visitChildren(ctx)
+      if(ctx.arrayType == null)
+        visit(ctx.classOrInterfaceType)
+      else visit(ctx.arrayType)
     }
 
 
@@ -313,8 +328,8 @@ trait Parsers extends parser.Parsers {
 
     override def visitPackageDeclaration(ctx:
       Java1Parser.PackageDeclarationContext): Tree = {
-      val name = ctx.Identifier.asScala.toList.mkString(".")
-      Ident(NoId, Some(name), pos(ctx), NoId)
+      // INFO: Do not use this method
+      visitChildren(ctx)
     }
 
     override def visitImportDeclaration(ctx:
@@ -338,8 +353,9 @@ trait Parsers extends parser.Parsers {
 
     override def visitTypeDeclaration(ctx:
       Java1Parser.TypeDeclarationContext): Tree = {
-      // INFO: Do not use this method
-      visitChildren(ctx)
+      if(ctx.classDeclaration == null)
+        visit(ctx.interfaceDeclaration)
+      else visit(ctx.classDeclaration)
     }
 
     override def visitClassDeclaration(ctx:
@@ -365,8 +381,8 @@ trait Parsers extends parser.Parsers {
           TypeUse(NoId, Some(ctx.parent().getText),
             pos(ctx.parent()), NoId)
       }
+      val body       = visit(ctx.classBody()).asInstanceOf[Template]
       val interfaces = interfacesContextToTypeUses(ctx.interfaces())
-      val body       = visitChildren(ctx.classBody()).asInstanceOf[Template]
       ClassDef(mods, NoId, name, parent::interfaces, body, pos(ctx), NoId)
     }
 
@@ -403,15 +419,20 @@ trait Parsers extends parser.Parsers {
 
     override def visitClassBodyDeclaration(ctx:
       Java1Parser.ClassBodyDeclarationContext): Tree = {
-      // INFO: Don't implement this
-      visitChildren(ctx)
+      if(ctx.classMemberDeclaration != null)
+        visit(ctx.classMemberDeclaration)
+      else if(ctx.staticInitializer != null)
+        visit(ctx.staticInitializer)
+      else
+        visit(ctx.constructorDeclaration)
     }
 
 
     override def visitClassMemberDeclaration(ctx:
       Java1Parser.ClassMemberDeclarationContext): Tree = {
-      // INFO: Don't implement this
-      visitChildren(ctx)
+      if(ctx.fieldDeclaration == null)
+        visit(ctx.methodDeclaration)
+      else visit(ctx.fieldDeclaration)
     }
 
     override def visitFieldDeclaration(ctx:
@@ -517,8 +538,8 @@ trait Parsers extends parser.Parsers {
 
     override def visitMethodBody(ctx:
       Java1Parser.MethodBodyContext): Tree = {
-      // INFO: Do not use this method
-      visitChildren(ctx)
+      if(ctx.emptyStatement != null) visit(ctx.emptyStatement)
+      else visit(ctx.block)
     }
 
 
@@ -545,8 +566,7 @@ trait Parsers extends parser.Parsers {
 
     override def visitConstructorDeclarator(ctx:
       Java1Parser.ConstructorDeclaratorContext): Tree = {
-      // INFO: Do not use this method
-      visitChildren(ctx)
+      visitChildren(ctx.methodDeclaratorNoDims)
     }
 
 
@@ -586,8 +606,6 @@ trait Parsers extends parser.Parsers {
       }
       val fun  = Select(qual, init, ps, NoId)
       Apply(fun, args, ps, NoId)
-
-      visitChildren(ctx)
     }
 
 
@@ -619,7 +637,6 @@ trait Parsers extends parser.Parsers {
           }
           Template(members, NoId)
       }
-      visitChildren(ctx)
     }
 
     override def visitInterfaceMemberDeclaration(ctx:
@@ -637,7 +654,6 @@ trait Parsers extends parser.Parsers {
         case t                      =>
           t
       }
-      visitChildren(ctx)
     }
 
     override def visitAbstractMethodDeclaration(ctx:
@@ -676,7 +692,9 @@ trait Parsers extends parser.Parsers {
               val ctx = x.localVariableDeclarationStatement
                          .localVariableDeclaration
               localVariableDeclaration(ctx)
-            } else List(visit(ctx))
+            } else {
+              List(visit(x.statement))
+            }
           }
       }
       Block(NoId, stmts, pos(ctx), NoId)
@@ -684,23 +702,21 @@ trait Parsers extends parser.Parsers {
 
     override def visitBlockStatement(ctx:
       Java1Parser.BlockStatementContext): Tree = {
-      // INFO: Do not use this method
-      visitChildren(ctx)
+      if(ctx.statement == null)
+        visit(ctx.localVariableDeclarationStatement)
+      else
+        visit(ctx.statement)
     }
 
     override def visitLocalVariableDeclarationStatement(ctx:
       Java1Parser.LocalVariableDeclarationStatementContext): Tree = {
       // INFO: Do not use this method
-      visitChildren(ctx)
+      visit(ctx.localVariableDeclaration)
     }
 
     override def visitLocalVariableDeclaration(ctx:
       Java1Parser.LocalVariableDeclarationContext): Tree = {
-      // TODO: it is much like in primj, see how I have done it
-      // In Java1 modifiers couldn't appear here (There were no
-      // inner classes)
-      // val mods       = modifiersToFlags(ctx.modifier, false)
-      val tpt        = visit(ctx.`type`()).asInstanceOf[TypeUse]
+      // INFO: Do not use this method
       visitChildren(ctx)
     }
 
@@ -719,7 +735,7 @@ trait Parsers extends parser.Parsers {
     override def visitStatementWithoutTrailingSubstatement(ctx:
       Java1Parser.StatementWithoutTrailingSubstatementContext): Tree = {
       // INFO: Do not use this method
-        visitChildren(ctx)
+      visitChildren(ctx)
     }
 
     override def visitEmptyStatement(ctx:
@@ -743,8 +759,7 @@ trait Parsers extends parser.Parsers {
 
     override def visitExpressionStatement(ctx:
       Java1Parser.ExpressionStatementContext): Tree = {
-      // INFO: Do not use this method
-      visitChildren(ctx)
+      visit(ctx.statementExpression)
     }
 
     override def visitStatementExpression(ctx:
@@ -763,7 +778,6 @@ trait Parsers extends parser.Parsers {
 
     override def visitIfThenElseStatement(ctx:
       Java1Parser.IfThenElseStatementContext): Tree = {
-      visitChildren(ctx)
       val cond    = visit(ctx.expression).asInstanceOf[Expr]
       val thenp   = visit(ctx.statementNoShortIf).asInstanceOf[Expr]
       val elsep   = visit(ctx.statement).asInstanceOf[Expr]
@@ -990,8 +1004,8 @@ trait Parsers extends parser.Parsers {
     }
 
     override def visitSynchronizedStatement(ctx:
-      // TODO: Implement this when you support synchronized
       Java1Parser.SynchronizedStatementContext): Tree = {
+      // TODO: Implement this when you support synchronized
       visitChildren(ctx)
     }
 
@@ -1031,11 +1045,127 @@ trait Parsers extends parser.Parsers {
       visitChildren(ctx)
     }
 
-    override def visitPrimaryNoNewArray(ctx:
-      Java1Parser.PrimaryNoNewArrayContext): Tree = {
+    override def visitPrimaryLit(ctx:
+      Java1Parser.PrimaryLitContext): Tree = {
       // INFO: Do not implement this
       visitChildren(ctx)
     }
+
+    override def visitPrimaryThis(ctx:
+      Java1Parser.PrimaryThisContext): Tree = {
+      This(NoId, pos(ctx), NoId)
+    }
+
+    override def visitPrimaryExpr(ctx:
+      Java1Parser.PrimaryExprContext): Tree = {
+      // INFO: Do not implement this
+      visit(ctx.expression)
+    }
+
+    override def visitPrimaryNew(ctx:
+      Java1Parser.PrimaryNewContext): Tree = {
+      // INFO: Do not implement this
+      visitChildren(ctx)
+    }
+
+    override def visitPrimaryNewArray(ctx:
+      Java1Parser.PrimaryNewArrayContext): Tree = {
+      // TODO: Implement this when you support arrays
+      visitChildren(ctx)
+    }
+
+    override def visitPrimarySelect(ctx:
+      Java1Parser.PrimarySelectContext): Tree = {
+      val id   = Ident(NoId, Some(ctx.Identifier.getText),
+                        pos(ctx.Identifier.getSymbol), NoId)
+      val qual = visit(ctx.primaryNoNewArray)
+      Select(qual, id, pos(ctx), NoId)
+    }
+
+    override def visitPrimarySuperSelect(ctx:
+      Java1Parser.PrimarySuperSelectContext): Tree = {
+      val id   = Ident(NoId, Some(ctx.Identifier.getText),
+                        pos(ctx.Identifier.getSymbol), NoId)
+      val qual = Super(NoId, pos(ctx), NoId)
+      Select(qual, id, pos(ctx), NoId)
+    }
+
+    override def visitPrimaryApply(ctx:
+      Java1Parser.PrimaryApplyContext): Tree = {
+      val fun = visit(ctx.name).asInstanceOf[Expr]
+      val args = ctx.argumentList match {
+        case null                       => Nil
+        case list                       =>
+          list.expression.asScala.toList.map { (x) =>
+            visit(x).asInstanceOf[Expr]
+          }
+      }
+      Apply(fun, args, pos(ctx), NoId)
+    }
+
+    override def visitPrimaryQualApply(ctx:
+      Java1Parser.PrimaryQualApplyContext): Tree = {
+      val ps   = pos(ctx)
+      val id   = Ident(NoId, Some(ctx.Identifier.getText),
+                        pos(ctx.Identifier.getSymbol), NoId)
+      val qual = visit(ctx.primaryNoNewArray)
+      val fun  = Select(qual, id, pos(ctx), NoId)
+      val args = ctx.argumentList match {
+        case null                       => Nil
+        case list                       =>
+          list.expression.asScala.toList.map { (x) =>
+            visit(x).asInstanceOf[Expr]
+          }
+      }
+      Apply(fun, args, ps, NoId)
+    }
+
+    override def visitPrimaryArrayApply(ctx:
+      Java1Parser.PrimaryArrayApplyContext): Tree = {
+      val ps   = pos(ctx)
+      val id   = Ident(NoId, Some(ctx.Identifier.getText),
+                        pos(ctx.Identifier.getSymbol), NoId)
+      val qual = visit(ctx.arrayCreationExpression)
+      val fun  = Select(qual, id, pos(ctx), NoId)
+      val args = ctx.argumentList match {
+        case null                       => Nil
+        case list                       =>
+          list.expression.asScala.toList.map { (x) =>
+            visit(x).asInstanceOf[Expr]
+          }
+      }
+      Apply(fun, args, ps, NoId)
+    }
+
+    override def visitPrimarySuperApply(ctx:
+      Java1Parser.PrimarySuperApplyContext): Tree = {
+      val ps   = pos(ctx)
+      val id   = Ident(NoId, Some(ctx.Identifier.getText),
+                        pos(ctx.Identifier.getSymbol), NoId)
+      val qual = Super(NoId, ps, NoId)
+      val fun  = Select(qual, id, pos(ctx), NoId)
+      val args = ctx.argumentList match {
+        case null                       => Nil
+        case list                       =>
+          list.expression.asScala.toList.map { (x) =>
+            visit(x).asInstanceOf[Expr]
+          }
+      }
+      Apply(fun, args, ps, NoId)
+    }
+
+    override def visitPrimaryArrayAccess(ctx:
+      Java1Parser.PrimaryArrayAccessContext): Tree = {
+      // TODO: Implement this when you support arrays
+      visitChildren(ctx)
+    }
+
+    override def visitPrimaryArrayAccess2(ctx:
+      Java1Parser.PrimaryArrayAccess2Context): Tree = {
+      // TODO: Implement this when you support arrays
+      visitChildren(ctx)
+    }
+
 
     override def visitClassInstanceCreationExpression(ctx:
       Java1Parser.ClassInstanceCreationExpressionContext): Tree = {
@@ -1051,7 +1181,7 @@ trait Parsers extends parser.Parsers {
             visit(x).asInstanceOf[Expr]
           }
       }
-      Apply(fun, args, ps, NoId)
+      New(fun, args, ps, NoId)
     }
 
     override def visitArgumentList(ctx:
@@ -1097,7 +1227,6 @@ trait Parsers extends parser.Parsers {
     override def visitSimpleMethodInvocation(ctx:
       Java1Parser.SimpleMethodInvocationContext): Tree = {
       val ps   = pos(ctx)
-      visitChildren(ctx)
       val fun = visit(ctx.name).asInstanceOf[Expr]
       val args = ctx.argumentList match {
         case null                       => Nil

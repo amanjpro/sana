@@ -484,19 +484,20 @@ arrayAccess
   ;
 
 primaryNoNewArray
-	: literal
-	| 'this'
-	| '(' expression ')'
-	| classInstanceCreationExpression
+	: literal                                                # PrimaryLit
+	| 'this'                                                 # PrimaryThis
+	| '(' expression ')'                                     # PrimaryExpr
+	| classInstanceCreationExpression                        # PrimaryNew
+	| arrayCreationExpression '.' Identifier                 # PrimaryNewArray
+	| primaryNoNewArray '.' Identifier                       # PrimarySelect
+	| 'super' '.' Identifier                                 # PrimarySuperSelect
+	| name '(' argumentList? ')'                             # PrimaryApply
+	| primaryNoNewArray '.' Identifier '(' argumentList? ')' # PrimaryQualApply
 	| arrayCreationExpression '.' Identifier
-	| primaryNoNewArray '.' Identifier
-	| 'super' '.' Identifier
-	| name '(' argumentList? ')'
-	| primaryNoNewArray '.' Identifier '(' argumentList? ')'
-	| arrayCreationExpression '.' Identifier '(' argumentList? ')'
-	| 'super' '.' Identifier '(' argumentList? ')'
-	| name '[' expression ']'
-	| primaryNoNewArray '[' expression ']'
+      '(' argumentList? ')'                                # PrimaryArrayApply
+	| 'super' '.' Identifier '(' argumentList? ')'           # PrimarySuperApply
+	| name '[' expression ']'                                # PrimaryArrayAccess
+	| primaryNoNewArray '[' expression ']'                   # PrimaryArrayAccess2
   ;
 
 classInstanceCreationExpression
