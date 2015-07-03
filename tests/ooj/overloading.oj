@@ -23,7 +23,11 @@ class Test {
   }
 
 
-  void test {
+  int test() {
+    return k(1).m();
+  }
+
+  void test(int m) {
     k(1).m();
   }
 }
