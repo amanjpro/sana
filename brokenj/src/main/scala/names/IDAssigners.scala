@@ -30,12 +30,22 @@ trait IDAssigners extends names.IDAssigners {
   trait IDAssigner extends super.IDAssigner {
     import rwst.{local => _, _}
     override def assign(tree: Tree): IDAssignerMonad[Tree] = tree match {
+      case dflt: DefaultCase                         => for {
+        r       <- assignDefaultCase(dflt)
+      } yield r
       case cse: Case                                 => for {
         r       <- assignCase(cse)
       } yield r
       case _                                         =>
         super.assign(tree)
     }
+
+    def assignDefaultCase(cse:
+      DefaultCase): IDAssignerMonad[DefaultCase] = for {
+      owner  <- ask
+      body   <- assign(cse.body)
+    } yield DefaultCase(body, cse.pos, owner)
+
 
 
     def assignCase(cse: Case): IDAssignerMonad[Case] = for {
@@ -55,8 +65,7 @@ trait IDAssigners extends names.IDAssigners {
         owner <- ask
         expr  <- assignExpr(switch.expr)
         cases <- switch.cases.map(assignCase(_)).sequenceU
-        dflt  <- assign(switch.default)
-      } yield Switch(expr, cases, dflt, switch.pos, owner)
+      } yield Switch(expr, cases, switch.pos, owner)
       case lbl: Label                         => for {
         owner <- ask
         stmt  <- assignExpr(lbl.stmt)

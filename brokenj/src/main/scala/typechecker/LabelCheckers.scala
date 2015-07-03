@@ -26,21 +26,21 @@ trait LabelCheckers extends passes.Phases {
 
   type LabelChecker = ReaderWriter[List[Label], Unit]
 
-  def toLabelChecker(x: Reader[List[Label], Unit]): 
+  def toLabelChecker(x: Reader[List[Label], Unit]):
     ReaderWriter[List[Label], Unit] = toReaderWriter(x)
 
-  def toLabelChecker(x: ErrorReportingMonad[Unit]): 
+  def toLabelChecker(x: ErrorReportingMonad[Unit]):
     ReaderWriter[List[Label], Unit] = toReaderWriter(x)
 
 
   trait Checker extends CheckerPhase {
-    
+
     val name: String = "label-checkers"
-    override val description: Option[String] = 
+    override val description: Option[String] =
       Some("Check validity of lable statements.")
     override def runRightAfter: Option[String] = Some("shape-checkers")
 
-    def startPhase(state: Context, unit: CompilationUnit): 
+    def startPhase(state: Context, unit: CompilationUnit):
          Vector[Report] = {
       val tree  = unit.tree
       val (w, _) = checkTree(tree).run(Nil).run
@@ -114,7 +114,6 @@ trait LabelCheckers extends passes.Phases {
       case switch: Switch                   => for {
         _       <- checkTree(switch.expr)
         _       <- switch.cases.map(checkTree(_)).sequenceU
-        _       <- checkTree(switch.default)
       } yield ()
       case cse: Case                        => for {
         _       <- cse.guards.map(checkTree(_)).sequenceU
@@ -177,6 +176,6 @@ trait LabelCheckers extends passes.Phases {
     } yield ()
 
 
-    
+
   }
 }

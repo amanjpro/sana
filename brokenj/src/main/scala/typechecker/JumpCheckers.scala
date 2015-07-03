@@ -26,20 +26,20 @@ trait JumpCheckers extends passes.Phases {
 
   type JumpChecker = ReaderWriter[List[Tree], Unit]
 
-  def toJumpChecker(x: Reader[List[Tree], Unit]): 
+  def toJumpChecker(x: Reader[List[Tree], Unit]):
     ReaderWriter[List[Tree], Unit] = toReaderWriter(x)
 
-  def toJumpChecker(x: ErrorReportingMonad[Unit]): 
+  def toJumpChecker(x: ErrorReportingMonad[Unit]):
     ReaderWriter[List[Tree], Unit] = toReaderWriter(x)
 
   trait Checker extends CheckerPhase {
-    
+
     val name: String = "jump-checkers"
-    override val description: Option[String] = 
+    override val description: Option[String] =
       Some("Check validity of continue/break statements.")
     override def runRightAfter: Option[String] = Some("label-checkers")
 
-    def startPhase(state: Context, unit: CompilationUnit): 
+    def startPhase(state: Context, unit: CompilationUnit):
          Vector[Report] = {
       val tree  = unit.tree
       val (w, _) = checkTree(tree).run(Nil).run
@@ -76,7 +76,7 @@ trait JumpCheckers extends passes.Phases {
         _       <- forloop.inits.map(checkTree(_)).sequenceU
         _       <- checkTree(forloop.cond)
         _       <- forloop.steps.map(checkTree(_)).sequenceU
-        _       <- 
+        _       <-
           localRW[List[Tree], Unit](l => forloop::l)(checkTree(forloop.body))
       } yield ()
       case wile: While                      => for {
@@ -116,8 +116,6 @@ trait JumpCheckers extends passes.Phases {
           case x =>
             localRW[List[Tree], Unit](l => switch::l)(checkTree(x))
         }.sequenceU
-        _       <- 
-          localRW[List[Tree], Unit](l => switch::l)(checkTree(switch.default))
       } yield ()
       case cse: Case                        => for {
         _       <- cse.guards.map(checkTree(_)).sequenceU
@@ -159,6 +157,6 @@ trait JumpCheckers extends passes.Phases {
 
 
 
-    
+
   }
 }

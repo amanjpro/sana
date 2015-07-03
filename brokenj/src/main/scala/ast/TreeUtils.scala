@@ -31,10 +31,9 @@ trait TreeUtils extends ast.TreeUtils {
     case cse: Case                                     =>
       allPathsReturn(cse.body, ctx)
     case switch: Switch                                =>
-      lazy val cases = switch.cases.foldLeft(true)((z, y) =>
+      switch.cases.foldLeft(true)((z, y) =>
         z || allPathsReturn(y, ctx)
       )
-      allPathsReturn(switch.default, ctx) && cases
     case e                                              =>
       super.allPathsReturn(e, ctx)
   }

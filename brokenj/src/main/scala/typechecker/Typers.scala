@@ -13,6 +13,7 @@ import calcj.ast.JavaOps._
 import primj.report._
 import primj.typechecker
 import brokenj.Global
+import brokenj.report._
 
 import scalaz.Scalaz._
 import scalaz._
@@ -47,12 +48,17 @@ trait Typers extends typechecker.Typers {
     }
 
 
-    def typeCase(cse: Case): TypeChecker[Case] = for {
-      // TODO:
-      // make sure that the guards are constant expressions Section 15.27
-      guards  <- cse.guards.map(typeExpr(_)).sequenceU
-      body    <- typeTree(cse.body)
-    } yield Case(guards, body, cse.pos, cse.owner)
+    def typeCase(cse: Case): TypeChecker[Case] = cse match {
+      case dflt: DefaultCase                   => for {
+        body    <- typeTree(dflt.body)
+      } yield DefaultCase(body, dflt.pos, dflt.owner)
+      case _                                   => for {
+        // TODO:
+        // make sure that the guards are constant expressions Section 15.27
+        guards  <- cse.guards.map(typeExpr(_)).sequenceU
+        body    <- typeTree(cse.body)
+      } yield Case(guards, body, cse.pos, cse.owner)
+    }
 
     // TODO
     // rule-out duplicate constant guards Section 14.9
@@ -69,6 +75,14 @@ trait Typers extends typechecker.Typers {
                       cond.toString, "char, byte, short or int",
                       cond.pos, cond))
       cases   <- switch.cases.map(typeCase(_)).sequenceU
+      _       <- switch.cases.filter(_.isInstanceOf[DefaultCase]).size match {
+        case 0 | 1                            => point(())
+        case n                                =>
+          toTypeChecker(error(TOO_MANY_DEFAULT_CASES,
+            n.toString, "expected one or zero",
+            switch.pos, cond))
+
+      }
       ctx     <- get
       // _       <- cases.map {
       //   case cse  =>
@@ -83,7 +97,6 @@ trait Typers extends typechecker.Typers {
       //             guard.pos, guard))
       //     }
       // }
-      default <- typeTree(switch.default)
-    } yield Switch(cond, cases, default, switch.pos, switch.owner)
+    } yield Switch(cond, cases, switch.pos, switch.owner)
   }
 }

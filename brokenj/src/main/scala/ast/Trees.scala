@@ -79,6 +79,22 @@ trait Trees extends ast.Trees {
 
   }
 
+  trait DefaultCase extends Case {
+    val guards: List[Expr] = Nil
+    override def asString(ctx: Context): String = {
+      s"default:\n${body.asString(ctx)}"
+    }
+
+    override def show(ctx: Context): String =
+      s"""|DefaultCase{
+          |body=${body.show(ctx)},
+          |owner=${owner},
+          |pos=${pos}
+          |}""".stripMargin
+
+
+  }
+
   trait Case extends Tree {
     def guards: List[Expr]
     def body: Tree
@@ -102,20 +118,16 @@ trait Trees extends ast.Trees {
   trait Switch extends Expr {
     def expr: Expr
     def cases: List[Case]
-    def default: Tree
 
     val tpe: TypeState[Type] = toTypeState(VoidType)
     def asString(ctx: Context): String =
       s"""|switch(${expr.asString(ctx)}){
-          |${asStringList(cases, ctx, "\n")}
-          |default:
-          |${default.asString(ctx)}""".stripMargin
+          |${asStringList(cases, ctx, "\n")}""".stripMargin
 
     def show(ctx: Context): String =
       s"""|Switch{
           |expr=${expr.show(ctx)},
           |cases=${showList(cases, ctx)},
-          |default=${default.show(ctx)},
           |owner=${owner},
           |pos=${pos}
           |}""".stripMargin
@@ -131,11 +143,18 @@ trait Trees extends ast.Trees {
   }
 
   trait SwitchExtractor {
-    def unapply(switch: Switch): Option[(Expr, List[Case], Tree)] =
+    def unapply(switch: Switch): Option[(Expr, List[Case])] =
       switch match {
         case null     => None
-        case _        => Some((switch.expr, switch.cases, switch.default))
+        case _        => Some((switch.expr, switch.cases))
       }
+  }
+
+  trait DefaultCaseExtractor {
+    def unapply(cse: DefaultCase): Option[(Tree)] = cse match {
+      case null     => None
+      case _        => Some(cse.body)
+    }
   }
 
   trait CaseExtractor {
@@ -173,13 +192,13 @@ trait Trees extends ast.Trees {
 
   trait SwitchFactory {
     private class SwitchImpl(val expr: Expr,
-      val cases: List[Case], val default: Tree,
-      val pos: Option[Position], val owner: TreeId) extends Switch
+      val cases: List[Case], val pos: Option[Position],
+      val owner: TreeId) extends Switch
 
 
-    def apply(expr: Expr, cases: List[Case], default: Tree,
+    def apply(expr: Expr, cases: List[Case],
         pos: Option[Position], owner: TreeId): Switch =
-      new SwitchImpl(expr, cases, default, pos, owner)
+      new SwitchImpl(expr, cases, pos, owner)
   }
 
   trait CaseFactory {
@@ -191,6 +210,16 @@ trait Trees extends ast.Trees {
     def apply(guards: List[Expr], body: Tree,
         pos: Option[Position], owner: TreeId): Case =
       new CaseImpl(guards, body, pos, owner)
+  }
+
+  trait DefaultCaseFactory {
+    protected class DefaultCaseImpl(val body: Tree,
+      val pos: Option[Position], val owner: TreeId) extends DefaultCase
+
+
+    def apply(body: Tree, pos: Option[Position],
+      owner: TreeId): DefaultCase =
+      new DefaultCaseImpl(body, pos, owner)
   }
 
 
@@ -218,9 +247,10 @@ trait Trees extends ast.Trees {
 
   // TODO: Only let Extractors out, or none?
 
-  val Label     = new LabelExtractor with LabelFactory {}
-  val Switch    = new SwitchExtractor with SwitchFactory {}
-  val Case      = new CaseExtractor with CaseFactory {}
-  val Break     = new BreakExtractor with BreakFactory {}
-  val Continue  = new ContinueExtractor with ContinueFactory {}
+  val Label       = new LabelExtractor with LabelFactory {}
+  val Switch      = new SwitchExtractor with SwitchFactory {}
+  val Case        = new CaseExtractor with CaseFactory {}
+  val DefaultCase = new DefaultCaseExtractor with DefaultCaseFactory {}
+  val Break       = new BreakExtractor with BreakFactory {}
+  val Continue    = new ContinueExtractor with ContinueFactory {}
 }
