@@ -17,7 +17,7 @@ trait Definitions extends calcj.util.Definitions {
   self: TreeInfos with Types with Trees =>
 
   override def builtInTypes: List[(Name, TypeState[Type])] = {
-    val superTypes: List[(Name, TypeState[Type])] = super.builtInTypes 
+    val superTypes: List[(Name, TypeState[Type])] = super.builtInTypes
     val langTypes:  List[(Name, TypeState[Type])] = List(
       VoidType.name      -> toTypeState(VoidType)
     )
