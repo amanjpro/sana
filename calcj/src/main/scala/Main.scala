@@ -11,10 +11,10 @@ import typechecker.Typers
 import java.lang.{System => OS}
 import java.io.File
 
-object Main { 
+object Main {
   def processOptions(args: Array[String],
-                        ln: String, 
-                        lv: String, 
+                        ln: String,
+                        lv: String,
                         fn: String): Either[String, SanaConfig] = {
         val config = new SanaConfig
         val processor = new CommandLineArgumentParser(config, ln, lv, fn)
@@ -28,10 +28,10 @@ object Main {
   def main(args: Array[String]): Unit = {
 
 
-    val c = processOptions(args, langName, langVersion, 
+    val c = processOptions(args, langName, langVersion,
           tiny.frameworkName) match {
         case Right(config) => config
-        case Left(msg)     => 
+        case Left(msg)     =>
           println(msg)
           System.exit(1)
           ???  // To satisfy the type checker

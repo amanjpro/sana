@@ -20,7 +20,7 @@ import primj.report._
 
 import ooj.Global
 import ooj.modifiers.Ops._
- 
+
 import scalaz.{Name => _, Failure => _, _}
 import Scalaz._
 
@@ -42,12 +42,12 @@ trait Namers extends primj.names.Namers {
 
     import rwst.{local => _, _}
 
-    def loadFromClassPath(name: String, 
+    def loadFromClassPath(name: String,
             owner: TreeId): NamerMonad[ClassDef] = {
       // INFO: Tree needs to have ID's assigned to
       // Namer needs to be able to talk to IDAssigners
       val clz =  loadClass(name)
-      for { 
+      for {
         ctx              <- get
         (_, clazz, ctx2) =  idassigner.assignClassDef(clz).run(owner, ctx)
         _                <- put(ctx2)
@@ -63,12 +63,12 @@ trait Namers extends primj.names.Namers {
         super.nameTrees(tree)
     }
 
-    override def nameDefTrees(defTree: DefTree): 
+    override def nameDefTrees(defTree: DefTree):
           NamerMonad[DefTree] = defTree match {
       case ttree: TypeTree                           => for {
         r  <- nameTypeTrees(ttree)
       } yield r
-      case _                                         => 
+      case _                                         =>
         super.nameDefTrees(defTree)
     }
 
@@ -108,7 +108,7 @@ trait Namers extends primj.names.Namers {
         }
       } else true
     }
-    
+
     override def nameTypeUses(tuse: TypeUse): NamerMonad[TypeUse] = for {
       ctx       <- get
       owner     =  tuse.owner
@@ -116,10 +116,10 @@ trait Namers extends primj.names.Namers {
       name      =  tuse.nameAtParser.map(Name(_)).getOrElse(ERROR_NAME)
       // Do we have a Type with this name seeing from the owner?
       nuse_ctx2 =  {
-        val i = ctx.lookup(name, _.kind.isInstanceOf[TypeKind], owner) 
+        val i = ctx.lookup(name, _.kind.isInstanceOf[TypeKind], owner)
         ctx.getTree(i) match {
           case Some(t)  if typeIsVisible(i, t.mods, enclId, ctx)    =>
-            (TypeUse(i, tuse.nameAtParser, tuse.pos, owner, 
+            (TypeUse(i, tuse.nameAtParser, tuse.pos, owner,
               enclId), ctx)
           case _                                                    =>
             // Do we have the (package, or type) in classpath?
@@ -128,21 +128,21 @@ trait Namers extends primj.names.Namers {
             // Is there a class in the classpath? with the same full name?
             // load it
             if(catalog.defines(fullName, true)) {
-              val (_, loadedClass, ctx2) = 
+              val (_, loadedClass, ctx2) =
                 loadFromClassPath(fullName, owner).run(Set(), ctx)
               loadedClass match {
-                case cd: ClassDef if typeIsVisible(cd.id, cd.mods, 
+                case cd: ClassDef if typeIsVisible(cd.id, cd.mods,
                                                                enclId, ctx2)  =>
-                  (TypeUse(cd.id, tuse.nameAtParser, tuse.pos, owner, 
+                  (TypeUse(cd.id, tuse.nameAtParser, tuse.pos, owner,
                                   enclId), ctx2)
                 case _                                                        =>
                   // This case should never happen
-                  (TypeUse(NoId, tuse.nameAtParser, tuse.pos, owner, 
+                  (TypeUse(NoId, tuse.nameAtParser, tuse.pos, owner,
                       enclId), ctx2)
               }
             } else {
               // Couldn't resolve the name, then don't resolve it
-              (TypeUse(NoId, tuse.nameAtParser, tuse.pos, owner, 
+              (TypeUse(NoId, tuse.nameAtParser, tuse.pos, owner,
                 enclId), ctx)
             }
         }
@@ -168,15 +168,15 @@ trait Namers extends primj.names.Namers {
       //
       // After we support inner classes (Java 1.1), we need to resolve
       // the types if needed, as an example:
-      // 
+      //
       // pkg.OuterClass.InnerClass
       //
       // Will be parsed as:
-      // Select(Select(Ident("pkg"), Ident("OuterClass")), 
+      // Select(Select(Ident("pkg"), Ident("OuterClass")),
       //           TypeUse("InnerClass"))
-      // 
+      //
       // But after namer should be (or if it is a local use, after typer) to:
-      // Select(Select(Ident("pkg"), TypeUse("OuterClass")), 
+      // Select(Select(Ident("pkg"), TypeUse("OuterClass")),
       //           TypeUse("InnerClass"))
 
       // Do we have a package with this name seeing from the owner?
@@ -184,7 +184,7 @@ trait Namers extends primj.names.Namers {
       nid_ctx2  =  ctx.lookup(name, _.kind == PackageKind, owner) match {
         case NoId                   =>
           // Do we have a Type with this name seeing from the owner?
-          val i = ctx.lookup(name, _.kind.isInstanceOf[TypeKind], owner) 
+          val i = ctx.lookup(name, _.kind.isInstanceOf[TypeKind], owner)
           ctx.getTree(i) match {
             case Some(t) if typeIsVisible(i, t.mods, enclId, ctx)  =>
               (TypeUse(i, id.nameAtParser, id.pos, owner, enclId), ctx)
@@ -195,25 +195,25 @@ trait Namers extends primj.names.Namers {
               // Is there a class in the classpath? with the same full name?
               // load it
               if(catalog.defines(fullName, true)) {
-                val (_, loadedClass, ctx2) = 
+                val (_, loadedClass, ctx2) =
                   loadFromClassPath(fullName, owner).run(Set(), ctx)
                 loadedClass match {
-                  case cd: ClassDef if typeIsVisible(cd.id, 
+                  case cd: ClassDef if typeIsVisible(cd.id,
                                                        cd.mods, enclId, ctx2) =>
-                    (TypeUse(cd.id, id.nameAtParser, id.pos, 
+                    (TypeUse(cd.id, id.nameAtParser, id.pos,
                       owner, enclId), ctx2)
                   case _                                                      =>
                     // This case should never happen
-                    (Ident(NoId, id.nameAtParser, id.pos, owner, 
+                    (Ident(NoId, id.nameAtParser, id.pos, owner,
                       enclId), ctx2)
                 }
-              } else if(catalog.defines(fullName, false)) { 
+              } else if(catalog.defines(fullName, false)) {
                 val info = newPackageDefInfo(name)
                 val (i, ctx2) = ctx.extend(owner, packageContext(info))
                 (Ident(i, id.nameAtParser, id.pos, owner, enclId), ctx2)
               } else {
                 // Couldn't resolve the name, then don't resolve it
-                (Ident(NoId, id.nameAtParser, id.pos, owner, 
+                (Ident(NoId, id.nameAtParser, id.pos, owner,
                   enclId), ctx)
               }
           }
@@ -228,7 +228,7 @@ trait Namers extends primj.names.Namers {
 
     // Before Java 1.1:
     // qual is package name? then:
-    // - if this package defines this name, then resolve this use 
+    // - if this package defines this name, then resolve this use
     //   to that name, and it is a type use (or a package name)
     // - if it doesn't, see if this package (or probably type) is
     //   defined by the classpath
@@ -251,11 +251,11 @@ trait Namers extends primj.names.Namers {
         case _                   => NoId
       }
       tree    <- select.tree match {
-        case id: Ident      => 
-          nameIdents(Ident(id.uses, id.nameAtParser, id.pos, 
+        case id: Ident      =>
+          nameIdents(Ident(id.uses, id.nameAtParser, id.pos,
             qid, id.enclosingId))
-        case tuse: TypeUse  => 
-          nameTypeUses(TypeUse(tuse.uses, tuse.nameAtParser, tuse.pos, 
+        case tuse: TypeUse  =>
+          nameTypeUses(TypeUse(tuse.uses, tuse.nameAtParser, tuse.pos,
             qid, tuse.enclosingId))
       }
     } yield Select(qual, tree, select.pos, select.owner)
