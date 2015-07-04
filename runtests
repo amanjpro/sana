@@ -29,14 +29,21 @@ def writeToFile(fname: String, text: String) {
   bw.close()
 }
 
-def fail(f: String, ref: String, prog: String, expected: String): Unit = {
+def fail(f: String, prog: List[String], ref: List[String]): Unit = {
   println("=======================================================")
   println("-------------------- Reference ------------------------")
-  println(ref)
+  ref.foreach(println)
   println("---------------------- Program ------------------------")
-  println(prog)
+  prog.foreach(println)
   println("---------------------- Test case ----------------------")
-  println(s"$red $f $endcolor $expected")
+  (ref, prog) match {
+    case (Nil, _)    =>
+      println(s"$red $f $endcolor should pass")
+    case (_, Nil)    =>
+      println(s"$red $f $endcolor should fail")
+    case _           =>
+      println(s"$red $f $endcolor should fail, but with different errors")
+  }
   println("=======================================================")
   failed += 1
 }
@@ -53,25 +60,29 @@ def pass(f: String): Unit = {
 def test(file: String, prg: String): Unit = {
   val source = Source.fromFile(file)
   val lines = source.getLines.toList
-  lines match {
-    case (x::y::Nil)  =>
-      skip(file)
-    case (x::y1::rest) =>
-      var rr = ""
-      s"scala $prg --Ytest --Xlog off $file".!! #> rr
-      // Only take the first error
-      val r = rr.split("\n").head
-      val y = y1.trim
-      if(y.startsWith(s"// ${r}".trim)) {
+  lines.indexWhere((x) => ! x.startsWith("//")) match {
+    case -1 | 0 | 1                => skip(file)
+    case n                         =>
+      // Only take the first error codes
+      val refErrorCodes = lines.take(n).tail.map((code) => {
+        code.trim
+      })
+
+      var rr: List[String] = Nil
+      val countLogger = ProcessLogger(line => (),
+                                      line => rr = rr ++ List(line))
+
+      s"scala $prg --Ytest --Xlog off $file" ! countLogger
+      val programErrors = rr.flatMap((err) => {
+        val trimmed = err.trim
+        if(trimmed != "") List(s"// $trimmed")
+        else Nil
+      })
+
+      if(refErrorCodes.length == programErrors.length &&
+        refErrorCodes == programErrors)
         pass(file)
-      } else if(x.startsWith("// fails")) {
-        fail(file, y, r, "should fail")
-      } else if(x.startsWith("// passes")) {
-        fail(file, y, r, "should pass")
-      } else
-        skip(file)
-    case _            =>
-      skip(file)
+      else fail(file, programErrors, refErrorCodes)
   }
 }
 

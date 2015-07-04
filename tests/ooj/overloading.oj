@@ -1,5 +1,4 @@
 // passes
-//
 
 class A {
   int m () {
