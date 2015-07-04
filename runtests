@@ -64,8 +64,10 @@ def test(file: String, prg: String): Unit = {
     case -1 | 0 | 1                => skip(file)
     case n                         =>
       // Only take the first error codes
-      val refErrorCodes = lines.take(n).tail.map((code) => {
-        code.trim
+      val refErrorCodes = lines.take(n).tail.flatMap((code) => {
+        val trimmed = code.trim
+        if(trimmed == "//") Nil
+        else List(trimmed)
       })
 
       var rr: List[String] = Nil
